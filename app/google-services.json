@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "226173807279",
+    "project_id": "synapse-venom",
+    "storage_bucket": "synapse-venom.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:226173807279:android:3ef7b30b4e53f31360c25a",
+        "android_client_info": {
+          "package_name": "com.venom.synapse"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkKqcODVBDnW8yo2LKrnG9SnmO58vu6V8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
