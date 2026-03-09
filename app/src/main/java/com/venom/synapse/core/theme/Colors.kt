@@ -1,0 +1,462 @@
+package com.venom.synapse.core.theme
+
+import androidx.compose.ui.graphics.Color
+
+/**
+ * Synapse Color Palette
+ * Section 1: Tailwind CSS v3.4 palette
+ * Section 2: Synapse custom brand intermediaries
+ */
+
+// SECTION 1 — Tailwind CSS v3.4
+
+// ── Slate ────────────────────────────────────────────────────────────────────
+val Slate25  = Color(0xFFFCFDFE)
+val Slate50  = Color(0xFFF8FAFC)
+val Slate100 = Color(0xFFF1F5F9)
+val Slate200 = Color(0xFFE2E8F0)
+val Slate300 = Color(0xFFCBD5E1)
+val Slate400 = Color(0xFF94A3B8)
+val Slate500 = Color(0xFF64748B)
+val Slate600 = Color(0xFF475569)
+val Slate700 = Color(0xFF334155)
+val Slate800 = Color(0xFF1E293B)
+val Slate850 = Color(0xFF12213B)
+val Slate900 = Color(0xFF0F172A)
+val Slate925 = Color(0xFF060C18)
+val Slate950 = Color(0xFF020617)
+
+// ── Gray ─────────────────────────────────────────────────────────────────────
+val Gray50  = Color(0xFFF9FAFB)
+val Gray100 = Color(0xFFF3F4F6)
+val Gray200 = Color(0xFFE5E7EB)
+val Gray300 = Color(0xFFD1D5DB)
+val Gray400 = Color(0xFF9CA3AF)
+val Gray500 = Color(0xFF6B7280)
+val Gray600 = Color(0xFF4B5563)
+val Gray700 = Color(0xFF374151)
+val Gray800 = Color(0xFF1F2937)
+val Gray900 = Color(0xFF111827)
+val Gray950 = Color(0xFF030712)
+
+// ── Zinc ─────────────────────────────────────────────────────────────────────
+val Zinc50  = Color(0xFFFAFAFA)
+val Zinc100 = Color(0xFFF4F4F5)
+val Zinc200 = Color(0xFFE4E4E7)
+val Zinc300 = Color(0xFFD4D4D8)
+val Zinc400 = Color(0xFFA1A1AA)
+val Zinc500 = Color(0xFF71717A)
+val Zinc600 = Color(0xFF52525B)
+val Zinc700 = Color(0xFF3F3F46)
+val Zinc800 = Color(0xFF27272A)
+val Zinc900 = Color(0xFF18181B)
+val Zinc950 = Color(0xFF09090B)
+
+// ── Neutral ──────────────────────────────────────────────────────────────────
+val Neutral50  = Color(0xFFFAFAFA)
+val Neutral100 = Color(0xFFF5F5F5)
+val Neutral200 = Color(0xFFE5E5E5)
+val Neutral300 = Color(0xFFD4D4D4)
+val Neutral400 = Color(0xFFA3A3A3)
+val Neutral500 = Color(0xFF737373)
+val Neutral600 = Color(0xFF525252)
+val Neutral700 = Color(0xFF404040)
+val Neutral800 = Color(0xFF262626)
+val Neutral900 = Color(0xFF171717)
+val Neutral950 = Color(0xFF0A0A0A)
+
+// ── Stone ────────────────────────────────────────────────────────────────────
+val Stone50  = Color(0xFFFAFAF9)
+val Stone100 = Color(0xFFF5F5F4)
+val Stone200 = Color(0xFFE7E5E4)
+val Stone300 = Color(0xFFD6D3D1)
+val Stone400 = Color(0xFFA8A29E)
+val Stone500 = Color(0xFF78716C)
+val Stone600 = Color(0xFF57534E)
+val Stone700 = Color(0xFF44403C)
+val Stone800 = Color(0xFF292524)
+val Stone900 = Color(0xFF1C1917)
+val Stone950 = Color(0xFF0C0A09)
+
+// ── Red ──────────────────────────────────────────────────────────────────────
+val Red50  = Color(0xFFFEF2F2)
+val Red100 = Color(0xFFFEE2E2)
+val Red200 = Color(0xFFFECACA)
+val Red300 = Color(0xFFFCA5A5)
+val Red400 = Color(0xFFF87171)
+val Red500 = Color(0xFFEF4444)
+val Red600 = Color(0xFFDC2626)
+val Red700 = Color(0xFFB91C1C)
+val Red800 = Color(0xFF991B1B)
+val Red900 = Color(0xFF7F1D1D)
+val Red950 = Color(0xFF450A0A)
+
+// ── Orange ───────────────────────────────────────────────────────────────────
+val Orange50  = Color(0xFFFFF7ED)
+val Orange100 = Color(0xFFFFEDD5)
+val Orange200 = Color(0xFFFED7AA)
+val Orange300 = Color(0xFFFDBA74)
+val Orange400 = Color(0xFFFB923C)
+val Orange500 = Color(0xFFF97316)
+val Orange600 = Color(0xFFEA580C)
+val Orange700 = Color(0xFFC2410C)
+val Orange800 = Color(0xFF9A3412)
+val Orange900 = Color(0xFF7C2D12)
+val Orange950 = Color(0xFF431407)
+
+// ── Amber ────────────────────────────────────────────────────────────────────
+val Amber50  = Color(0xFFFFFBEB)
+val Amber100 = Color(0xFFFEF3C7)
+val Amber200 = Color(0xFFFDE68A)
+val Amber300 = Color(0xFFFCD34D)
+val Amber400 = Color(0xFFFBBF24)
+val Amber500 = Color(0xFFF59E0B)
+val Amber600 = Color(0xFFD97706)
+val Amber700 = Color(0xFFB45309)
+val Amber800 = Color(0xFF92400E)
+val Amber900 = Color(0xFF78350F)
+val Amber950 = Color(0xFF451A03)
+
+// ── Yellow ───────────────────────────────────────────────────────────────────
+val Yellow50  = Color(0xFFFEFCE8)
+val Yellow100 = Color(0xFFFEF9C3)
+val Yellow200 = Color(0xFFFEF08A)
+val Yellow300 = Color(0xFFFDE047)
+val Yellow400 = Color(0xFFFACC15)
+val Yellow500 = Color(0xFFEAB308)
+val Yellow600 = Color(0xFFCA8A04)
+val Yellow700 = Color(0xFFA16207)
+val Yellow800 = Color(0xFF854D0E)
+val Yellow900 = Color(0xFF713F12)
+val Yellow950 = Color(0xFF422006)
+
+// ── Lime ─────────────────────────────────────────────────────────────────────
+val Lime50  = Color(0xFFF7FEE7)
+val Lime100 = Color(0xFFECFCCB)
+val Lime200 = Color(0xFFD9F99D)
+val Lime300 = Color(0xFFBEF264)
+val Lime400 = Color(0xFFA3E635)
+val Lime500 = Color(0xFF84CC16)
+val Lime600 = Color(0xFF65A30D)
+val Lime700 = Color(0xFF4D7C0F)
+val Lime800 = Color(0xFF3F6212)
+val Lime900 = Color(0xFF365314)
+val Lime950 = Color(0xFF1A2E05)
+
+// ── Green ────────────────────────────────────────────────────────────────────
+val Green50  = Color(0xFFF0FDF4)
+val Green100 = Color(0xFFDCFCE7)
+val Green200 = Color(0xFFBBF7D0)
+val Green300 = Color(0xFF86EFAC)
+val Green400 = Color(0xFF4ADE80)
+val Green500 = Color(0xFF22C55E)
+val Green600 = Color(0xFF16A34A)
+val Green700 = Color(0xFF15803D)
+val Green800 = Color(0xFF166534)
+val Green900 = Color(0xFF14532D)
+val Green950 = Color(0xFF052E16)
+
+// ── Emerald ──────────────────────────────────────────────────────────────────
+val Emerald50  = Color(0xFFECFDF5)
+val Emerald100 = Color(0xFFD1FAE5)
+val Emerald200 = Color(0xFFA7F3D0)
+val Emerald300 = Color(0xFF6EE7B7)
+val Emerald400 = Color(0xFF34D399)
+val Emerald500 = Color(0xFF10B981)
+val Emerald600 = Color(0xFF059669)
+val Emerald700 = Color(0xFF047857)
+val Emerald800 = Color(0xFF065F46)
+val Emerald900 = Color(0xFF064E3B)
+val Emerald950 = Color(0xFF022C22)
+
+// ── Teal ─────────────────────────────────────────────────────────────────────
+val Teal50  = Color(0xFFF0FDFA)
+val Teal100 = Color(0xFFCCFBF1)
+val Teal200 = Color(0xFF99F6E4)
+val Teal300 = Color(0xFF5EEAD4)
+val Teal400 = Color(0xFF2DD4BF)
+val Teal500 = Color(0xFF14B8A6)
+val Teal600 = Color(0xFF0D9488)
+val Teal700 = Color(0xFF0F766E)
+val Teal800 = Color(0xFF115E59)
+val Teal900 = Color(0xFF134E4A)
+val Teal950 = Color(0xFF042F2E)
+
+// ── Cyan ─────────────────────────────────────────────────────────────────────
+val Cyan50  = Color(0xFFECFEFF)
+val Cyan100 = Color(0xFFCFFAFE)
+val Cyan200 = Color(0xFFA5F3FC)
+val Cyan300 = Color(0xFF67E8F9)
+val Cyan400 = Color(0xFF22D3EE)
+val Cyan500 = Color(0xFF06B6D4)
+val Cyan600 = Color(0xFF0891B2)
+val Cyan700 = Color(0xFF0E7490)
+val Cyan800 = Color(0xFF155E75)
+val Cyan900 = Color(0xFF164E63)
+val Cyan950 = Color(0xFF083344)
+
+// ── Sky ──────────────────────────────────────────────────────────────────────
+val Sky50  = Color(0xFFF0F9FF)
+val Sky100 = Color(0xFFE0F2FE)
+val Sky200 = Color(0xFFBAE6FD)
+val Sky300 = Color(0xFF7DD3FC)
+val Sky400 = Color(0xFF38BDF8)
+val Sky500 = Color(0xFF0EA5E9)
+val Sky600 = Color(0xFF0284C7)
+val Sky700 = Color(0xFF0369A1)
+val Sky800 = Color(0xFF075985)
+val Sky900 = Color(0xFF0C4A6E)
+val Sky950 = Color(0xFF082F49)
+
+// ── Blue ─────────────────────────────────────────────────────────────────────
+val Blue50  = Color(0xFFEFF6FF)
+val Blue100 = Color(0xFFDBEAFE)
+val Blue200 = Color(0xFFBFDBFE)
+val Blue300 = Color(0xFF93C5FD)
+val Blue400 = Color(0xFF60A5FA)
+val Blue500 = Color(0xFF3B82F6)
+val Blue600 = Color(0xFF2563EB)
+val Blue700 = Color(0xFF1D4ED8)
+val Blue800 = Color(0xFF1E40AF)
+val Blue900 = Color(0xFF1E3A8A)
+val Blue950 = Color(0xFF172554)
+
+// ── Indigo ───────────────────────────────────────────────────────────────────
+val Indigo50  = Color(0xFFEEF2FF)
+val Indigo100 = Color(0xFFE0E7FF)
+val Indigo200 = Color(0xFFC7D2FE)
+val Indigo300 = Color(0xFFA5B4FC)
+val Indigo400 = Color(0xFF818CF8)
+val Indigo500 = Color(0xFF6366F1)
+val Indigo600 = Color(0xFF4F46E5)
+val Indigo700 = Color(0xFF4338CA)
+val Indigo800 = Color(0xFF3730A3)
+val Indigo900 = Color(0xFF312E81)
+val Indigo950 = Color(0xFF1E1B4B)
+
+// ── Violet ───────────────────────────────────────────────────────────────────
+val Violet50  = Color(0xFFF5F3FF)
+val Violet100 = Color(0xFFEDE9FE)
+val Violet200 = Color(0xFFDDD6FE)
+val Violet300 = Color(0xFFC4B5FD)
+val Violet400 = Color(0xFFA78BFA)
+val Violet500 = Color(0xFF8B5CF6)
+val Violet600 = Color(0xFF7C3AED)
+val Violet700 = Color(0xFF6D28D9)
+val Violet800 = Color(0xFF5B21B6)
+val Violet900 = Color(0xFF4C1D95)
+val Violet950 = Color(0xFF2E1065)
+
+// ── Purple ───────────────────────────────────────────────────────────────────
+val Purple50  = Color(0xFFFAF5FF)
+val Purple100 = Color(0xFFF3E8FF)
+val Purple200 = Color(0xFFE9D5FF)
+val Purple300 = Color(0xFFD8B4FE)
+val Purple400 = Color(0xFFC084FC)
+val Purple500 = Color(0xFFA855F7)
+val Purple600 = Color(0xFF9333EA)
+val Purple700 = Color(0xFF7E22CE)
+val Purple800 = Color(0xFF6B21A8)
+val Purple900 = Color(0xFF581C87)
+val Purple950 = Color(0xFF3B0764)
+
+// ── Fuchsia ──────────────────────────────────────────────────────────────────
+val Fuchsia50  = Color(0xFFFDF4FF)
+val Fuchsia100 = Color(0xFFFAE8FF)
+val Fuchsia200 = Color(0xFFF5D0FE)
+val Fuchsia300 = Color(0xFFF0ABFC)
+val Fuchsia400 = Color(0xFFE879F9)
+val Fuchsia500 = Color(0xFFD946EF)
+val Fuchsia600 = Color(0xFFC026D3)
+val Fuchsia700 = Color(0xFFA21CAF)
+val Fuchsia800 = Color(0xFF86198F)
+val Fuchsia900 = Color(0xFF701A75)
+val Fuchsia950 = Color(0xFF4A044E)
+
+// ── Pink ─────────────────────────────────────────────────────────────────────
+val Pink50  = Color(0xFFFDF2F8)
+val Pink100 = Color(0xFFFCE7F3)
+val Pink200 = Color(0xFFFBCFE8)
+val Pink300 = Color(0xFFF9A8D4)
+val Pink400 = Color(0xFFF472B6)
+val Pink500 = Color(0xFFEC4899)
+val Pink600 = Color(0xFFDB2777)
+val Pink700 = Color(0xFFBE185D)
+val Pink800 = Color(0xFF9D174D)
+val Pink900 = Color(0xFF831843)
+val Pink950 = Color(0xFF500724)
+
+// ── Rose ─────────────────────────────────────────────────────────────────────
+val Rose50  = Color(0xFFFFF1F2)
+val Rose100 = Color(0xFFFFE4E6)
+val Rose200 = Color(0xFFFECDD3)
+val Rose300 = Color(0xFFFDA4AF)
+val Rose400 = Color(0xFFFB7185)
+val Rose500 = Color(0xFFF43F5E)
+val Rose600 = Color(0xFFE11D48)
+val Rose700 = Color(0xFFBE123C)
+val Rose800 = Color(0xFF9F1239)
+val Rose900 = Color(0xFF881337)
+val Rose950 = Color(0xFF4C0519)
+
+// Absolute
+val White       = Color(0xFFFFFFFF)
+val Black       = Color(0xFF000000)
+val Transparent = Color(0x00000000)
+
+// SECTION 2 — Synapse Custom Intermediaries
+// Non-Tailwind hex values for the brand system.
+
+// Primary (Violet)
+
+/** #5B4EE8 — Synapse primary violet (light mode) */
+val SynapseViolet600 = Color(0xFF5B4EE8)
+
+/** #9D93FF — Synapse primary violet (dark mode) */
+val SynapseViolet300 = Color(0xFF9D93FF)
+
+/** #4A3DD6 — Deep violet — primary gradient start */
+val SynapseVioletDeep = Color(0xFF4A3DD6)
+
+/** #7B6FFF — Bright violet — primary gradient end */
+val SynapseVioletBright = Color(0xFF7B6FFF)
+
+/** #BDB6FF — Pale violet — dark-mode gradient end, onPrimaryContainer dark */
+val SynapseVioletPale = Color(0xFFBDB6FF)
+
+/** #4C3EC7 — Mid-deep violet — CTA gradient start, interactive action button BG */
+val SynapseVioletMid = Color(0xFF4C3EC7)
+
+/** #3B2FA8 — Dark annual gradient start */
+val SynapseVioletDarkAnnual = Color(0xFF3B2FA8)
+
+/** #2D1B8C — Darkest violet — title gradient start */
+val SynapseVioletDarkest = Color(0xFF2D1B8C)
+
+// ── Tertiary (Gold / Amber) ───────────────────────────────────────────────────
+
+/** #FBB830 — Synapse gold (dark mode primary tertiary) */
+val SynapseGold = Color(0xFFFBB830)
+
+/** #FDCA6E — Pale gold — streak chips, shimmer highlights */
+val SynapseGoldPale = Color(0xFFFDCA6E)
+
+/** #92580A — Deep gold — dark-mode gradient start (note: darker than Amber800 #92400E) */
+val SynapseGoldDeep = Color(0xFF92580A)
+
+// ── Neutral — Dark Surface Stack ─────────────────────────────────────────────
+
+/** #06051A — App background (dark) */
+val SynapseDeepDark = Color(0xFF06051A)
+
+/** #0D0B25 — Surface level 1 (dark) */
+val SynapseSurfaceDark = Color(0xFF0D0B25)
+
+/** #0D0B22 — Near-black violet — onBackground in light scheme */
+val SynapseNearBlack = Color(0xFF0D0B22)
+
+/** #13112E — Card surface (dark) */
+val SynapseCardDark = Color(0xFF13112E)
+
+/** #1B183E — Elevated card (dark) — dialogs, selected pricing cards */
+val SynapseElevatedDark = Color(0xFF1B183E)
+
+// ── Neutral — Light Surface ───────────────────────────────────────────────────
+
+/** #EBE9FF — Ghost white — onBackground in dark scheme */
+val SynapseGhostWhite = Color(0xFFEBE9FF)
+
+/** #EDE8FF — Lavender — light-mode elevated card surface */
+val SynapseLavender = Color(0xFFEDE8FF)
+
+/** #F4F2FF — App background (light) */
+val SynapseLightBg = Color(0xFFF4F2FF)
+
+/** #E8E4FF — Page gradient end (light) */
+val SynapsePageLight = Color(0xFFE8E4FF)
+
+/** #04030F — Page gradient end (dark) */
+val SynapsePageDark = Color(0xFF04030F)
+
+// ── Text Roles ────────────────────────────────────────────────────────────────
+
+/** #9896C8 — TextSub (dark mode) — onSurfaceVariant dark */
+val SynapseTextSub = Color(0xFF9896C8)
+
+// ── Container / Semantic Roles ────────────────────────────────────────────────
+
+/** #EEF0FF — Light secondary container */
+val SynapseSecContainerLt = Color(0xFFEEF0FF)
+
+/** #1E1870 — Dark indigo — onSecondaryContainer light */
+val SynapseIndigoDeep = Color(0xFF1E1870)
+
+/** #FEF3D0 — Amber-tinted tertiary container (light) */
+val SynapseAmberContainer = Color(0xFFFEF3D0)
+
+/** #7A3D02 — Amber-900 — onTertiaryContainer (light) */
+val SynapseAmberOnContainer = Color(0xFF7A3D02)
+
+/** #2A1F04 — Amber-950 — dark tertiary container */
+val SynapseAmberContainerDk = Color(0xFF2A1F04)
+
+/** #FFDAD6 — Error container (light) */
+val SynapseErrorContainerLt = Color(0xFFFFDAD6)
+
+/** #7A0012 — onErrorContainer (light) */
+val SynapseOnErrorContainerLt = Color(0xFF7A0012)
+
+/** #2A0E0E — Error container (dark) */
+val SynapseErrorContainerDk = Color(0xFF2A0E0E)
+
+/** #1A0808 — onError (dark) */
+val SynapseOnErrorDk = Color(0xFF1A0808)
+
+// ── Border / Outline Roles ────────────────────────────────────────────────────
+// Used directly in ColorScheme.kt for the M3 `outline` and `outlineVariant` roles.
+// Calibrated to pass WCAG AA at their respective surface backgrounds.
+
+/** #4A4570 — onSurfaceVariant (light) */
+val SynapseOnSurfaceVariantLt = Color(0xFF4A4570)
+
+/** #8B87B8 — Outline (light) — card borders, input fields */
+val SynapseOutlineLt = Color(0xFF8B87B8)
+
+/** #D4CFEE — Outline variant / subtle divider (light) */
+val SynapseOutlineVariantLt = Color(0xFFD4CFEE)
+
+/** #0A0820 — Scrim */
+val SynapseScrim = Color(0xFF0A0820)
+
+/** #524D8A — Outline (dark) — card borders, input fields */
+val SynapseOutlineDk = Color(0xFF524D8A)
+
+/** #1B1A3A — Outline variant / subtle divider (dark) */
+val SynapseOutlineVariantDk = Color(0xFF1B1A3A)
+
+// ── Streak Hero Card ─────────────────────────────────────────────────────────
+// Source: /src/app/components/StatsScreen.tsx (StreakHeroCard background gradient)
+// Always consume via Gradients.GradientStreakHeroLight / GradientStreakHeroDark —
+// never reference these constants directly in composables.
+
+/** #1C1200 — Streak hero dark bg start (near-black amber) */
+val SynapseStreakBgDark1 = Color(0xFF1C1200)
+
+/** #2D1F02 — Streak hero dark bg mid */
+val SynapseStreakBgDark2 = Color(0xFF2D1F02)
+
+/** #FFF8E7 — Streak hero light bg start (warm ivory; slightly warmer than Amber50 #FFFBEB) */
+val SynapseStreakBgLight1 = Color(0xFFFFF8E7)
+
+// ── Semantic Dark Containers ──────────────────────────────────────────────────
+// Used by SynapseSemanticColors for dark-mode container backgrounds.
+// Never reference these directly in composables — use semantic tokens instead.
+
+/** #3D2000 — Gold container surface (dark mode) */
+val SynapseGoldContainerDk = Color(0xFF3D2000)
+
+/** #002818 — Success/emerald container surface (dark mode) */
+val SynapseSuccessContainerDk = Color(0xFF002818)
+
+/** #1A1650 — Accent/indigo container surface (dark mode) */
+val SynapseAccentContainerDk = Color(0xFF1A1650)
