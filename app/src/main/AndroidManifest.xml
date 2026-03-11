@@ -15,20 +15,21 @@
 
     <application
         android:name=".Application"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_launcher"
-        android:usesCleartextTraffic="false"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="false"
         android:extractNativeLibs="false"
-        android:supportsRtl="false"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
         android:theme="@style/Theme.LingoLens"
         tools:targetApi="31">
         <!-- Splash Activity as Launcher -->
         <activity
             android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.LingoLens.Splash">
+            android:theme="@style/Theme.Synapse.Splash"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -39,7 +40,8 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.LingoLens" />
+            android:theme="@style/Theme.LingoLens"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- FileProvider for Secure File Sharing -->
         <provider
@@ -52,23 +54,24 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- AdMob -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
-
         <meta-data
             android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
             android:value="true" />
 
+        <!-- FCM  -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_launcher" />
 
         <service
-            android:name=".MyFirebaseMessagingService"
+            android:name="com.venom.analytics.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
 
