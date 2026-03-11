@@ -17,15 +17,12 @@ import com.venom.synapse.core.theme.tokens.defaultSpacingTokens
 import com.venom.synapse.core.theme.tokens.defaultTypographyTokens
 import com.venom.ui.theme.tokens.GlassColors
 import com.venom.ui.theme.tokens.LocalGlassColors
-import com.venom.ui.theme.tokens.LocalNavBarColors
-import com.venom.ui.theme.tokens.NavBarColors
 
 /**
  * Synthetic helper to read Synapse-specific theme tokens via MaterialTheme.
  */
 data class SynapseColors(
     val semantic: SynapseSemanticColors,
-    val navBar: NavBarColors,
     val glass: GlassColors,
     val gradients: GradientTokens,
     val spacing: SpacingTokens,
@@ -39,8 +36,7 @@ val MaterialTheme.synapse: SynapseColors
     @Composable
     @ReadOnlyComposable
     get() = SynapseColors(
-        semantic = LocalSynapseSemanticColors.current,
-        navBar = LocalNavBarColors.current,
+        semantic = LocalSemanticColors.current,
         glass = LocalGlassColors.current,
         gradients = LocalGradientTokens.current,
         spacing = LocalSpacingTokens.current,
