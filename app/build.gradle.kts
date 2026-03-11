@@ -44,7 +44,9 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        resourceConfigurations.addAll(listOf("en", "ar"))
+        androidResources {
+            localeFilters += listOf("en", "ar")
+        }
     }
 
     buildTypes {
@@ -60,23 +62,25 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
     buildFeatures {
         compose = true
         buildConfig = true
     }
-    packaging {
-        resources {
-            excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/*.version",
-                "/META-INF/kotlin-project-structure-metadata.json",
-                "**/dump_syms*"
-            )
-        }
-    }
+//    packaging {
+//        resources {
+//            excludes += setOf(
+//                "/META-INF/{AL2.0,LGPL2.1}",
+//                "/META-INF/*.version",
+//                "/META-INF/kotlin-project-structure-metadata.json",
+//                "**/dump_syms*"
+//            )
+//        }
+//    }
     android {
         lint {
             disable += "NullSafeMutableLiveData"
@@ -94,11 +98,16 @@ android {
     tasks.whenTaskAdded {
         if (name == "assembleDebug") {
             doLast {
-                project.exec {
+                exec {
                     commandLine("cmd", "/c", "D:\\Amgad\\unlock_device.bat")
                     isIgnoreExitValue = true
                 }
             }
+        }
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -125,17 +134,17 @@ dependencies {
     implementation("com.venom:core:analytics")
 
     // Features
-    implementation("com.venom:features:translation")
-    implementation("com.venom:features:stackcard")
-    implementation("com.venom:features:quiz")
-    implementation("com.venom:features:lingospell")
-    implementation("com.venom:features:settings")
-
-    implementation("com.venom:features:phrase")
-    implementation("com.venom:features:dialog")
-    implementation("com.venom:features:ocr")
-    implementation("com.venom:features:quote")
-    implementation("com.venom:features:wordcraftai")
+//    implementation("com.venom:features:translation")
+//    implementation("com.venom:features:stackcard")
+//    implementation("com.venom:features:quiz")
+//    implementation("com.venom:features:lingospell")
+//    implementation("com.venom:features:settings")
+//
+//    implementation("com.venom:features:phrase")
+//    implementation("com.venom:features:dialog")
+//    implementation("com.venom:features:ocr")
+//    implementation("com.venom:features:quote")
+//    implementation("com.venom:features:wordcraftai")
 
 
     // Android Jetpack
@@ -168,6 +177,14 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.json)
 
+    // ML Kit
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
+    // Supabase
+    implementation(libs.supabase.client)
+    implementation(libs.supabase.postgrest)
+    implementation("io.ktor:ktor-client-okhttp:3.1.3")
+
 
     // Compose
     api(libs.compose.ui)
@@ -191,11 +208,20 @@ dependencies {
 
 
     // Testing
+    testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-
 }
 
-
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
