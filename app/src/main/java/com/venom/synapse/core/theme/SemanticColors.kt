@@ -40,4 +40,4 @@ val DarkSynapseSemanticColors = SynapseSemanticColors(
     accentContainer = SynapseAccentContainerDk,     // #1A1650
 )
 
-val LocalSynapseSemanticColors = staticCompositionLocalOf { LightSynapseSemanticColors }
+val LocalSemanticColors = staticCompositionLocalOf { LightSynapseSemanticColors }

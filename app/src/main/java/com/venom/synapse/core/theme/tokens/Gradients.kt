@@ -84,7 +84,7 @@ object Gradients {
      * Usage: Same as GradientPrimaryLight on dark backgrounds.
      */
     val GradientPrimaryDark = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandPrimaryBright, BrandColors.BrandPrimaryPale),
+        colors = listOf(BrandColors.BrandPrimaryBright, BrandColors.BrandPrimaryDeep),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
@@ -95,7 +95,7 @@ object Gradients {
      * GradientAccentLight — `linear-gradient(135deg, #3730A3, #6366F1)`
      */
     val GradientAccentLight = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.DeckViolet),
+        colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.PackViolet),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
@@ -104,7 +104,7 @@ object Gradients {
      * GradientAccentDark — `linear-gradient(135deg, #6366F1, #A5B4FC)`
      */
     val GradientAccentDark = Brush.linearGradient(
-        colors = listOf(BrandColors.DeckViolet, BrandColors.BrandSecondaryPale),
+        colors = listOf(BrandColors.PackViolet, BrandColors.BrandSecondaryPale),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
@@ -116,7 +116,7 @@ object Gradients {
      * Usage: Streak flame avatar, "Go Pro" pill, premium badges.
      */
     val GradientGoldLight = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandGoldDeep, BrandColors.DeckAmber),
+        colors = listOf(BrandColors.BrandGoldDeep, BrandColors.PackAmber),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
@@ -169,7 +169,7 @@ object Gradients {
     // Title
 
     val GradientTitleLight = Brush.linearGradient(
-        colors = listOf(SynapseVioletDarkest, SynapseVioletMid, BrandColors.DeckViolet),
+        colors = listOf(SynapseVioletDarkest, SynapseVioletMid, BrandColors.PackViolet),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
@@ -227,7 +227,7 @@ object Gradients {
     // Go Pro Pill
 
     val GradientGoProLight = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandGoldDeep, BrandColors.BrandGoldLight, BrandColors.DeckAmber),
+        colors = listOf(BrandColors.BrandGoldDeep, BrandColors.BrandGoldLight, BrandColors.PackAmber),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )

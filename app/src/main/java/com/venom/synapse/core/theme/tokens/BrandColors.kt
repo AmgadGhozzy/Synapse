@@ -137,7 +137,7 @@ object BrandColors {
      */
     val BrandSuccessDark = Emerald400
 
-    // ── Semantic — Error (Red) ────────────────────────────────────────────────
+    // Semantic — Error (Red)
 
     /**
      * BrandErrorLight  |  #DC2626
@@ -159,7 +159,7 @@ object BrandColors {
      */
     val BrandErrorDestructiveBg = Red800
 
-    // ── Neutral — Surface Foundations ─────────────────────────────────────────
+    // Neutral — Surface Foundations
 
     /**
      * BrandNeutralDeepDark  |  #06051A
@@ -175,7 +175,7 @@ object BrandColors {
 
     /**
      * BrandNeutralCardDark  |  #13112E
-     * Card-level surface elevation in dark — deck cards, stats cards, feature rows.
+     * Card-level surface elevation in dark — pack cards, stats cards, feature rows.
      */
     val BrandNeutralCardDark = SynapseCardDark
 
@@ -197,17 +197,17 @@ object BrandColors {
      */
     val BrandNeutralCardLight = SynapseLavender
 
-    // ── Deck Accent Palette ───────────────────────────────────────────────────
+    // Pack Accent Palette
 
-    /** DeckViolet  — ML / AI decks */
-    val DeckViolet  = Indigo600
+    /** PackViolet  — ML / AI packs */
+    val PackViolet  = Indigo600
 
-    /** DeckEmerald — Biology / Science decks */
-    val DeckEmerald = Emerald500
+    /** PackEmerald — Biology / Science packs */
+    val PackEmerald = Emerald500
 
-    /** DeckAmber   — History / Languages decks */
-    val DeckAmber   = Amber500
+    /** PackAmber   — History / Languages packs */
+    val PackAmber   = Amber500
 
-    /** DeckPurple  — Philosophy / Arts decks */
-    val DeckPurple  = Violet500
+    /** PackPurple  — Philosophy / Arts packs */
+    val PackPurple  = Violet500
 }
