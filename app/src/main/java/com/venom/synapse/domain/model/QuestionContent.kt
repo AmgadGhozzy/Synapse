@@ -9,7 +9,8 @@ sealed class QuestionContent {
     data class McqContent(
         val options: List<String>,
         val correctIndex: Int,
-        val explanation: String? = null
+        val explanation: String? = null,
+        val hint: String? = null
     ) : QuestionContent()
 
     data class TfContent(
@@ -20,6 +21,7 @@ sealed class QuestionContent {
     data class FlashcardContent(
         val front: String,
         val back: String,
+        val example: String? = null,
         val imageUris: List<String>? = null
     ) : QuestionContent()
 
