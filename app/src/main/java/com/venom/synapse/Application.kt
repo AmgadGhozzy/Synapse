@@ -7,6 +7,7 @@ import com.venom.analytics.AnalyticsManager
 import com.venom.analytics.CrashlyticsManager
 import com.venom.di.NetworkEntryPoint
 import com.venom.domain.provider.AppConfigProvider
+import com.venom.synapse.domain.repo.IAuthRepository
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -23,10 +24,12 @@ class Application : Application() {
     @Inject lateinit var analyticsManager: AnalyticsManager
     @Inject lateinit var crashlyticsManager: CrashlyticsManager
     @Inject lateinit var appConfigProvider: AppConfigProvider
+    @Inject lateinit var authRepo: IAuthRepository
 
     override fun onCreate() {
         super.onCreate()
         initializeAnalytics()
+        bootstrapAuth()
         preWarmNetworkClients()
 
         if (BuildConfig.DEBUG) {
@@ -70,6 +73,15 @@ class Application : Application() {
             } catch (e: Exception) {
                 Log.e(TAG, "Network client warm-up failed", e)
                 crashlyticsManager.logNonFatalException(e, "Network client warm-up failed")
+            }
+        }
+    }
+
+    private fun bootstrapAuth() {
+        applicationScope.launch {
+            authRepo.ensureSignedIn().onFailure { e ->
+                Log.e(TAG, "Auth bootstrap failed", e)
+                crashlyticsManager.logNonFatalException(e, "Auth bootstrap failed")
             }
         }
     }
