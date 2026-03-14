@@ -18,5 +18,6 @@ data class GenerationConfig(
     val language: String = "en",
     val tone: String = "neutral",
     val includeImages: Boolean = false,
-    val hintTone: String? = null
+    val hintTone: String? = null,
+    val isMixed: Boolean = true,
 )
