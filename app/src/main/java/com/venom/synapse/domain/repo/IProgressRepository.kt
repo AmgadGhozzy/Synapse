@@ -8,4 +8,5 @@ interface IProgressRepository {
     suspend fun saveProgress(progress: QuestionProgressModel)
     suspend fun saveProgressBatch(list: List<QuestionProgressModel>)
     suspend fun getProgress(questionId: Long): QuestionProgressModel?
+    suspend fun getLastReviewedForPack(packId: Long): Long?
 }
