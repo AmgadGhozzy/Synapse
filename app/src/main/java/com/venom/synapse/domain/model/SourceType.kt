@@ -3,7 +3,8 @@ package com.venom.synapse.domain.model
 enum class SourceType {
     PDF,
     TEXT,
-    YOUTUBE;
+    YOUTUBE,
+    URL;
 
     companion object {
         fun fromString(value: String): SourceType =
