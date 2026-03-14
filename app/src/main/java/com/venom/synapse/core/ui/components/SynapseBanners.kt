@@ -1,0 +1,81 @@
+package com.venom.synapse.core.ui.components
+
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import com.venom.synapse.R
+import com.venom.synapse.core.theme.SynapseTheme
+import com.venom.synapse.core.theme.tokens.Radius
+import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.ui.components.common.adp
+
+/**
+ * Error banner with an accessible dismiss action.
+ */
+@Composable
+fun ErrorBanner(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color    = MaterialTheme.colorScheme.errorContainer,
+        shape    = Radius.ShapeMedium,
+    ) {
+        Row(
+            modifier              = Modifier
+                .fillMaxWidth()
+                .padding(Spacing.ListItemVerticalGap),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing8),
+        ) {
+            Text(
+                text     = message,
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(
+                onClick  = onDismiss,
+                modifier = Modifier.size(20.adp),
+            ) {
+                Icon(
+                    painter            = painterResource(R.drawable.ic_x),
+                    contentDescription = stringResource(R.string.banner_dismiss),
+                    tint               = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier           = Modifier.size(14.adp),
+                )
+            }
+        }
+    }
+}
+
+// ── Preview ───────────────────────────────────────────────────────────────────
+
+@Preview(name = "Error Banner — Light", showBackground = true)
+@Preview(name = "Error Banner — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun ErrorBannerPreview() {
+    SynapseTheme {
+        ErrorBanner(
+            message   = "Something went wrong. Please try again.",
+            onDismiss = {},
+            modifier  = Modifier.padding(Spacing.ScreenHorizontalPadding),
+        )
+    }
+}
