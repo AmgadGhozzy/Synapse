@@ -14,7 +14,10 @@ import androidx.core.view.WindowCompat
 import com.venom.domain.model.AppTheme
 import com.venom.domain.model.FontStyles
 import com.venom.synapse.core.theme.tokens.DarkGradientTokens
+import com.venom.synapse.core.theme.tokens.DarkLevelColors
 import com.venom.synapse.core.theme.tokens.LightGradientTokens
+import com.venom.synapse.core.theme.tokens.LightLevelColors
+import com.venom.synapse.core.theme.tokens.LocalLevelColors
 import com.venom.synapse.core.theme.tokens.defaultComponentTokens
 import com.venom.synapse.core.theme.tokens.defaultElevationTokens
 import com.venom.synapse.core.theme.tokens.defaultRadiusTokens
@@ -45,7 +48,6 @@ fun SynapseTheme(
 ) {
     val view = LocalView.current
 
-    // ── Locale detection ──────────────────────────────────────────────────────
     val arabicLocale = isArabicLocale()
 
     val biScriptFonts = remember(fontFamilyStyle) {
@@ -72,7 +74,6 @@ fun SynapseTheme(
         }
     }
 
-    // ── Dark / light ──────────────────────────────────────────────────────────
     val isDark = when (appTheme) {
         AppTheme.DARK -> true
         AppTheme.LIGHT -> false
@@ -81,7 +82,6 @@ fun SynapseTheme(
 
     val colorScheme = if (isDark) SynapseDarkColorScheme else SynapseLightColorScheme
 
-    // Compute the nav-bar tint inline to prevent background flash on the first frame.
     val navBarColor = colorScheme.surfaceColorAtElevation(3.adp)
 
     if (!view.isInEditMode) {
@@ -98,6 +98,7 @@ fun SynapseTheme(
     CompositionLocalProvider(
         LocalBiScriptFonts provides biScriptFonts,
         LocalSemanticColors provides if (isDark) DarkSynapseSemanticColors else LightSynapseSemanticColors,
+        LocalLevelColors provides if (isDark) DarkLevelColors else LightLevelColors,
         LocalGlassColors provides if (isDark) DarkGlassColors else LightGlassColors,
         LocalGradientTokens provides if (isDark) DarkGradientTokens else LightGradientTokens,
         LocalSpacingTokens provides defaultSpacingTokens,
@@ -108,7 +109,6 @@ fun SynapseTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            // Typography automatically uses Inter or Cairo based on locale
             typography = getTypographyForLocale(
                 latinFamily = biScriptFonts.latin,
                 arabicFamily = biScriptFonts.arabic,
