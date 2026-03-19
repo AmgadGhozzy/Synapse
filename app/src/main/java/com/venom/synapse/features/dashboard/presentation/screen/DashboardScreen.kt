@@ -1,27 +1,18 @@
 package com.venom.synapse.features.dashboard.presentation.screen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,22 +22,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
-import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.FabTokens
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.synapse.core.ui.components.GridPackCard
+import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.buildPackCardActions
+import com.venom.synapse.core.ui.components.rememberSnackbarController
 import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.features.dashboard.presentation.components.AiInsightCard
 import com.venom.synapse.features.dashboard.presentation.components.DailyGoalCard
 import com.venom.synapse.features.dashboard.presentation.components.EmptyPacksState
 import com.venom.synapse.features.dashboard.presentation.components.SectionHeader
@@ -64,7 +50,7 @@ fun DashboardScreen(
     modifier     : Modifier = Modifier,
 ) {
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarHostState  = remember { SnackbarHostState() }
+    val snackbarController = rememberSnackbarController()
     val listState          = rememberLazyGridState()
 
     // FAB collapses once user scrolls past the hero card
@@ -76,60 +62,33 @@ fun DashboardScreen(
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate  -> onNavigate(effect.route)
-                is UiEffect.ShowToast -> snackbarHostState.showSnackbar(effect.message)
-                is UiEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+                is UiEffect.ShowToast -> snackbarController.success(effect.message)
+                is UiEffect.ShowError -> snackbarController.error(effect.message)
                 else                  -> Unit
             }
         }
     }
 
-    // Update global top bar subtitle with dynamic greeting
     LaunchedEffect(uiState.greetingRes) {
         rootViewModel.setSubtitleResOverride(uiState.greetingRes)
     }
 
-    // Clear override when leaving Dashboard
     DisposableEffect(Unit) {
-        onDispose {
-            rootViewModel.setSubtitleResOverride(null)
-        }
+        onDispose { rootViewModel.setSubtitleResOverride(null) }
     }
 
     Scaffold(
         modifier            = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         containerColor      = MaterialTheme.colorScheme.background,
-        snackbarHost        = { SnackbarHost(snackbarHostState) },
+        snackbarHost        = { snackbarController.SnackbarHost() },
         floatingActionButton = {
-            Box(
-                modifier = Modifier
-                    .padding(bottom = FabTokens.BottomOffset)
-                    .clip(FabTokens.Shape)
-                    .background(MaterialTheme.synapse.gradients.primary),
-            ) {
-                ExtendedFloatingActionButton(
-                    text = {
-                        Text(
-                            text       = stringResource(R.string.fab_new_pack),
-                            fontWeight = FontWeight.Bold,
-                            fontSize   = FabTokens.LabelFontStyle.fontSize,
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            painter            = painterResource(R.drawable.ic_plus),
-                            contentDescription = stringResource(R.string.fab_new_pack_description),
-                            modifier           = Modifier.size(FabTokens.IconSize),
-                        )
-                    },
-                    onClick        = viewModel::onAddPack,
-                    expanded       = isFabExpanded,
-                    containerColor = Color.Transparent,
-                    contentColor   = Color.White,
-                    shape          = FabTokens.Shape,
-                    elevation      = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
-                )
-            }
+            DashboardFab(
+                isLocked   = uiState.isPackLimitReached,
+                isExpanded = isFabExpanded,
+                onClick    = viewModel::onAddPack,
+                modifier   = Modifier.padding(bottom = FabTokens.BottomOffset),
+            )
         },
     ) { innerPadding ->
         DashboardContent(
@@ -145,6 +104,8 @@ fun DashboardScreen(
     }
 }
 
+
+// ── Content ───────────────────────────────────────────────────────────────────
 @Composable
 private fun DashboardContent(
     uiState        : DashboardUiState,
@@ -179,30 +140,22 @@ private fun DashboardContent(
                 streakDays      = uiState.streakDays,
                 totalDue        = uiState.totalDue,
                 onStartStudying = onStartStudying,
-                modifier        = Modifier
-                    .padding(bottom = Spacing.ListItemVerticalGap),
-            )
-        }
-
-        // ── AI insight card ───────────────────────────────────────────────
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            AiInsightCard(
-                accuracyDelta = uiState.accuracyDelta ?: 0,
-                modifier = Modifier
-                    .padding(bottom = Spacing.ListItemVerticalGap),
+                modifier        = Modifier.padding(bottom = Spacing.ListItemVerticalGap),
             )
         }
 
         // ── Stats row ─────────────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             StatsRow(
-                streak             = uiState.streakDays,
-                accuracyPercent    = uiState.accuracyPercent,
-                accuracyDelta      = uiState.accuracyDelta,
-                accuracyDeltaRes   = uiState.accuracyDeltaRes,
-                timeMinutes        = uiState.timeStudiedMinutes,
-                modifier           = Modifier
-                    .padding(top = Spacing.Spacing4, bottom = Spacing.SectionVerticalGap),
+                streak           = uiState.streakDays,
+                accuracyPercent  = uiState.accuracyPercent,
+                accuracyDelta    = uiState.accuracyDelta,
+                accuracyDeltaRes = uiState.accuracyDeltaRes,
+                timeMinutes      = uiState.timeStudiedMinutes,
+                modifier         = Modifier.padding(
+                    top    = Spacing.Spacing4,
+                    bottom = Spacing.SectionVerticalGap,
+                ),
             )
         }
 
@@ -228,23 +181,21 @@ private fun DashboardContent(
             items(displayedPacks, key = { it.id }) { pack ->
                 val actions = remember(pack.id, onDeletePack) {
                     buildPackCardActions(
-                        onEdit = { /* TODO */ },
+                        onEdit   = { /* TODO */ },
                         onExport = { /* TODO */ },
-                        onDelete = { onDeletePack(pack.id) }
+                        onDelete = { onDeletePack(pack.id) },
                     )
                 }
                 GridPackCard(
-                    pack        = pack,
-                    animDelayMs = 0,
-                    onClick     = { onPackTapped(pack.id) },
-                    actions     = actions,
-                    isSwiped    = openSwipedPackId == pack.id,
-                    onSwipeOpen = { openSwipedPackId = pack.id },
-                    onSwipeClose = {
-                        if (openSwipedPackId == pack.id) openSwipedPackId = null
-                    },
+                    pack               = pack,
+                    animDelayMs        = 0,
+                    onClick            = { onPackTapped(pack.id) },
+                    actions            = actions,
+                    isSwiped           = openSwipedPackId == pack.id,
+                    onSwipeOpen        = { openSwipedPackId = pack.id },
+                    onSwipeClose       = { if (openSwipedPackId == pack.id) openSwipedPackId = null },
                     enableSwipeActions = true,
-                    modifier    = Modifier
+                    modifier           = Modifier
                         .fillMaxWidth()
                         .animateItem(),
                 )
