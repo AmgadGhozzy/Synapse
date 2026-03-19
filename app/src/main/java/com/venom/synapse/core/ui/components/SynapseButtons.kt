@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -34,7 +35,6 @@ import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.PrimaryButtonTokens
 import com.venom.synapse.core.theme.tokens.ProBadgeTokens
-import com.venom.synapse.core.theme.tokens.Radius
 import com.venom.synapse.core.theme.tokens.Spacing
 
 /**
@@ -62,7 +62,7 @@ fun PrimaryGradientButton(
     }
 
     val contentColor = if (enabled) {
-        MaterialTheme.colorScheme.onPrimary
+        Color.White.copy(alpha = 0.9f)
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -123,7 +123,7 @@ fun SecondaryButton(
         modifier = modifier
             .fillMaxWidth()
             .height(PrimaryButtonTokens.Height),
-        shape   = Radius.ShapeLarge,
+        shape   = PrimaryButtonTokens.Shape,
         border  = BorderStroke(
             width = Spacing.Spacing2 / 2,
             color = MaterialTheme.colorScheme.outline,
