@@ -34,7 +34,7 @@ object TopAppBarTokens {
     val Height: Dp = 64.dp
     val HorizontalPadding: Dp = Spacing.Spacing20
 
-    val AvatarSize: Dp = 40.dp
+    val AvatarSize: Dp = 48.dp
     val AvatarShape = Radius.ShapeCircle
     val AvatarBorderWidth: Dp = 1.5.dp
 
@@ -74,7 +74,7 @@ object BottomNavTokens {
 }
 
 // DECK CARD
-object DeckCardTokens {
+object PackCardTokens {
     val Shape = Radius.ShapeXL
     val InternalShape = Radius.ShapeLarge
     val Padding: Dp = Spacing.Spacing14
@@ -91,11 +91,30 @@ object DeckCardTokens {
     val StreakFontStyle = TypeScale.LabelMedium
 
     val CircularProgressSize: Dp = 46.dp
-    val CircularProgressStrokeWidth: Dp = 3.5.dp
+    val CircularProgressStrokeWidth: Dp = 5.dp
 
     val SwipeRevealWidth: Dp = 180.dp
     val SwipeThreshold: Dp = 55.dp
+    // React LibraryScreen: each action button is 56px wide (3 × 56 = 168px reveal)
+    val ActionButtonWidth: Dp = 56.dp
 
+    // React LibraryScreen: icon inside action button is 16px
+    val ActionIconSize: Dp = 16.dp
+
+    // React LibraryScreen: progress bar is 3px height
+    val ProgressBarHeight: Dp = 3.dp
+
+    // React LibraryScreen: emoji text inside icon container
+    val EmojiSize: TextUnit = 20.sp
+
+    // Matches MetaFontStyle for the info row (11sp — see TypeScale.LabelMedium)
+    val MetaFontStyle = TypeScale.LabelMedium
+
+    // Mastered count label (10sp muted)
+    val MasteredFontStyle = TypeScale.LabelXSmall
+
+    // Circular progress percentage font size
+    val CircularProgressFontSize: TextUnit = 12.sp
     /**
      * Action button backgrounds — all via BrandColors to maintain the layering contract.
      *
@@ -111,6 +130,7 @@ object DeckCardTokens {
     val ActionButtonEditBg   = BrandColors.BrandPrimaryAction
     val ActionButtonShareBg  = BrandColors.BrandSecondaryDeep
     val ActionButtonDeleteBg = BrandColors.BrandErrorDestructiveBg
+    val ActionButtonMoreBg   = BrandColors.BrandSuccessDark
 
     val ActionLabelFontStyle = TypeScale.LabelXSmall
 }
@@ -153,7 +173,7 @@ object HeroCardTokens {
     val InnerButtonFontStyle = TypeScale.BodyMedium
 
     val CircularProgressSize: Dp = 72.dp
-    val CircularProgressStrokeWidth: Dp = 5.dp
+    val CircularProgressStrokeWidth: Dp = 6.dp
 }
 
 // FAB
@@ -162,7 +182,7 @@ object FabTokens {
     val HorizontalPadding: Dp = Spacing.Spacing18
     val VerticalPadding: Dp = 13.dp
 
-    val IconSize: Dp = 17.dp
+    val IconSize: Dp = 20.dp
     val IconStrokeWidth: Float = 2.5f
     val LabelFontStyle = TypeScale.BodySmall
 
@@ -174,7 +194,7 @@ object FabTokens {
 
 // PRIMARY BUTTON
 object PrimaryButtonTokens {
-    val Shape = Radius.ShapeXXL
+    val Shape = Radius.ShapeLarge
     val Height: Dp = 56.dp
     val HorizontalPadding: Dp = Spacing.Spacing20
 
@@ -380,7 +400,7 @@ object CircularProgressTokens {
 data class ComponentTokens(
     val topAppBar:        TopAppBarTokens       = TopAppBarTokens,
     val bottomNav:        BottomNavTokens        = BottomNavTokens,
-    val deckCard:         DeckCardTokens         = DeckCardTokens,
+    val packCard:         PackCardTokens         = PackCardTokens,
     val statsCard:        StatsCardTokens        = StatsCardTokens,
     val heroCard:         HeroCardTokens         = HeroCardTokens,
     val fab:              FabTokens              = FabTokens,
