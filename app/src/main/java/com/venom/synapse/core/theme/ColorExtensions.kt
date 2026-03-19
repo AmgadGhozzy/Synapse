@@ -7,6 +7,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.venom.synapse.core.theme.tokens.ComponentTokens
 import com.venom.synapse.core.theme.tokens.ElevationTokens
 import com.venom.synapse.core.theme.tokens.GradientTokens
+import com.venom.synapse.core.theme.tokens.LevelColors
+import com.venom.synapse.core.theme.tokens.LocalLevelColors
 import com.venom.synapse.core.theme.tokens.RadiusTokens
 import com.venom.synapse.core.theme.tokens.SpacingTokens
 import com.venom.synapse.core.theme.tokens.TypographyTokens
@@ -23,6 +25,7 @@ import com.venom.ui.theme.tokens.LocalGlassColors
  */
 data class SynapseColors(
     val semantic: SynapseSemanticColors,
+    val levelColors: LevelColors,
     val glass: GlassColors,
     val gradients: GradientTokens,
     val spacing: SpacingTokens,
@@ -37,6 +40,7 @@ val MaterialTheme.synapse: SynapseColors
     @ReadOnlyComposable
     get() = SynapseColors(
         semantic = LocalSemanticColors.current,
+        levelColors = LocalLevelColors.current,
         glass = LocalGlassColors.current,
         gradients = LocalGradientTokens.current,
         spacing = LocalSpacingTokens.current,
