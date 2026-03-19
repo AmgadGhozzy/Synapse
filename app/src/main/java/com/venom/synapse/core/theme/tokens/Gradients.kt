@@ -195,8 +195,7 @@ object Gradients {
     val GradientCtaDark = Brush.linearGradient(
         colors = listOf(
             SynapseVioletMid,
-            BrandColors.BrandPrimaryBright,
-            BrandColors.BrandPrimaryDark,
+            BrandColors.BrandPrimaryBright
         ),
         start = Offset(0f, 0f),
         end   = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
