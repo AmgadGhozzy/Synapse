@@ -2,13 +2,9 @@ package com.venom.synapse.features.add_pdf.presentation.state
 
 import androidx.compose.runtime.Immutable
 import com.venom.synapse.core.ui.state.QuestionUiModel
+import com.venom.synapse.core.ui.state.UiText
 import com.venom.synapse.domain.model.QuestionType
-import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiState.Companion.FREE_PACK_LIMIT
 
-/**
- * Wizard state machine:
- *   SELECT_PDF → EXTRACTING → CONFIGURE → GENERATING → DONE
- */
 enum class AddPdfStep {
     SELECT_PDF,
     EXTRACTING,
@@ -17,9 +13,6 @@ enum class AddPdfStep {
     DONE
 }
 
-/**
- * Controls which input tab is active on the upload step.
- */
 enum class SourceTab { FILE, WEB, TEXT }
 
 fun AddPdfStep.toIndicatorIndex() = when (this) {
@@ -53,17 +46,10 @@ data class AddPdfUiState(
     val packId: Long = 0L,
     val generatedQuestions: List<QuestionUiModel> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null,
-
-    // ── Premium / pack-limit gating ──────────────────────────────
-    /**
-     * True when the free-tier user has already reached [FREE_PACK_LIMIT].
-     * The screen surfaces an upgrade gate instead of the wizard when true.
-     */
+    val error: UiText? = null,
     val isPackLimitReached: Boolean = false,
 ) {
     companion object {
-        /** Must stay in sync with [DashboardUiState.FREE_PACK_LIMIT]. */
         const val FREE_PACK_LIMIT = 5
     }
 }
