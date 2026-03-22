@@ -1,6 +1,5 @@
 package com.venom.synapse.features.premium.presentation.screen
 
-import android.content.res.Configuration
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -34,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import com.venom.synapse.core.ui.components.rememberSnackbarController
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,8 +43,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -62,6 +61,7 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.LocalGradientTokens
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.White
+import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.AvatarStackTokens
 import com.venom.synapse.core.theme.tokens.FeatureRowTokens
 import com.venom.synapse.core.theme.tokens.Gradients
@@ -71,18 +71,16 @@ import com.venom.synapse.core.theme.tokens.Radius
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.synapse.core.theme.tokens.TypeScale
 import com.venom.synapse.core.ui.components.SnackbarHost
-import com.venom.synapse.domain.model.FeatureColorRole
+import com.venom.synapse.core.ui.components.rememberSnackbarController
 import com.venom.synapse.features.premium.presentation.state.PremiumEvent
 import com.venom.synapse.features.premium.presentation.state.PremiumPlanUiModel
 import com.venom.synapse.features.premium.presentation.state.PremiumUiState
 import com.venom.synapse.features.premium.presentation.state.ProFeatureUiModel
+import com.venom.synapse.features.premium.presentation.state.SocialProofData
+import com.venom.synapse.features.premium.presentation.state.iconKeyToDrawableRes
 import com.venom.synapse.features.premium.presentation.state.toColor
-import com.venom.synapse.ui.viewmodel.PremiumViewModel
+import com.venom.synapse.features.premium.presentation.viewmodel.PremiumViewModel
 import com.venom.ui.components.common.adp
-
-// ══════════════════════════════════════════════════════════════════
-// ENTRY POINT
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 fun SynapsePremiumScreen(
@@ -106,32 +104,28 @@ fun SynapsePremiumScreen(
     }
 
     Scaffold(
-        snackbarHost = { snackbarController.SnackbarHost() },
-        modifier = modifier,
-        contentWindowInsets = WindowInsets(0,0,0,0),
-        containerColor = Color.Transparent,
+        snackbarHost        = { snackbarController.SnackbarHost() },
+        modifier            = modifier,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor      = Color.Transparent,
     ) { innerPadding ->
         when (val state = uiState) {
             is PremiumUiState.Loading -> PremiumLoadingContent(Modifier.padding(innerPadding))
             is PremiumUiState.Error   -> PremiumErrorContent(
-                message = state.message,
-                onRetry = viewModel::loadConfig,
+                message  = state.message,
+                onRetry  = viewModel::loadConfig,
                 modifier = Modifier.padding(innerPadding),
             )
             is PremiumUiState.Ready   -> PremiumReadyContent(
-                state = state,
+                state          = state,
                 onPlanSelected = viewModel::selectPlan,
-                onStartTrial = viewModel::startPurchase,
-                onDismiss = viewModel::dismiss,
-                modifier = Modifier.padding(innerPadding),
+                onStartTrial   = viewModel::startPurchase,
+                onDismiss      = viewModel::dismiss,
+                modifier       = Modifier.padding(innerPadding),
             )
         }
     }
 }
-
-// ══════════════════════════════════════════════════════════════════
-// READY CONTENT
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 private fun PremiumReadyContent(
@@ -141,34 +135,28 @@ private fun PremiumReadyContent(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val pageBrush = remember(isDark) {
-        if (isDark) Gradients.gradientPageDark() else Gradients.gradientPageLight()
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(pageBrush),
+            .background(MaterialTheme.synapse.gradients.page),
     ) {
-        // Decorative ambient blobs
         AmbientOrb(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = if (isDark) 0.18f else 0.10f),
-            size = 280.adp,
+            color    = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+            size     = 280.adp,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = 60.adp, y = (-80).adp),
         )
         AmbientOrb(
-            color = MaterialTheme.colorScheme.tertiary.copy(alpha = if (isDark) 0.10f else 0.08f),
-            size = 240.adp,
+            color    = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f),
+            size     = 240.adp,
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .offset(x = (-60).adp, y = 120.adp),
         )
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Close button row
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -181,18 +169,16 @@ private fun PremiumReadyContent(
 
             LazyColumn(
                 contentPadding = PaddingValues(bottom = Spacing.Spacing32),
-                modifier = Modifier.fillMaxSize(),
+                modifier       = Modifier.fillMaxSize(),
             ) {
                 item { HeroSection(trialDays = state.trialDays) }
 
                 item {
                     SectionLabel(
-                        text = stringResource(R.string.premium_section_features),
+                        text     = stringResource(R.string.premium_section_features),
                         modifier = Modifier.padding(
-                            start = Spacing.Spacing20,
-                            end = Spacing.Spacing20,
-                            top = Spacing.Spacing4,
-                            bottom = Spacing.Spacing10,
+                            start = Spacing.Spacing20, end = Spacing.Spacing20,
+                            top   = Spacing.Spacing4,  bottom = Spacing.Spacing10,
                         ),
                     )
                 }
@@ -201,33 +187,32 @@ private fun PremiumReadyContent(
 
                 item {
                     SectionLabel(
-                        text = stringResource(R.string.premium_section_plans),
+                        text     = stringResource(R.string.premium_section_plans),
                         modifier = Modifier.padding(
-                            start = Spacing.Spacing20,
-                            end = Spacing.Spacing20,
-                            top = Spacing.Spacing20,
-                            bottom = Spacing.Spacing10,
+                            start = Spacing.Spacing20, end = Spacing.Spacing20,
+                            top   = Spacing.Spacing20, bottom = Spacing.Spacing10,
                         ),
                     )
                 }
 
                 item {
                     PlansRow(
-                        plans = state.plans,
+                        plans          = state.plans,
                         selectedPlanId = state.selectedPlanId,
                         onPlanSelected = onPlanSelected,
-                        modifier = Modifier.padding(horizontal = Spacing.Spacing20),
+                        modifier       = Modifier.padding(horizontal = Spacing.Spacing20),
                     )
                 }
 
                 item {
                     Spacer(Modifier.height(Spacing.Spacing20))
                     CtaSection(
-                        trialDays = state.trialDays,
+                        trialDays    = state.trialDays,
                         isPurchasing = state.isPurchasing,
+                        socialProof  = state.socialProof,
                         onStartTrial = onStartTrial,
-                        onDismiss = onDismiss,
-                        modifier = Modifier.padding(horizontal = Spacing.Spacing20),
+                        onDismiss    = onDismiss,
+                        modifier     = Modifier.padding(horizontal = Spacing.Spacing20),
                     )
                 }
             }
@@ -235,22 +220,18 @@ private fun PremiumReadyContent(
     }
 }
 
-// ══════════════════════════════════════════════════════════════════
-// HERO
-// ══════════════════════════════════════════════════════════════════
-
 @Composable
 private fun HeroSection(
     trialDays: Int,
     modifier: Modifier = Modifier,
 ) {
-    val gradients = LocalGradientTokens.current
+    val gradients       = LocalGradientTokens.current
     val pulseTransition = rememberInfiniteTransition(label = "pulse")
     val pulseAlpha by pulseTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.3f,
+        initialValue  = 1f,
+        targetValue   = 0.3f,
         animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
-        label = "pulseAlpha",
+        label         = "pulseAlpha",
     )
 
     Column(
@@ -260,22 +241,21 @@ private fun HeroSection(
             .padding(top = Spacing.Spacing4, bottom = Spacing.Spacing20),
     ) {
         Text(
-            text = stringResource(R.string.premium_tagline),
-            style = TypeScale.BodySmallRegular,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text      = stringResource(R.string.premium_tagline),
+            style     = TypeScale.BodySmallRegular,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = Spacing.Spacing32),
+            modifier  = Modifier.padding(horizontal = Spacing.Spacing32),
         )
 
         Spacer(Modifier.height(Spacing.Spacing12))
 
-        // Synapse gradient wordmark + PRO chip inline
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing10),
         ) {
             Text(
-                text = stringResource(R.string.app_name),
+                text  = stringResource(R.string.app_name),
                 style = TypeScale.DisplayLarge.copy(brush = gradients.title),
             )
             ProBadgeChip()
@@ -283,9 +263,8 @@ private fun HeroSection(
 
         Spacer(Modifier.height(Spacing.Spacing12))
 
-        // Free trial badge
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
             modifier = Modifier
                 .clip(Radius.ShapePill)
@@ -304,7 +283,7 @@ private fun HeroSection(
                     .background(MaterialTheme.colorScheme.tertiary.copy(alpha = pulseAlpha)),
             )
             Text(
-                text = stringResource(R.string.premium_trial_badge, trialDays),
+                text  = stringResource(R.string.premium_trial_badge, trialDays),
                 style = TypeScale.LabelXSmall,
                 color = MaterialTheme.colorScheme.tertiary,
             )
@@ -315,7 +294,7 @@ private fun HeroSection(
 @Composable
 private fun ProBadgeChip(modifier: Modifier = Modifier) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing4),
         modifier = modifier
             .clip(Radius.ShapePill)
@@ -335,22 +314,18 @@ private fun ProBadgeChip(modifier: Modifier = Modifier) {
             .padding(horizontal = Spacing.Spacing8, vertical = Spacing.Spacing4),
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_crown), // https://lucide.dev/icons/crown
+            painter            = painterResource(R.drawable.ic_crown),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.size(10.adp),
+            tint               = MaterialTheme.colorScheme.tertiary,
+            modifier           = Modifier.size(10.adp),
         )
         Text(
-            text = stringResource(R.string.premium_pro_label),
+            text  = stringResource(R.string.premium_pro_label),
             style = TypeScale.LabelMicro,
             color = MaterialTheme.colorScheme.tertiary,
         )
     }
 }
-
-// ══════════════════════════════════════════════════════════════════
-// FEATURES CARD
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 internal fun PremiumFeaturesCard(
@@ -358,10 +333,10 @@ internal fun PremiumFeaturesCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        shape = Radius.ShapeXL,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape          = Radius.ShapeXL,
+        color          = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
         tonalElevation = 0.adp,
-        modifier = modifier
+        modifier       = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Spacing20)
             .border(
@@ -375,7 +350,7 @@ internal fun PremiumFeaturesCard(
                 PremiumFeatureRow(feature = feature)
                 if (index < features.lastIndex) {
                     HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
+                        color    = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
                         modifier = Modifier.padding(
                             start = (FeatureRowTokens.HorizontalPadding.value +
                                     FeatureRowTokens.IconContainerSize.value +
@@ -396,16 +371,15 @@ internal fun PremiumFeatureRow(
     val featureColor = feature.colorRole.toColor()
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(FeatureRowTokens.InternalGap),
         modifier = modifier
             .fillMaxWidth()
             .padding(
                 horizontal = FeatureRowTokens.HorizontalPadding,
-                vertical = FeatureRowTokens.VerticalPadding,
+                vertical   = FeatureRowTokens.VerticalPadding,
             ),
     ) {
-        // Tinted icon container
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -413,31 +387,28 @@ internal fun PremiumFeatureRow(
                 .clip(FeatureRowTokens.IconContainerShape)
                 .background(featureColor.copy(alpha = 0.14f)),
         ) {
-            if (feature.iconRes != 0) {
-                Icon(
-                    painter = painterResource(feature.iconRes),
-                    contentDescription = null,
-                    tint = featureColor,
-                    modifier = Modifier.size(FeatureRowTokens.IconSize),
-                )
-            }
+            Icon(
+                painter            = painterResource(iconKeyToDrawableRes(feature.iconKey)),
+                contentDescription = null,
+                tint               = featureColor,
+                modifier           = Modifier.size(FeatureRowTokens.IconSize),
+            )
         }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = feature.label,
+                text  = feature.label,
                 style = TypeScale.LabelXLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = feature.sublabel,
-                style = TypeScale.LabelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text     = feature.sublabel,
+                style    = TypeScale.LabelMedium,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = Spacing.Spacing2),
             )
         }
 
-        // Check badge
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -451,18 +422,14 @@ internal fun PremiumFeatureRow(
                 ),
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_check), // https://lucide.dev/icons/check
+                painter            = painterResource(R.drawable.ic_check),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(FeatureRowTokens.CheckIconSize),
+                tint               = MaterialTheme.colorScheme.primary,
+                modifier           = Modifier.size(FeatureRowTokens.CheckIconSize),
             )
         }
     }
 }
-
-// ══════════════════════════════════════════════════════════════════
-// PLANS ROW
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 private fun PlansRow(
@@ -473,14 +440,14 @@ private fun PlansRow(
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing12),
-        modifier = modifier.fillMaxWidth(),
+        modifier              = modifier.fillMaxWidth(),
     ) {
         plans.forEach { plan ->
             PlanCard(
-                plan = plan,
+                plan       = plan,
                 isSelected = plan.id == selectedPlanId,
-                onSelect = { onPlanSelected(plan.id) },
-                modifier = Modifier.weight(1f),
+                onSelect   = { onPlanSelected(plan.id) },
+                modifier   = Modifier.weight(1f),
             )
         }
     }
@@ -493,9 +460,9 @@ private fun PlanCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gradients = LocalGradientTokens.current
+    val gradients  = LocalGradientTokens.current
     val isGradient = isSelected && plan.isHighlighted
-    val onPrimary = MaterialTheme.colorScheme.onPrimary // White in Synapse schemes
+    val onPrimary  = MaterialTheme.colorScheme.onPrimary
 
     val cardBg: Brush = if (isGradient) {
         gradients.annual
@@ -529,59 +496,49 @@ private fun PlanCard(
             .padding(PricingCardTokens.Padding),
     ) {
         Column {
-            // Plan label
+            // Resolve UiText label to a locale-correct String for this Composable scope.
+            val labelText = if (plan.isHighlighted) {
+                stringResource(R.string.premium_plan_label_best, plan.label.resolve())
+            } else {
+                plan.label.resolve().uppercase()
+            }
             Text(
-                text = if (plan.isHighlighted) {
-                    stringResource(R.string.premium_plan_label_best, plan.label.uppercase())
-                } else {
-                    plan.label.uppercase()
-                },
+                text  = labelText,
                 style = TypeScale.LabelXSmall,
                 color = labelColor,
             )
 
             Spacer(Modifier.height(Spacing.Spacing4))
 
-            // Price row
             Row(verticalAlignment = Alignment.Bottom) {
+                Text(text = plan.priceDisplay,           style = TypeScale.HeadlineLarge, color = priceColor)
                 Text(
-                    text = plan.priceDisplay,
-                    style = TypeScale.HeadlineLarge,
-                    color = priceColor,
-                )
-                Text(
-                    text = plan.periodDisplay,
-                    style = TypeScale.LabelLarge,
-                    color = periodColor,
+                    text     = plan.periodDisplay.resolve(),
+                    style    = TypeScale.LabelLarge,
+                    color    = periodColor,
                     modifier = Modifier.padding(bottom = Spacing.Spacing3, start = Spacing.Spacing2),
                 )
             }
 
-            Text(
-                text = plan.noteDisplay,
-                style = TypeScale.LabelMedium,
-                color = noteColor,
-            )
+            Text(text = plan.noteDisplay, style = TypeScale.LabelMedium, color = noteColor)
         }
 
-        // Save badge
         if (plan.badgeLabel != null) {
             Text(
-                text = plan.badgeLabel,
-                style = TypeScale.LabelMicro,
-                color = MaterialTheme.colorScheme.onTertiary,
+                text     = plan.badgeLabel.resolve(),
+                style    = TypeScale.LabelMicro,
+                color    = MaterialTheme.colorScheme.onTertiary,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .clip(PricingCardTokens.BadgeShape)
                     .background(MaterialTheme.colorScheme.tertiary)
                     .padding(
                         horizontal = PricingCardTokens.BadgeHorizontalPadding,
-                        vertical = PricingCardTokens.BadgeVerticalPadding,
+                        vertical   = PricingCardTokens.BadgeVerticalPadding,
                     ),
             )
         }
 
-        // Selected check badge (bottom-end corner)
         if (isSelected) {
             Box(
                 contentAlignment = Alignment.Center,
@@ -602,64 +559,51 @@ private fun PlanCard(
                     ),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_check),
+                    painter            = painterResource(R.drawable.ic_check),
                     contentDescription = null,
-                    tint = if (isGradient) onPrimary else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(10.adp),
+                    tint               = if (isGradient) onPrimary else MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(10.adp),
                 )
             }
         }
 
-        // Shimmer sweep on annual selected card
-        if (isGradient) {
-            ShimmerSweep(
-                durationMs = 2_800,
-                delayMs = 1_600,
-            )
-        }
+        if (isGradient) ShimmerSweep(durationMs = 2_800, delayMs = 1_600)
     }
 }
-
-// ══════════════════════════════════════════════════════════════════
-// CTA SECTION
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 private fun CtaSection(
     trialDays: Int,
     isPurchasing: Boolean,
+    socialProof: SocialProofData?,
     onStartTrial: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxWidth(),
+        modifier            = modifier.fillMaxWidth(),
     ) {
-        // Primary CTA
         PremiumCtaButton(
-            trialDays = trialDays,
+            trialDays    = trialDays,
             isPurchasing = isPurchasing,
-            onClick = onStartTrial,
+            onClick      = onStartTrial,
         )
 
         Spacer(Modifier.height(Spacing.Spacing12))
 
-        // Social proof row
-        SocialProofRow()
+        SocialProofRow(socialProof = socialProof)
 
         Spacer(Modifier.height(Spacing.Spacing8))
 
-        // Trust line
         TrustLine()
 
-        // Skip link
         Text(
-            text = stringResource(R.string.premium_cta_skip),
-            style = TypeScale.BodySmallRegular,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            text      = stringResource(R.string.premium_cta_skip),
+            style     = TypeScale.BodySmallRegular,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
-            modifier = Modifier
+            modifier  = Modifier
                 .clickable(onClick = onDismiss)
                 .padding(vertical = Spacing.Spacing10, horizontal = Spacing.Spacing16),
         )
@@ -674,9 +618,6 @@ internal fun PremiumCtaButton(
     modifier: Modifier = Modifier,
 ) {
     val gradients = LocalGradientTokens.current
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val shadowSpec = if (isDark) com.venom.synapse.core.theme.tokens.ShadowTokens.ShadowCtaDark
-    else com.venom.synapse.core.theme.tokens.ShadowTokens.ShadowCtaLight
 
     Box(
         contentAlignment = Alignment.Center,
@@ -692,31 +633,31 @@ internal fun PremiumCtaButton(
 
         if (isPurchasing) {
             CircularProgressIndicator(
-                color = White,
+                color       = White,
                 strokeWidth = 2.adp,
-                modifier = Modifier.size(22.adp),
+                modifier    = Modifier.size(22.adp),
             )
         } else {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(PrimaryButtonTokens.IconTextGap),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_gem), // https://lucide.dev/icons/gem
+                    painter            = painterResource(R.drawable.ic_gem),
                     contentDescription = null,
-                    tint = White,
-                    modifier = Modifier.size(PrimaryButtonTokens.IconSize),
+                    tint               = White,
+                    modifier           = Modifier.size(PrimaryButtonTokens.IconSize),
                 )
                 Text(
-                    text = stringResource(R.string.premium_cta_start_trial, trialDays),
+                    text  = stringResource(R.string.premium_cta_start_trial, trialDays),
                     style = TypeScale.BodyXLarge,
                     color = White,
                 )
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = null,
-                    tint = White,
-                    modifier = Modifier.size(PrimaryButtonTokens.IconSize),
+                    tint               = White,
+                    modifier           = Modifier.size(PrimaryButtonTokens.IconSize),
                 )
             }
         }
@@ -724,31 +665,44 @@ internal fun PremiumCtaButton(
 }
 
 @Composable
-private fun SocialProofRow(modifier: Modifier = Modifier) {
-    val avatarInitials = listOf("A", "J", "M", "S", "K")
+private fun SocialProofRow(
+    socialProof: SocialProofData?,
+    modifier: Modifier = Modifier,
+) {
+    val initials   = socialProof?.avatarInitials ?: listOf("A", "J", "M", "S", "K")
+    val countLabel = socialProof?.userCountLabel ?: "50,000+"
+
+    val avatarStep  = AvatarStackTokens.AvatarSize - AvatarStackTokens.Overlap
+    val stackWidth  = remember(initials.size) {
+        AvatarStackTokens.AvatarSize + avatarStep * (initials.size - 1)
+    }
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
             .clip(Radius.ShapeXXXL)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
             .border(
-                1.adp,
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
-                Radius.ShapeXXXL,
+                width = 1.adp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+                shape = Radius.ShapeXXXL,
             )
             .padding(horizontal = Spacing.Spacing16, vertical = Spacing.Spacing12),
     ) {
-        // Avatar stack
-        Box(modifier = Modifier.height(AvatarStackTokens.AvatarSize)) {
-            avatarInitials.forEachIndexed { index, initial ->
+        // ── Avatar stack ──────────────────────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .width(stackWidth)
+                .height(AvatarStackTokens.AvatarSize),
+        ) {
+            initials.forEachIndexed { index, initial ->
                 val hue = 240f + index * 22f
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .offset(x = (index * (AvatarStackTokens.AvatarSize.value - AvatarStackTokens.Overlap.value)).adp)
+                        .offset(x = avatarStep * index)
                         .size(AvatarStackTokens.AvatarSize)
                         .clip(AvatarStackTokens.AvatarShape)
                         .background(
@@ -760,15 +714,15 @@ private fun SocialProofRow(modifier: Modifier = Modifier) {
                             )
                         )
                         .border(
-                            AvatarStackTokens.AvatarBorderWidth,
-                            MaterialTheme.colorScheme.surface,
-                            AvatarStackTokens.AvatarShape,
+                            width = AvatarStackTokens.AvatarBorderWidth,
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = AvatarStackTokens.AvatarShape,
                         ),
                 ) {
                     Text(
-                        text = initial,
+                        text  = initial,
                         style = TypeScale.LabelXSmall.copy(
-                            fontSize = AvatarStackTokens.InitialFontSize,
+                            fontSize   = AvatarStackTokens.InitialFontSize,
                             fontWeight = AvatarStackTokens.InitialFontWeight,
                         ),
                         color = White,
@@ -777,22 +731,25 @@ private fun SocialProofRow(modifier: Modifier = Modifier) {
             }
         }
 
-        Spacer(Modifier.size(Spacing.Spacing12))
+        Spacer(Modifier.width(Spacing.Spacing12))
 
-        Column {
-            // Star row
-            Row(horizontalArrangement = Arrangement.spacedBy(AvatarStackTokens.StarGap)) {
+        // ── Stars + copy ──────────────────────────────────────────────────────
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Spacing2)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(AvatarStackTokens.StarGap),
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
                 repeat(5) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_star), // https://lucide.dev/icons/star
+                        painter            = painterResource(R.drawable.ic_star),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(AvatarStackTokens.StarSize),
+                        tint               = MaterialTheme.colorScheme.tertiary,
+                        modifier           = Modifier.size(AvatarStackTokens.StarSize),
                     )
                 }
             }
             Text(
-                text = stringResource(R.string.premium_social_proof, "50,000+"),
+                text  = stringResource(R.string.premium_social_proof, countLabel),
                 style = TypeScale.LabelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -803,39 +760,34 @@ private fun SocialProofRow(modifier: Modifier = Modifier) {
 @Composable
 private fun TrustLine(modifier: Modifier = Modifier) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
-        modifier = modifier,
+        modifier              = modifier,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_lock), // https://lucide.dev/icons/lock
+            painter            = painterResource(R.drawable.ic_lock),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-            modifier = Modifier.size(10.adp),
+            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+            modifier           = Modifier.size(10.adp),
         )
         Text(
-            text = stringResource(R.string.premium_trust_line),
-            style = TypeScale.LabelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+            text      = stringResource(R.string.premium_trust_line),
+            style     = TypeScale.LabelSmall,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
             textAlign = TextAlign.Center,
         )
     }
 }
-
-// ══════════════════════════════════════════════════════════════════
-// SHARED / INTERNAL COMPOSABLES
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 internal fun SectionLabel(
     text: String,
     modifier: Modifier = Modifier,
 ) {
-    // AccessibilityAudit: dark mode uses onSurfaceVariant (4.5:1) not the muted variant
     Text(
-        text = text.uppercase(),
-        style = TypeScale.LabelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+        text     = text.uppercase(),
+        style    = TypeScale.LabelSmall,
+        color    = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
         modifier = modifier.padding(start = Spacing.Spacing2),
     )
 }
@@ -846,7 +798,7 @@ internal fun PremiumCloseButton(
     modifier: Modifier = Modifier,
 ) {
     IconButton(
-        onClick = onClick,
+        onClick  = onClick,
         modifier = modifier
             .size(34.adp)
             .clip(CircleShape)
@@ -854,15 +806,14 @@ internal fun PremiumCloseButton(
             .border(1.adp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), CircleShape),
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_x), // https://lucide.dev/icons/x
+            painter            = painterResource(R.drawable.ic_x),
             contentDescription = stringResource(R.string.premium_close),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(15.adp),
+            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier           = Modifier.size(15.adp),
         )
     }
 }
 
-/** Animated shimmer sweep — purely decorative. Does not contain business logic. */
 @Composable
 internal fun ShimmerSweep(
     durationMs: Int = 2_600,
@@ -871,10 +822,10 @@ internal fun ShimmerSweep(
 ) {
     val transition = rememberInfiniteTransition(label = "shimmer")
     val offset by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
+        initialValue  = -1f,
+        targetValue   = 2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMs, easing = FastOutSlowInEasing, delayMillis = delayMs),
+            animation  = tween(durationMs, easing = FastOutSlowInEasing, delayMillis = delayMs),
             repeatMode = RepeatMode.Restart,
         ),
         label = "shimmerOffset",
@@ -887,25 +838,26 @@ internal fun ShimmerSweep(
     )
 }
 
-/** Blurred ambient glow blob — purely decorative. */
 @Composable
 internal fun AmbientOrb(
     color: Color,
     size: Dp,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Spacer(
         modifier = modifier
             .size(size)
-            .blur(radius = (size.value * 0.35f).adp)
-            .clip(CircleShape)
-            .background(color),
+            .drawBehind {
+                drawCircle(
+                    brush  = Brush.radialGradient(
+                        colors = listOf(color, Color.Transparent),
+                        center = center,
+                        radius = this.size.minDimension / 2f,
+                    ),
+                )
+            },
     )
 }
-
-// ══════════════════════════════════════════════════════════════════
-// LOADING / ERROR STATES
-// ══════════════════════════════════════════════════════════════════
 
 @Composable
 private fun PremiumLoadingContent(modifier: Modifier = Modifier) {
@@ -923,52 +875,27 @@ private fun PremiumErrorContent(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxSize()
-            .padding(Spacing.Spacing24),
+        modifier            = modifier.fillMaxSize().padding(Spacing.Spacing24),
     ) {
         Text(
-            text = message,
-            style = TypeScale.BodyMedium,
-            color = MaterialTheme.colorScheme.error,
+            text      = message,
+            style     = TypeScale.BodyMedium,
+            color     = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(Spacing.Spacing16))
-        TextButton(onClick = onRetry) {
-            Text(stringResource(R.string.premium_retry))
-        }
+        TextButton(onClick = onRetry) { Text(stringResource(R.string.premium_retry)) }
     }
 }
 
-// Helper — approximate luminance for dark-mode detection
-private fun Color.luminance() = red * 0.2126f + green * 0.7152f + blue * 0.0722f
-
-// ══════════════════════════════════════════════════════════════════
-// PREVIEWS
-// ══════════════════════════════════════════════════════════════════
-
-@Preview(name = "Premium Screen · Light", showBackground = true)
-@Preview(name = "Premium Screen · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "SocialProofRow · With data", showBackground = true)
+@Preview(name = "SocialProofRow · Loading (null)", showBackground = true)
 @Composable
-private fun PremiumReadyContentPreview() {
+private fun SocialProofRowPreview() {
     SynapseTheme {
-        PremiumReadyContent(
-            state = PremiumUiState.Ready(
-                plans = listOf(
-                    PremiumPlanUiModel("annual", "Annual", "SAVE 50%", "\$4.99", "/mo", "Billed \$59.99/yr", true, "annual_sku"),
-                    PremiumPlanUiModel("monthly", "Monthly", null, "\$9.99", "/mo", "Cancel anytime", false, "monthly_sku"),
-                ),
-                features = listOf(
-                    ProFeatureUiModel(R.drawable.ic_layers, "Unlimited Packs", "No caps, ever", FeatureColorRole.PRIMARY),
-                    ProFeatureUiModel(R.drawable.ic_brain, "Advanced SRS Algorithm", "Personalised spaced repetition", FeatureColorRole.SECONDARY),
-                    ProFeatureUiModel(R.drawable.ic_file_text, "Process Large PDFs", "Up to 500 pages per upload", FeatureColorRole.ERROR),
-                ),
-                selectedPlanId = "annual",
-                trialDays = 7,
-            ),
-            onPlanSelected = {},
-            onStartTrial = {},
-            onDismiss = {},
-        )
+        Column(Modifier.padding(Spacing.Spacing16), verticalArrangement = Arrangement.spacedBy(Spacing.Spacing12)) {
+            SocialProofRow(socialProof = SocialProofData(userCountLabel = "50,000+"))
+            SocialProofRow(socialProof = null)
+        }
     }
 }
