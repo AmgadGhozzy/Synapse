@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -33,9 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -91,13 +97,6 @@ fun GridPackCard(
         animationSpec  = tween(durationMillis = 900, easing = FastOutSlowInEasing)
     )
 
-    val cardShadow = Modifier.shadow(
-        elevation    = if (hasDue) 6.adp else 2.adp,
-        shape        = Radius.ShapeXL,
-        ambientColor = if (hasDue) colorSet.accent.copy(0.12f) else Color.Black.copy(0.06f),
-        spotColor    = if (hasDue) colorSet.accent.copy(0.22f) else Color.Black.copy(0.10f),
-    )
-
     if (enableSwipeActions && actions.isNotEmpty()) {
         SwipeableCardContainer(
             actions         = actions,
@@ -106,7 +105,7 @@ fun GridPackCard(
             onSwipeClose    = onSwipeClose,
             onTap           = onClick,
             verticalActions = true,
-            modifier        = modifier.then(cardShadow),
+            modifier        = modifier,
         ) {
             GridPackCardSurface(
                 pack = pack,
@@ -117,6 +116,7 @@ fun GridPackCard(
                 animatedProgress = animatedProgress,
                 surfaceOnClick = null,
                 onClick = onClick,
+                modifier = Modifier.fillMaxSize(),
             )
         }
     } else {
@@ -129,7 +129,7 @@ fun GridPackCard(
             animatedProgress = animatedProgress,
             surfaceOnClick = onClick,
             onClick = onClick,
-            modifier = modifier.then(cardShadow),
+            modifier = modifier,
         )
     }
 }
@@ -149,11 +149,12 @@ private fun GridPackCardSurface(
     modifier: Modifier = Modifier,
 ) {
     if (surfaceOnClick != null) {
-        Surface(
+        Card(
             onClick  = surfaceOnClick,
             modifier = modifier,
             shape    = Radius.ShapeXL,
-            color    = MaterialTheme.colorScheme.surface,
+            colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.adp),
         ) {
             GridPackCardContent(
                 pack = pack,
@@ -195,12 +196,14 @@ private fun GridPackCardContent(
     onClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.padding(
-            start  = Spacing.Spacing12,
-            end    = Spacing.Spacing12,
-            top    = Spacing.Spacing14,
-            bottom = Spacing.Spacing12,
-        ),
+        modifier = Modifier
+            .fillMaxHeight()
+            .padding(
+                start  = Spacing.Spacing12,
+                end    = Spacing.Spacing12,
+                top    = Spacing.Spacing14,
+                bottom = Spacing.Spacing12,
+            ),
     ) {
         // ── Row 1: Icon + Category pill ───────────────────────────────
         IconAndCategoryRow(
@@ -219,6 +222,7 @@ private fun GridPackCardContent(
             lineHeight = 17.5.asp,
             color      = MaterialTheme.colorScheme.onSurface,
             maxLines   = 2,
+            minLines   = 2,
             overflow   = TextOverflow.Ellipsis,
             modifier   = Modifier.padding(bottom = 10.adp),
         )
@@ -250,7 +254,7 @@ private fun GridPackCardContent(
             hasDue      = hasDue,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing12))
+        Spacer(Modifier.weight(1f))
 
         // ── Continue CTA ──────────────────────────────────────────────
         ContinueButton(
@@ -289,7 +293,7 @@ private fun IconAndCategoryRow(
             modifier = Modifier
                 .clip(Radius.ShapePill)
                 .background(colorSet.bg)
-                .padding(horizontal = Spacing.Spacing6, vertical = Spacing.Spacing2),
+                .padding(horizontal = Spacing.Spacing6),
         ) {
             Text(
                 text          = category.uppercase(),
@@ -308,6 +312,8 @@ private fun ProgressBar(
     accent:   Color,
     modifier: Modifier = Modifier,
 ) {
+    val fraction = progress.coerceIn(0f, 1f)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -317,18 +323,43 @@ private fun ProgressBar(
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
+                .fillMaxWidth(fraction)
                 .fillMaxHeight()
                 .clip(Radius.ShapePill)
+                // ── Glow halo ─────────────────────────────────────────────
+                .drawBehind {
+                    drawIntoCanvas { canvas ->
+                        val paint = Paint().apply {
+                            asFrameworkPaint().apply {
+                                isAntiAlias = true
+                                color       = android.graphics.Color.TRANSPARENT
+                                setShadowLayer(
+                                    8f,
+                                    0f,
+                                    0f,
+                                    accent.copy(alpha = 0.55f).toArgb(),
+                                )
+                            }
+                        }
+                        canvas.drawRoundRect(
+                            left         = 0f,
+                            top          = 0f,
+                            right        = size.width,
+                            bottom       = size.height,
+                            radiusX      = size.height / 2f,
+                            radiusY      = size.height / 2f,
+                            paint        = paint,
+                        )
+                    }
+                }
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(accent.copy(alpha = 0.60f), accent),
+                        colors = listOf(accent.copy(alpha = 0.7f), accent),
                     )
                 ),
         )
     }
 }
-
 @Composable
 private fun LearnedRow(
     mastered: Int,
@@ -413,7 +444,7 @@ private fun DueBadge(
         modifier = modifier
             .clip(Radius.ShapePill)
             .background(goldColor.copy(alpha = 0.14f))
-            .padding(horizontal = Spacing.Spacing6, vertical = Spacing.Spacing2),
+            .padding(horizontal = Spacing.Spacing6),
     ) {
         Text(
             text       = stringResource(R.string.due_badge, dueCards),
