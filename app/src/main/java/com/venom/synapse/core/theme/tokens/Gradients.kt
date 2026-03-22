@@ -23,12 +23,6 @@ import com.venom.synapse.core.theme.Violet300
 import com.venom.synapse.core.theme.Violet800
 import com.venom.synapse.core.theme.White
 
-/**
- * Gradient Token System.
- */
-
-// Token data class (consumed by composables via MaterialTheme.synapse.gradients)
-
 data class GradientTokens(
     val primary:    Brush,
     val accent:     Brush,
@@ -36,8 +30,8 @@ data class GradientTokens(
     val title:      Brush,
     val cta:        Brush,
     val annual:     Brush,
+    val page:       ShaderBrush,
     val goPro:      Brush,
-    /** StreakHeroCard + PremiumBanner background — resolves light/dark automatically. */
     val streakHero: Brush,
 )
 
@@ -48,6 +42,7 @@ val LightGradientTokens = GradientTokens(
     title      = Gradients.GradientTitleLight,
     cta        = Gradients.GradientCtaLight,
     annual     = Gradients.GradientAnnualLight,
+    page       = Gradients.GradientPageLight,
     goPro      = Gradients.GradientGoProLight,
     streakHero = Gradients.GradientStreakHeroLight,
 )
@@ -59,30 +54,20 @@ val DarkGradientTokens = GradientTokens(
     title      = Gradients.GradientTitleDark,
     cta        = Gradients.GradientCtaDark,
     annual     = Gradients.GradientAnnualDark,
+    page       = Gradients.GradientPageDark,
     goPro      = Gradients.GradientGoProDark,
     streakHero = Gradients.GradientStreakHeroDark,
 )
 
-// Static gradient constants + ShaderBrush factories
-
 object Gradients {
 
     // Primary
-
-    /**
-     * GradientPrimaryLight — `linear-gradient(135deg, #4A3DD6, #7B6FFF)`
-     * Usage: Daily goal hero card, FAB, avatar ring, circular progress track.
-     */
     val GradientPrimaryLight = Brush.linearGradient(
         colors = listOf(BrandColors.BrandPrimaryDeep, BrandColors.BrandPrimaryBright),
         start  = Offset(0f, 0f),
         end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
 
-    /**
-     * GradientPrimaryDark — `linear-gradient(135deg, #7B6FFF, #BDB6FF)`
-     * Usage: Same as GradientPrimaryLight on dark backgrounds.
-     */
     val GradientPrimaryDark = Brush.linearGradient(
         colors = listOf(BrandColors.BrandPrimaryBright, BrandColors.BrandPrimaryDeep),
         start  = Offset(0f, 0f),
@@ -90,10 +75,6 @@ object Gradients {
     )
 
     // Accent
-
-    /**
-     * GradientAccentLight — `linear-gradient(135deg, #3730A3, #6366F1)`
-     */
     val GradientAccentLight = Brush.linearGradient(
         colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.PackViolet),
         start  = Offset(0f, 0f),
@@ -243,7 +224,7 @@ object Gradients {
     // Always wrap the call in `remember { Gradients.gradientPageLight() }`.
 
     /** Ambient radial gradient for the app page background (light mode). */
-    fun gradientPageLight(): ShaderBrush = object : ShaderBrush() {
+    val GradientPageLight: ShaderBrush = object : ShaderBrush() {
         override fun createShader(size: Size) = RadialGradientShader(
             center      = Offset(size.width * 0.5f, 0f),
             radius      = size.width * 0.85f,
@@ -253,7 +234,7 @@ object Gradients {
     }
 
     /** Ambient radial gradient for the app page background (dark mode). */
-    fun gradientPageDark(): ShaderBrush = object : ShaderBrush() {
+    val GradientPageDark: ShaderBrush = object : ShaderBrush() {
         override fun createShader(size: Size) = RadialGradientShader(
             center      = Offset(size.width * 0.5f, 0f),
             radius      = size.width * 0.85f,
