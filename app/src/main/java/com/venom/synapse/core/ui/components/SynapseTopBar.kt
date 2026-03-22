@@ -136,7 +136,7 @@ private fun AvatarButton(
             if (profileAvatarUrl != null) {
                 AsyncImage(
                     model = profileAvatarUrl,
-                    contentDescription = "Profile photo",
+                    contentDescription = stringResource(R.string.profile_photo_description),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(80.adp)
@@ -157,16 +157,6 @@ private fun AvatarButton(
 }
 
 // ── Go Pro Button ─────────────────────────────────────────────────────────────
-
-/**
- * Animated "Go Pro" button.
- *
- * Effects:
- *  • Shimmer  — angled diagonal light streak sweeps across the pill every 3 s (idle 2 s)
- *  • Pulse    — outer ring expands + fades
- *  • Crown    — gentle rock
- *  • Shake    — quick 5-step jolt fires once every 10 s, silent the rest of the time
- */
 @Composable
 private fun GoProButton(
     isPremium: Boolean,
@@ -176,15 +166,13 @@ private fun GoProButton(
     val infiniteTransition = rememberInfiniteTransition(label = "goPro")
 
     // ── Shimmer sweep ──────────────────────────────────────────────────────────
-    // Animates -1.4 → 2.4 so the rotated beam fully enters and exits the pill.
     val shimmerFraction by infiniteTransition.animateFloat(
         initialValue = -1.4f,
         targetValue = 2.4f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 3_000, delayMillis = 2_000, easing = EaseInOut),
             repeatMode = RepeatMode.Restart,
-        ),
-        label = "shimmer",
+        )
     )
 
     // ── Outer pulse ring ───────────────────────────────────────────────────────
@@ -194,8 +182,7 @@ private fun GoProButton(
         animationSpec = infiniteRepeatable(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
-        ),
-        label = "ringScale",
+        )
     )
     val ringAlpha by infiniteTransition.animateFloat(
         initialValue = 0.5f,
@@ -203,8 +190,7 @@ private fun GoProButton(
         animationSpec = infiniteRepeatable(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
-        ),
-        label = "ringAlpha",
+        )
     )
 
     // ── Crown rock ─────────────────────────────────────────────────────────────
@@ -214,12 +200,9 @@ private fun GoProButton(
         animationSpec = infiniteRepeatable(
             animation = tween(4_000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse,
-        ),
-        label = "crownRot",
+        )
     )
 
-    // ── Shake — fires for ~400 ms, then silent for the rest of the 10 s cycle ──
-    // keyframes values are translationX in dp-equivalent; converted to px in graphicsLayer.
     val shakeOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 0f,
@@ -238,8 +221,7 @@ private fun GoProButton(
                 0f at 10_000
             },
             repeatMode = RepeatMode.Restart,
-        ),
-        label = "shake",
+        )
     )
 
     val pillLabel = if (isPremium) {
@@ -286,9 +268,7 @@ private fun GoProButton(
                         .background(MaterialTheme.synapse.gradients.goPro),
                 )
 
-                // Angled shimmer beam
-                // A narrow box rotated ~25° creates a realistic diagonal light streak.
-                // translationX moves it from left-of-pill to right-of-pill.
+                // Angled shimmer
                 Box(
                     modifier = Modifier
                         .matchParentSize()
