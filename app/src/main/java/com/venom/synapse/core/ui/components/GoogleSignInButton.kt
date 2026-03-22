@@ -17,10 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.venom.resources.R
 import com.venom.ui.components.common.adp
 import com.venom.ui.components.common.asp
+import com.venom.synapse.R as SynapseR
 
 @Composable
 fun GoogleSignInButton(
@@ -48,12 +50,12 @@ fun GoogleSignInButton(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.icon_google),
-                contentDescription = "Google Logo",
+                contentDescription = stringResource(SynapseR.string.google_logo_description),
                 modifier = Modifier.size(24.adp)
             )
             Spacer(modifier = Modifier.width(12.adp))
             Text(
-                text = "Continue with Google",
+                text = stringResource(SynapseR.string.google_sign_in_button),
                 fontSize = 16.asp,
                 fontWeight = FontWeight.SemiBold
             )
