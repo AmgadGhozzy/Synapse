@@ -71,9 +71,9 @@ fun StatsRow(
             labelRes = R.string.stat_streak_label,
             value = "$streak",
             subLabel = pluralStringResource(R.plurals.streak_days_noun, streak),
-            accentColor = levelColors.basic.accentColor,
-            bgColor = levelColors.basic.bgColor,
-            borderColor = levelColors.basic.borderColor,
+            accentColor = levelColors.normal.accentColor,
+            bgColor = levelColors.normal.bgColor,
+            borderColor = levelColors.normal.borderColor,
             iconRes = R.drawable.ic_zap,
         ),
         StatChipData(
@@ -84,9 +84,9 @@ fun StatsRow(
             } else {
                 accuracyDeltaRes?.let { stringResource(it) } ?: ""
             },
-            accentColor = levelColors.normal.accentColor,
-            bgColor = levelColors.normal.bgColor,
-            borderColor = levelColors.normal.borderColor,
+            accentColor = levelColors.basic.accentColor,
+            bgColor = levelColors.basic.bgColor,
+            borderColor = levelColors.basic.borderColor,
             iconRes = R.drawable.ic_target,
         ),
         StatChipData(
@@ -103,7 +103,6 @@ fun StatsRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            // All chips match the tallest chip's height → no more lopsided layout
             .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing10),
     ) {
@@ -116,7 +115,6 @@ fun StatsRow(
                 bgColor = chip.bgColor,
                 borderColor = chip.borderColor,
                 iconRes = chip.iconRes,
-                // weight + fillMaxHeight → chip fills both axes of its cell
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
@@ -125,7 +123,6 @@ fun StatsRow(
     }
 }
 
-// ── Stat Chip ─────────────────────────────────────────────────────────────────
 @Composable
 private fun StatChip(
     label: String,
@@ -142,7 +139,6 @@ private fun StatChip(
         modifier = modifier.shadow(
             elevation = 4.adp,
             shape = StatsCardTokens.Shape,
-            clip = false,           // ← shadow bleeds outside → no clipping
             ambientColor = accentColor.copy(alpha = 0.08f),
             spotColor = accentColor.copy(alpha = 0.14f),
         ),
@@ -161,7 +157,6 @@ private fun StatChip(
                 .padding(StatsCardTokens.Padding),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            // ── Label row ──────────────────────────────────────────────────
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(StatsCardTokens.IconLabelGap),
@@ -180,14 +175,12 @@ private fun StatChip(
                 )
             }
 
-            // ── Large value ────────────────────────────────────────────────
             Text(
                 text = value,
                 style = StatsCardTokens.ValueFontStyle,
                 color = accentColor,
             )
 
-            // ── Sub-label ──────────────────────────────────────────────────
             Text(
                 text = subLabel,
                 style = StatsCardTokens.SubFontStyle,
@@ -197,7 +190,6 @@ private fun StatChip(
     }
 }
 
-// ── Section Header ─────────────────────────────────────────────────────────────
 @Composable
 fun SectionHeader(
     title: String,
@@ -216,7 +208,6 @@ fun SectionHeader(
             color = MaterialTheme.colorScheme.onBackground,
         )
 
-        // "See all ›"  — TextButton contains text + arrow icon side by side
         TextButton(onClick = onSeeAll) {
             Text(
                 text = stringResource(R.string.action_see_all),
@@ -236,7 +227,6 @@ fun SectionHeader(
     }
 }
 
-// ── Empty Packs State ─────────────────────────────────────────────────────────
 @Composable
 fun EmptyPacksState(
     onAddPack: () -> Unit,
@@ -276,7 +266,6 @@ fun EmptyPacksState(
     }
 }
 
-// ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Stats Row · Light", showBackground = true)
 @Preview(name = "Stats Row · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
