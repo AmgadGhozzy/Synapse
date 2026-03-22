@@ -34,6 +34,7 @@ import com.venom.synapse.core.ui.components.buildPackCardActions
 import com.venom.synapse.core.ui.components.rememberSnackbarController
 import com.venom.synapse.core.ui.state.UiEffect
 import com.venom.synapse.features.dashboard.presentation.components.DailyGoalCard
+import com.venom.synapse.features.dashboard.presentation.components.DashboardFab
 import com.venom.synapse.features.dashboard.presentation.components.EmptyPacksState
 import com.venom.synapse.features.dashboard.presentation.components.SectionHeader
 import com.venom.synapse.features.dashboard.presentation.components.StatsRow
@@ -52,8 +53,8 @@ fun DashboardScreen(
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val listState          = rememberLazyGridState()
+    val context            = androidx.compose.ui.platform.LocalContext.current
 
-    // FAB collapses once user scrolls past the hero card
     val isFabExpanded by remember {
         derivedStateOf { listState.firstVisibleItemIndex == 0 }
     }
@@ -62,8 +63,8 @@ fun DashboardScreen(
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate  -> onNavigate(effect.route)
-                is UiEffect.ShowToast -> snackbarController.success(effect.message)
-                is UiEffect.ShowError -> snackbarController.error(effect.message)
+                is UiEffect.ShowToast -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.ShowError -> snackbarController.error(effect.text.asString(context))
                 else                  -> Unit
             }
         }
@@ -105,7 +106,6 @@ fun DashboardScreen(
 }
 
 
-// ── Content ───────────────────────────────────────────────────────────────────
 @Composable
 private fun DashboardContent(
     uiState        : DashboardUiState,
@@ -132,7 +132,6 @@ private fun DashboardContent(
         verticalArrangement   = Arrangement.spacedBy(Spacing.ListItemVerticalGap),
         horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing12),
     ) {
-        // ── Hero goal card ────────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             DailyGoalCard(
                 todayStudied    = uiState.todayStudied,
@@ -144,7 +143,6 @@ private fun DashboardContent(
             )
         }
 
-        // ── Stats row ─────────────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             StatsRow(
                 streak           = uiState.streakDays,
@@ -153,13 +151,11 @@ private fun DashboardContent(
                 accuracyDeltaRes = uiState.accuracyDeltaRes,
                 timeMinutes      = uiState.timeStudiedMinutes,
                 modifier         = Modifier.padding(
-                    top    = Spacing.Spacing4,
-                    bottom = Spacing.SectionVerticalGap,
+                    bottom = Spacing.ListItemVerticalGap,
                 ),
             )
         }
 
-        // ── Section header ────────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             SectionHeader(
                 title    = stringResource(R.string.section_jump_back_in),
@@ -168,7 +164,6 @@ private fun DashboardContent(
             )
         }
 
-        // ── Pack list or empty state ──────────────────────────────────────
         if (uiState.packs.isEmpty()) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 EmptyPacksState(
