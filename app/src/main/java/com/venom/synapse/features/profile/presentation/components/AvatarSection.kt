@@ -54,7 +54,7 @@ fun ProfileAvatarSection(
                 if (uiState.avatarUrl != null) {
                     AsyncImage(
                         model = uiState.avatarUrl,
-                        contentDescription = "Profile photo",
+                        contentDescription = stringResource(R.string.profile_photo_description),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .size(80.adp)
@@ -106,7 +106,7 @@ fun ProfileAvatarSection(
                 .padding(horizontal = 12.adp, vertical = 4.adp),
         ) {
             Text(
-                text = uiState.planLabel,
+                text = stringResource(uiState.planLabelRes),
                 style = MaterialTheme.typography.labelSmall,
                 color = cs.onSurfaceVariant,
             )
