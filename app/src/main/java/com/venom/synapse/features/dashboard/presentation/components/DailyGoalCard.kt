@@ -33,6 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,12 +49,10 @@ import com.venom.ui.components.common.adp
 import com.venom.ui.components.common.asp
 import com.venom.ui.components.other.CircularProgressRing
 
-// ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Average seconds spent per flashcard during a review session. */
 private const val SECONDS_PER_CARD = 8
 
-// ── Root composable ───────────────────────────────────────────────────────────
 
 @Composable
 fun DailyGoalCard(
@@ -91,7 +90,6 @@ fun DailyGoalCard(
         Column(Modifier.padding(HeroCardTokens.Padding)) {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment     = Alignment.Top,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -122,7 +120,6 @@ fun DailyGoalCard(
 
             Spacer(Modifier.height(Spacing.Spacing16))
 
-            // Glass-effect CTA button
             Surface(
                 onClick      = onStartStudying,
                 modifier     = Modifier.fillMaxWidth(),
@@ -144,15 +141,15 @@ fun DailyGoalCard(
                     Icon(
                         imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                         contentDescription = null,
-                        modifier           = Modifier.size(18.adp),
+                        modifier           = Modifier
+                            .size(18.adp)
+                            .shake(),
                     )
                 }
             }
         }
     }
 }
-
-// ── Sub-composables ───────────────────────────────────────────────────────────
 
 @Composable
 private fun GoalLabel() {
@@ -165,7 +162,7 @@ private fun GoalLabel() {
             painter            = painterResource(R.drawable.ic_target),
             contentDescription = null,
             tint               = Color.White.copy(alpha = 0.9f),
-            modifier           = Modifier.size(20.adp),
+            modifier           = Modifier.size(24.adp),
         )
         Text(
             text       = stringResource(R.string.daily_goal_label),
@@ -241,9 +238,8 @@ private fun GoalStatChips(
     streakDays: Int,
     totalDue: Int,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
 
-        // ── Streak ──────────────────────────────────────────────────────────
         HeroStatChip(
             label    = pluralStringResource(R.plurals.streak_days, streakDays, streakDays),
             emphasis = true,
@@ -252,12 +248,13 @@ private fun GoalStatChips(
                     painter            = painterResource(R.drawable.ic_zap),
                     contentDescription = null,
                     tint               = Amber400,
-                    modifier           = Modifier.size(12.adp).shake(),
+                    modifier           = Modifier
+                        .size(16.adp)
+                        .shake(),
                 )
             },
         )
 
-        // ── Cards due ────────────────────────────────────────────────────────
         HeroStatChip(
             label    = pluralStringResource(R.plurals.cards_due, totalDue, totalDue),
             emphasis = false,
@@ -266,9 +263,11 @@ private fun GoalStatChips(
                     painter            = painterResource(R.drawable.ic_clock),
                     contentDescription = null,
                     tint               = Color.White.copy(alpha = 0.55f),
-                    modifier           = Modifier.size(12.adp).shake(),
+                    modifier           = Modifier
+                        .size(16.adp)
+                        .shake(),
                 )
-            },
+            }
         )
     }
 }
@@ -307,11 +306,11 @@ private fun HeroStatChip(
             .clip(RoundedCornerShape(50))
             .background(
                 if (emphasis) Color.White.copy(alpha = 0.13f)
-                else          Color.White.copy(alpha = 0.1f)
+                else Color.White.copy(alpha = 0.1f)
             )
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         icon()
         Text(
@@ -321,11 +320,12 @@ private fun HeroStatChip(
                 fontSize   = 11.sp,
             ),
             color = Color.White.copy(alpha = if (emphasis) 0.9f else 0.6f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-// ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Light Mode", showBackground = true)
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
