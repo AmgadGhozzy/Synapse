@@ -87,21 +87,22 @@ fun AddPdfScreen(
         viewModel.onEvent(AddPdfUiEvent.FileSelected(uri, fileName))
     }
 
-    // One-shot UI effects: navigation and toast
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate     -> onNavigateToSession(uiState.packId)
                 is UiEffect.NavigateBack -> onNavigateBack()
-                is UiEffect.ShowToast    -> snackbarController.success(effect.message)
+                is UiEffect.ShowToast    -> snackbarController.success(effect.text.asString(context))
 
-                // Pack-limit reached → navigate to paywall, otherwise show inline info
                 is UiEffect.ShowUpgradePrompt -> {
                     if (uiState.isPackLimitReached) {
                         onNavigateToPremium()
                     } else {
                         snackbarController.info(
-                            context.getString(R.string.add_pdf_upgrade_prompt, effect.feature)
+                            context.getString(
+                                R.string.add_pdf_upgrade_prompt,
+                                effect.feature.asString(context)
+                            )
                         )
                     }
                 }
@@ -111,7 +112,6 @@ fun AddPdfScreen(
         }
     }
 
-    // Scroll to top on every wizard step transition
     LaunchedEffect(uiState.step) {
         scrollState.animateScrollTo(0)
     }
@@ -163,7 +163,7 @@ fun AddPdfScreen(
             ) {
                 uiState.error?.let {
                     ErrorBanner(
-                        message   = it,
+                        message   = it.resolve(),
                         onDismiss = { viewModel.onEvent(AddPdfUiEvent.DismissError) },
                     )
                 }
