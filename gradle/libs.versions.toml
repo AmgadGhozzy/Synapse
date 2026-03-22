@@ -54,6 +54,9 @@ media3Exoplayer = "1.7.1"
 firebaseCrashlyticsBuildtools = "3.0.6"
 material3WindowSizeClass = "1.4.0"
 supabase = "3.4.1"
+workmanager = "2.9.0"
+hilt-work = "1.2.0"
+
 
 [libraries]
 # Android Jetpack
@@ -139,6 +142,13 @@ androidx-material3-window-size-class1 = { group = "androidx.compose.material3", 
 # Supabase
 supabase-client = { group = "io.github.jan-tennert.supabase", name = "supabase-kt", version.ref = "supabase" }
 supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt", version.ref = "supabase" }
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", version.ref = "supabase" }
+supabase-functions = { group = "io.github.jan-tennert.supabase", name = "functions-kt", version.ref = "supabase" }
+
+# WorkManager
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
+hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
+hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-work" }
 
 [plugins]
 

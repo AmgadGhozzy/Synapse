@@ -44,6 +44,10 @@ android {
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", localProperties.getProperty("GOOGLE_WEB_CLIENT_ID"))
+        buildConfigField("String", "SUPABASE_URL", localProperties.getProperty("SUPABASE_URL"))
+        buildConfigField("String", "SUPABASE_ANON_KEY", localProperties.getProperty("SUPABASE_ANON_KEY"))
+
         androidResources {
             localeFilters += listOf("en", "ar")
         }
@@ -71,16 +75,16 @@ android {
         compose = true
         buildConfig = true
     }
-//    packaging {
-//        resources {
-//            excludes += setOf(
-//                "/META-INF/{AL2.0,LGPL2.1}",
-//                "/META-INF/*.version",
-//                "/META-INF/kotlin-project-structure-metadata.json",
-//                "**/dump_syms*"
-//            )
-//        }
-//    }
+    packaging {
+        resources {
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.version",
+                "/META-INF/kotlin-project-structure-metadata.json",
+                "**/dump_syms*"
+            )
+        }
+    }
     android {
         lint {
             disable += "NullSafeMutableLiveData"
@@ -175,6 +179,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
+
+    implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization.json)
 
     // ML Kit
@@ -183,7 +190,19 @@ dependencies {
     // Supabase
     implementation(libs.supabase.client)
     implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.functions)
     implementation("io.ktor:ktor-client-okhttp:3.1.3")
+
+    // WorkManager (EntitlementSyncWorker)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Credential Manager (Google Sign-In)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
 
     // Compose
