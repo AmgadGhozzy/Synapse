@@ -139,12 +139,6 @@ fun SynapseNavGraph(
                             popUpTo(SynapseScreen.Dashboard.route) { inclusive = false }
                         }
                     },
-                    onStudyAgain = {
-                        // For now, same as back - just return to main
-                        navController.navigate(SynapseScreen.Dashboard.route) {
-                            popUpTo(SynapseScreen.Dashboard.route) { inclusive = false }
-                        }
-                    },
                 )
             }
         }
