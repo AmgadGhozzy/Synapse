@@ -28,13 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -43,11 +44,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -57,6 +60,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.LocalGradientTokens
 import com.venom.synapse.core.theme.SynapseTheme
@@ -161,10 +168,15 @@ private fun PremiumReadyContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(end = Spacing.Spacing16, top = Spacing.Spacing12),
+                    .padding(end = Spacing.Spacing24, top = Spacing.Spacing20),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                PremiumCloseButton(onClick = onDismiss)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = stringResource(R.string.premium_close),
+                    tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.8f),
+                    modifier           = Modifier.size(24.adp),
+                )
             }
 
             LazyColumn(
@@ -230,8 +242,7 @@ private fun HeroSection(
     val pulseAlpha by pulseTransition.animateFloat(
         initialValue  = 1f,
         targetValue   = 0.3f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
-        label         = "pulseAlpha",
+        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse)
     )
 
     Column(
@@ -268,10 +279,10 @@ private fun HeroSection(
             horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
             modifier = Modifier
                 .clip(Radius.ShapePill)
-                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f))
+                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.22f))
                 .border(
                     width = 1.adp,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.32f),
+                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.38f),
                     shape = Radius.ShapePill,
                 )
                 .padding(horizontal = Spacing.Spacing16, vertical = Spacing.Spacing6),
@@ -302,7 +313,7 @@ private fun ProBadgeChip(modifier: Modifier = Modifier) {
                 Brush.linearGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.22f),
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f),
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
                     )
                 )
             )
@@ -332,10 +343,10 @@ internal fun PremiumFeaturesCard(
     features: List<ProFeatureUiModel>,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        shape          = Radius.ShapeXL,
-        color          = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-        tonalElevation = 0.adp,
+    Card(
+        shape     = Radius.ShapeXL,
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.adp),
         modifier       = modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.Spacing20)
@@ -343,7 +354,7 @@ internal fun PremiumFeaturesCard(
                 width = FeatureRowTokens.ContainerBorderWidth,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
                 shape = Radius.ShapeXL,
-            ),
+            )
     ) {
         Column {
             features.forEachIndexed { index, feature ->
@@ -460,7 +471,7 @@ private fun PlanCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gradients  = LocalGradientTokens.current
+    val gradients  = MaterialTheme.synapse.gradients
     val isGradient = isSelected && plan.isHighlighted
     val onPrimary  = MaterialTheme.colorScheme.onPrimary
 
@@ -482,10 +493,10 @@ private fun PlanCard(
     }
     val borderWidth = if (isSelected) PricingCardTokens.BorderWidthSelected else PricingCardTokens.BorderWidth
 
-    val priceColor  = if (isGradient) onPrimary else MaterialTheme.colorScheme.onSurface
-    val labelColor  = if (isGradient) onPrimary.copy(alpha = 0.70f) else MaterialTheme.colorScheme.onSurfaceVariant
-    val periodColor = if (isGradient) onPrimary.copy(alpha = 0.60f) else MaterialTheme.colorScheme.onSurfaceVariant
-    val noteColor   = if (isGradient) onPrimary.copy(alpha = 0.52f) else MaterialTheme.colorScheme.onSurfaceVariant
+    val priceColor  = if (isGradient) Color.White else MaterialTheme.colorScheme.onSurface
+    val labelColor  = if (isGradient) Color.White.copy(alpha = 0.70f) else MaterialTheme.colorScheme.onSurfaceVariant
+    val periodColor = if (isGradient) Color.White.copy(alpha = 0.60f) else MaterialTheme.colorScheme.onSurfaceVariant
+    val noteColor   = if (isGradient) Color.White.copy(alpha = 0.52f) else MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
         modifier = modifier
@@ -548,12 +559,12 @@ private fun PlanCard(
                     .size(PricingCardTokens.CheckBadgeSize)
                     .clip(PricingCardTokens.CheckBadgeShape)
                     .background(
-                        if (isGradient) onPrimary.copy(alpha = 0.22f)
+                        if (isGradient) Color.White.copy(alpha = 0.22f)
                         else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                     )
                     .border(
                         width = 1.adp,
-                        color = if (isGradient) onPrimary.copy(alpha = 0.40f)
+                        color = if (isGradient) Color.White.copy(alpha = 0.40f)
                         else MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
                         shape = PricingCardTokens.CheckBadgeShape,
                     ),
@@ -561,7 +572,7 @@ private fun PlanCard(
                 Icon(
                     painter            = painterResource(R.drawable.ic_check),
                     contentDescription = null,
-                    tint               = if (isGradient) onPrimary else MaterialTheme.colorScheme.primary,
+                    tint               = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
                     modifier           = Modifier.size(10.adp),
                 )
             }
@@ -632,10 +643,16 @@ internal fun PremiumCtaButton(
         ShimmerSweep(durationMs = 2_600, delayMs = 1_200)
 
         if (isPurchasing) {
-            CircularProgressIndicator(
-                color       = White,
-                strokeWidth = 2.adp,
-                modifier    = Modifier.size(22.adp),
+            LottieAnimation(
+                composition = rememberLottieComposition(
+                    LottieCompositionSpec.RawRes(com.venom.resources.R.raw.dot_loading)
+                ).value,
+                iterations = LottieConstants.IterateForever,
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth(0.35f)
+                    .blur(0.5.adp),
+                speed = 0.8f
             )
         } else {
             Row(
@@ -645,18 +662,18 @@ internal fun PremiumCtaButton(
                 Icon(
                     painter            = painterResource(R.drawable.ic_gem),
                     contentDescription = null,
-                    tint               = White,
+                    tint               = Color.White.copy(0.8f),
                     modifier           = Modifier.size(PrimaryButtonTokens.IconSize),
                 )
                 Text(
                     text  = stringResource(R.string.premium_cta_start_trial, trialDays),
                     style = TypeScale.BodyXLarge,
-                    color = White,
+                    color = Color.White.copy(0.8f),
                 )
                 Icon(
                     imageVector        = Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = null,
-                    tint               = White,
+                    tint               = Color.White.copy(0.8f),
                     modifier           = Modifier.size(PrimaryButtonTokens.IconSize),
                 )
             }
@@ -670,7 +687,7 @@ private fun SocialProofRow(
     modifier: Modifier = Modifier,
 ) {
     val initials   = socialProof?.avatarInitials ?: listOf("A", "J", "M", "S", "K")
-    val countLabel = socialProof?.userCountLabel ?: "50,000+"
+    val countLabel = socialProof?.userCountLabel ?: "5,000+"
 
     val avatarStep  = AvatarStackTokens.AvatarSize - AvatarStackTokens.Overlap
     val stackWidth  = remember(initials.size) {
@@ -741,7 +758,7 @@ private fun SocialProofRow(
             ) {
                 repeat(5) {
                     Icon(
-                        painter            = painterResource(R.drawable.ic_star),
+                        painter            = painterResource(R.drawable.ic_star_fill),
                         contentDescription = null,
                         tint               = MaterialTheme.colorScheme.tertiary,
                         modifier           = Modifier.size(AvatarStackTokens.StarSize),
@@ -793,42 +810,19 @@ internal fun SectionLabel(
 }
 
 @Composable
-internal fun PremiumCloseButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    IconButton(
-        onClick  = onClick,
-        modifier = modifier
-            .size(34.adp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-            .border(1.adp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), CircleShape),
-    ) {
-        Icon(
-            painter            = painterResource(R.drawable.ic_x),
-            contentDescription = stringResource(R.string.premium_close),
-            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier           = Modifier.size(15.adp),
-        )
-    }
-}
-
-@Composable
 internal fun ShimmerSweep(
     durationMs: Int = 2_600,
     delayMs: Int = 1_200,
     modifier: Modifier = Modifier,
 ) {
-    val transition = rememberInfiniteTransition(label = "shimmer")
+    val transition = rememberInfiniteTransition()
     val offset by transition.animateFloat(
         initialValue  = -1f,
         targetValue   = 2f,
         animationSpec = infiniteRepeatable(
             animation  = tween(durationMs, easing = FastOutSlowInEasing, delayMillis = delayMs),
             repeatMode = RepeatMode.Restart,
-        ),
-        label = "shimmerOffset",
+        )
     )
     Box(
         modifier = modifier
