@@ -36,12 +36,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,8 +49,10 @@ import androidx.compose.ui.unit.dp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
+import com.venom.synapse.core.theme.tokens.PackCardTokens
 import com.venom.synapse.core.theme.tokens.Radius
 import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.core.ui.state.LastStudiedLabel
 import com.venom.synapse.core.ui.state.PackDisplayItem
 import com.venom.synapse.core.ui.state.displayString
@@ -105,7 +105,10 @@ fun GridPackCard(
             onSwipeClose    = onSwipeClose,
             onTap           = onClick,
             verticalActions = true,
-            modifier        = modifier,
+            modifier = modifier.dropShadow(
+                shape = PackCardTokens.Shape,
+                shadow = PackCardTokens.Shadow.toShadow(customColor = colorSet.accent)
+            ),
         ) {
             GridPackCardSurface(
                 pack = pack,
@@ -129,7 +132,10 @@ fun GridPackCard(
             animatedProgress = animatedProgress,
             surfaceOnClick = onClick,
             onClick = onClick,
-            modifier = modifier,
+            modifier = modifier.dropShadow(
+                shape = PackCardTokens.Shape,
+                shadow = PackCardTokens.Shadow.toShadow(customColor = colorSet.accent)
+            ),
         )
     }
 }
@@ -152,9 +158,9 @@ private fun GridPackCardSurface(
         Card(
             onClick  = surfaceOnClick,
             modifier = modifier,
-            shape    = Radius.ShapeXL,
+            shape    = PackCardTokens.Shape,
             colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.adp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
             GridPackCardContent(
                 pack = pack,
@@ -169,7 +175,7 @@ private fun GridPackCardSurface(
     } else {
         Surface(
             modifier = modifier,
-            shape    = Radius.ShapeXL,
+            shape    = PackCardTokens.Shape,
             color    = MaterialTheme.colorScheme.surface,
         ) {
             GridPackCardContent(
@@ -254,7 +260,7 @@ private fun GridPackCardContent(
             hasDue      = hasDue,
         )
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(Spacing.Spacing4))
 
         // ── Continue CTA ──────────────────────────────────────────────
         ContinueButton(
@@ -317,7 +323,7 @@ private fun ProgressBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(4.adp)
+            .height(6.adp)
             .clip(Radius.ShapePill)
             .background(accent.copy(alpha = 0.13f)),
     ) {
@@ -325,33 +331,11 @@ private fun ProgressBar(
             modifier = Modifier
                 .fillMaxWidth(fraction)
                 .fillMaxHeight()
+                .dropShadow(
+                    shape  = Radius.ShapePill,
+                    shadow = Shadow(radius = 8.dp, color = accent, alpha = 0.55f),
+                )
                 .clip(Radius.ShapePill)
-                // ── Glow halo ─────────────────────────────────────────────
-                .drawBehind {
-                    drawIntoCanvas { canvas ->
-                        val paint = Paint().apply {
-                            asFrameworkPaint().apply {
-                                isAntiAlias = true
-                                color       = android.graphics.Color.TRANSPARENT
-                                setShadowLayer(
-                                    8f,
-                                    0f,
-                                    0f,
-                                    accent.copy(alpha = 0.55f).toArgb(),
-                                )
-                            }
-                        }
-                        canvas.drawRoundRect(
-                            left         = 0f,
-                            top          = 0f,
-                            right        = size.width,
-                            bottom       = size.height,
-                            radiusX      = size.height / 2f,
-                            radiusY      = size.height / 2f,
-                            paint        = paint,
-                        )
-                    }
-                }
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(accent.copy(alpha = 0.7f), accent),
@@ -488,7 +472,7 @@ private fun ContinueButton(
     onClick:  () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ctaGradient = MaterialTheme.synapse.gradients.primary
+    val ctaGradient = MaterialTheme.synapse.gradients.cta
 
     Box(
         modifier = modifier
