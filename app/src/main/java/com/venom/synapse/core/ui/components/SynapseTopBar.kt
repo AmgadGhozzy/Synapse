@@ -42,7 +42,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
@@ -51,6 +50,7 @@ import com.venom.synapse.core.theme.tokens.Gradients
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.synapse.core.theme.tokens.TopAppBarTokens
 import com.venom.ui.components.common.adp
+import com.venom.ui.components.common.asp
 
 /**
  * Shell-level top bar for the application.
@@ -147,7 +147,7 @@ private fun AvatarButton(
                     text = initial.take(1).uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.sp,
+                        fontSize = 16.asp,
                         color = Color.White
                     )
                 )
