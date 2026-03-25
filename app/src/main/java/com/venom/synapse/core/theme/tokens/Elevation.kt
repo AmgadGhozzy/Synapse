@@ -1,7 +1,9 @@
 package com.venom.synapse.core.theme.tokens
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.venom.synapse.core.theme.Amber600
 import com.venom.synapse.core.theme.Black
@@ -21,199 +23,186 @@ data class ElevationTokens(
 
 val defaultElevationTokens = ElevationTokens()
 
-/**
- * Elevation Token System.
- */
 object Elevation {
-
-    /**
-     * Level0 — 0dp
-     * Flat surfaces: BottomNav background (uses border instead), feature list rows,
-     * disabled / inactive states.
-     */
     val Level0: Dp = 0.dp
-
-    /**
-     * Level1 — 1dp
-     * Default card resting state: pack card base, stats cards (light), input containers.
-     */
     val Level1: Dp = 1.dp
-
-    /**
-     * Level2 — 3dp
-     * Cards in default visible state: pack list, profile section cards, feature groups.
-     */
     val Level2: Dp = 3.dp
-
-    /**
-     * Level3 — 6dp
-     * Floating elements: FAB ("New Pack"), nav bar with blurred backdrop,
-     * drag-held pack card, source tab selector.
-     */
     val Level3: Dp = 6.dp
-
-    /**
-     * Level4 — 8dp
-     * Elevated overlays: bottom sheets, modals, TopAppBar avatar pressed state,
-     * selected pricing card.
-     */
     val Level4: Dp = 8.dp
-
-    /**
-     * Level5 — 12dp
-     * Full-screen surfaces: paywall overlay, premium CTA glow, decorative phone frame.
-     */
     val Level5: Dp = 12.dp
 }
 
 /**
- * ShadowSpec — encapsulates a coloured shadow for brand-aware glow effects.
- *
- * @param elevation  M3 elevation dp (pass to Modifier.shadow elevation param).
- * @param blur       CSS-equivalent blur radius (for custom Canvas DrawScope use).
- * @param color      The tinted shadow / glow colour.
- * @param spread     CSS spread equivalent — informational only; not supported by
- *                   Modifier.shadow(). Implement via drawBehind canvas if needed.
+ * Design token for drop shadows.
+ * [elevation] — Y-axis offset (key light distance from surface).
+ * [blur] — blur radius (ambient softness).
+ * [spread] — shadow growth beyond shape bounds.
+ * [color] — shadow tint (pre-alpha).
+ * [offset] — explicit DpOffset; defaults to (0, elevation) when not set.
  */
 data class ShadowSpec(
     val elevation: Dp,
-    val blur:      Dp,
-    val color:     Color,
-    val spread:    Dp = 0.dp,
+    val blur: Dp,
+    val color: Color,
+    val spread: Dp = 0.dp,
+    val offset: DpOffset = DpOffset.Unspecified,
 )
 
 object ShadowTokens {
 
-    /**
-     * ShadowAvatar
-     * CSS: `box-shadow: 0 4px 14px rgba(91,78,232,0.20)` — TopAppBar avatar
-     * Usage: Avatar circle, small icon-button active states.
-     */
+    // Avatar / thumb shadow
     val ShadowAvatar = ShadowSpec(
         elevation = Elevation.Level2,
-        blur      = 14.dp,
-        color     = SynapseViolet600.copy(alpha = 0.20f),
+        blur = 16.dp,
+        spread = 0.5.dp,
+        color = SynapseViolet600.copy(alpha = 0.22f),
     )
 
-    /**
-     * ShadowCard
-     * CSS: `box-shadow: 0 0 0 1.5px rgba(91,78,232,0.55)` — pack card ring on swipe
-     * Usage: Elevated / active card border ring. Combine with Level2 elevation.
-     */
+    // Active pack card ring (swipe reveal)
     val ShadowCard = ShadowSpec(
         elevation = Elevation.Level2,
-        blur      = 0.dp,
-        color     = SynapseViolet600.copy(alpha = 0.55f),
-        spread    = 1.5.dp,
+        blur = 0.dp,
+        spread = 1.5.dp,
+        color = SynapseViolet600.copy(alpha = 0.55f),
     )
 
-    /**
-     * ShadowFab
-     * CSS: `box-shadow: 0 8px 28px rgba(91,78,232,0.20), 0 0 0 1px rgba(91,78,232,0.12)`
-     * Usage: FAB "New Pack" button, primary action buttons on hero cards.
-     */
+    // FAB
     val ShadowFab = ShadowSpec(
         elevation = Elevation.Level3,
-        blur      = 28.dp,
-        color     = SynapseViolet600.copy(alpha = 0.20f),
+        blur = 32.dp,
+        spread = 2.dp,
+        color = SynapseViolet600.copy(alpha = 0.18f),
     )
 
-    /**
-     * ShadowGoPro
-     * CSS: `box-shadow: 0 4px 18px rgba(217,119,6,0.45), 0 0 0 1px rgba(251,184,48,0.22)`
-     * Usage: "Go Pro" pill, gold / amber CTA buttons, premium action chips.
-     *
-     * Color: Amber600 (#D97706) — CSS rgba(217,119,6) is exact Amber600.
-     */
+    // "Go Pro" pill
     val ShadowGoPro = ShadowSpec(
         elevation = Elevation.Level2,
-        blur      = 18.dp,
-        color     = Amber600.copy(alpha = 0.45f),
+        blur = 20.dp,
+        spread = 1.dp,
+        color = Amber600.copy(alpha = 0.45f),
     )
 
-    /**
-     * ShadowBadge
-     * CSS: `box-shadow: 0 2px 8px rgba(217,119,6,0.40)` — "SAVE 50%" badge
-     * Usage: Small badge pills, promotional labels.
-     *
-     * Color: Amber600 (#D97706) — same amber family as ShadowGoPro, lower blur.
-     */
+    // Promotional badges
     val ShadowBadge = ShadowSpec(
         elevation = Elevation.Level1,
-        blur      = 8.dp,
-        color     = Amber600.copy(alpha = 0.40f),
+        blur = 10.dp,
+        color = Amber600.copy(alpha = 0.40f),
     )
 
-    /**
-     * ShadowAnnualCard
-     * CSS: `box-shadow: 0 8px 32px rgba(76,62,199,0.50)` — selected Annual pricing card
-     * Usage: Primary selected state for gradient-filled cards.
-     */
+    // Selected annual pricing card
     val ShadowAnnualCard = ShadowSpec(
         elevation = Elevation.Level4,
-        blur      = 32.dp,
-        color     = SynapseVioletMid.copy(alpha = 0.50f),
+        blur = 36.dp,
+        spread = 2.dp,
+        color = SynapseVioletMid.copy(alpha = 0.48f),
     )
 
-    /**
-     * ShadowCtaDark / ShadowCtaLight
-     * CSS dark:  `0 10px 40px rgba(76,62,199,0.55), 0 0 0 1px rgba(157,147,255,0.20)`
-     * CSS light: `0 10px 32px rgba(55,48,163,0.32), 0 0 0 1px rgba(91,78,232,0.18)`
-     * Usage: Full-width primary CTA button ("Start Free Trial", "Generate Quiz").
-     *
-     * ShadowCtaLight color: Indigo800 (#3730A3) — CSS rgba(55,48,163) is exact Indigo800.
-     */
+    // Full-width CTA button (dark theme)
     val ShadowCtaDark = ShadowSpec(
         elevation = Elevation.Level4,
-        blur      = 40.dp,
-        color     = SynapseVioletMid.copy(alpha = 0.55f),
+        blur = 44.dp,
+        spread = 2.dp,
+        color = SynapseVioletMid.copy(alpha = 0.50f),
     )
+
+    // Full-width CTA button (light theme)
     val ShadowCtaLight = ShadowSpec(
         elevation = Elevation.Level4,
-        blur      = 32.dp,
-        color     = Indigo800.copy(alpha = 0.32f),
+        blur = 36.dp,
+        spread = 1.dp,
+        color = Indigo800.copy(alpha = 0.30f),
     )
 
-    /**
-     * ShadowBottomNav
-     * CSS: `border-top: 1px solid C.border` + `backdrop-filter: blur(20px)`
-     * Usage: BottomNav bar — border + blur rather than a traditional shadow.
-     * Implement via Modifier.border() + graphicsLayer { renderEffect = BlurEffect(...) } (API 31+).
-     */
+    // Bottom nav top glow
     val ShadowBottomNav = ShadowSpec(
         elevation = Elevation.Level3,
-        blur      = 20.dp,   // backdrop blur
-        color     = SynapseViolet300.copy(alpha = 0.06f),
+        blur = 24.dp,
+        color = SynapseViolet300.copy(alpha = 0.06f),
     )
 
-    /**
-     * ShadowSheetDark / ShadowSheetLight
-     * CSS dark:  `box-shadow: 0 48px 120px rgba(0,0,0,0.80)`
-     * CSS light: `box-shadow: 0 48px 120px rgba(91,78,232,0.22)`
-     * Usage: Bottom sheets, modal drawers, paywall overlay.
-     */
+    // Bottom sheets / modal drawers (dark)
     val ShadowSheetDark = ShadowSpec(
         elevation = Elevation.Level5,
-        blur      = 120.dp,
-        color     = Black.copy(alpha = 0.80f),
-    )
-    val ShadowSheetLight = ShadowSpec(
-        elevation = Elevation.Level5,
-        blur      = 120.dp,
-        color     = SynapseViolet600.copy(alpha = 0.22f),
+        blur = 120.dp,
+        color = Black.copy(alpha = 0.80f),
     )
 
-    /**
-     * ShadowNavDot
-     * CSS: `box-shadow: 0 0 6px C.success` — online status dot on avatar
-     * Usage: Status dot glow.
-     *
-     * Color: Emerald400 (#34D399) — the dark-mode success colour; renders well
-     * on both light and dark avatar surfaces at this small dot size.
-     */
+    // Bottom sheets / modal drawers (light)
+    val ShadowSheetLight = ShadowSpec(
+        elevation = Elevation.Level5,
+        blur = 120.dp,
+        color = SynapseViolet600.copy(alpha = 0.22f),
+    )
+
+    // Online status dot glow
     val ShadowNavDot = ShadowSpec(
         elevation = Elevation.Level0,
-        blur      = 6.dp,
-        color     = Emerald400,
+        blur = 7.dp,
+        color = Emerald400,
+    )
+
+    // Hero / daily goal card
+    val ShadowHero = ShadowSpec(
+        elevation = Elevation.Level3,
+        blur = 36.dp,
+        spread = 2.dp,
+        color = SynapseViolet600.copy(alpha = 0.10f),
+        offset = DpOffset(0.dp, 4.dp),
+    )
+
+    // Stats chip cards
+    val ShadowStats = ShadowSpec(
+        elevation = Elevation.Level2,
+        blur = 20.dp,
+        spread = 0.5.dp,
+        color = Black.copy(alpha = 0.07f),
+        offset = DpOffset(0.dp, 2.dp),
+    )
+
+    // Grid pack cards
+    val ShadowPack = ShadowSpec(
+        elevation = Elevation.Level1,
+        blur = 16.dp,
+        spread = 1.dp,
+        color = Black.copy(alpha = 0.06f),
+        offset = DpOffset(0.dp, 2.dp),
+    )
+
+    // Flashcard / flip card
+    val ShadowFlashcard = ShadowSpec(
+        elevation = Elevation.Level4,
+        blur = 28.dp,
+        spread = 1.dp,
+        color = Black.copy(alpha = 0.08f),
+        offset = DpOffset(0.dp, 4.dp),
+    )
+
+    // SRS action buttons / hint chips
+    val ShadowQuizAction = ShadowSpec(
+        elevation = Elevation.Level2,
+        blur = 16.dp,
+        spread = 0.5.dp,
+        color = Black.copy(alpha = 0.08f),
+        offset = DpOffset(0.dp, 2.dp),
+    )
+
+    // Action sheet top edge
+    val ShadowQuizSheet = ShadowSpec(
+        elevation = Elevation.Level3,
+        blur = 24.dp,
+        spread = 1.dp,
+        color = Black.copy(alpha = 0.06f),
     )
 }
+
+/** Converts [ShadowSpec] to the Compose [Shadow] renderer. */
+fun ShadowSpec.toShadow(
+    customColor: Color? = null,
+    offset: DpOffset = if (this.offset != DpOffset.Unspecified) this.offset
+                       else DpOffset(0.dp, elevation),
+): Shadow = Shadow(
+    radius = blur,
+    color  = customColor?.copy(alpha = color.alpha) ?: color,
+    spread = spread,
+    offset = offset,
+)
