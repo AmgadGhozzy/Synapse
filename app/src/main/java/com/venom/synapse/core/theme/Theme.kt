@@ -9,6 +9,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.venom.domain.model.AppTheme
@@ -18,12 +19,13 @@ import com.venom.synapse.core.theme.tokens.DarkLevelColors
 import com.venom.synapse.core.theme.tokens.LightGradientTokens
 import com.venom.synapse.core.theme.tokens.LightLevelColors
 import com.venom.synapse.core.theme.tokens.LocalLevelColors
+import com.venom.synapse.core.theme.tokens.SynapseShapes
+import com.venom.synapse.core.theme.tokens.adp
+import com.venom.synapse.core.theme.tokens.buildAdaptiveElevation
+import com.venom.synapse.core.theme.tokens.buildAdaptiveRadius
+import com.venom.synapse.core.theme.tokens.buildAdaptiveSpacing
+import com.venom.synapse.core.theme.tokens.buildAdaptiveTypography
 import com.venom.synapse.core.theme.tokens.defaultComponentTokens
-import com.venom.synapse.core.theme.tokens.defaultElevationTokens
-import com.venom.synapse.core.theme.tokens.defaultRadiusTokens
-import com.venom.synapse.core.theme.tokens.defaultSpacingTokens
-import com.venom.synapse.core.theme.tokens.defaultTypographyTokens
-import com.venom.ui.components.common.adp
 import com.venom.ui.theme.Alexandria
 import com.venom.ui.theme.BiScriptFonts
 import com.venom.ui.theme.Cairo
@@ -81,8 +83,16 @@ fun SynapseTheme(
     }
 
     val colorScheme = if (isDark) SynapseDarkColorScheme else SynapseLightColorScheme
-
     val navBarColor = colorScheme.surfaceColorAtElevation(3.adp)
+
+    val config = LocalConfiguration.current
+    val w = config.screenWidthDp
+    val h = config.screenHeightDp
+
+    val adaptiveSpacing    = remember(w, h) { buildAdaptiveSpacing(w, h) }
+    val adaptiveRadius     = remember(w, h) { buildAdaptiveRadius(w, h) }
+    val adaptiveTypography = remember(w, h) { buildAdaptiveTypography(w, h) }
+    val adaptiveElevation  = remember(w, h) { buildAdaptiveElevation(w, h) }
 
     if (!view.isInEditMode) {
         SideEffect {
@@ -101,10 +111,10 @@ fun SynapseTheme(
         LocalLevelColors provides if (isDark) DarkLevelColors else LightLevelColors,
         LocalGlassColors provides if (isDark) DarkGlassColors else LightGlassColors,
         LocalGradientTokens provides if (isDark) DarkGradientTokens else LightGradientTokens,
-        LocalSpacingTokens provides defaultSpacingTokens,
-        LocalRadiusTokens provides defaultRadiusTokens,
-        LocalElevationTokens provides defaultElevationTokens,
-        LocalTypographyTokens provides defaultTypographyTokens,
+        LocalSpacingTokens provides adaptiveSpacing,
+        LocalRadiusTokens provides adaptiveRadius,
+        LocalTypographyTokens provides adaptiveTypography,
+        LocalElevationTokens provides adaptiveElevation,
         LocalComponentTokens provides defaultComponentTokens,
     ) {
         MaterialTheme(
@@ -114,6 +124,7 @@ fun SynapseTheme(
                 arabicFamily = biScriptFonts.arabic,
                 isArabic = arabicLocale,
             ),
+            shapes = SynapseShapes,
             content = content,
         )
     }
