@@ -7,15 +7,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.HeroCardTokens
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
 
 @Composable
@@ -25,16 +28,15 @@ fun CardShell(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val cardStyle = MaterialTheme.synapse.components.heroCard
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .shadow(
-                elevation = 3.adp,
-                shape = HeroCardTokens.Shape,
-                ambientColor = color.copy(alpha = 0.15f),
-                spotColor = color.copy(alpha = 0.30f)
+            .dropShadow(
+                shape = cardStyle.Shape,
+                shadow = cardStyle.Shadow.toShadow(customColor = color)
             )
-            .clip(HeroCardTokens.Shape)
+            .clip(cardStyle.Shape)
             .background(bgGrad)
             .border(0.5.adp, color.copy(alpha = 0.20f), HeroCardTokens.Shape)
     ) {
