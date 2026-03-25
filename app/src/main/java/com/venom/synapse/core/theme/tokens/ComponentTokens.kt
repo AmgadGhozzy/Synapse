@@ -6,30 +6,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.venom.synapse.core.theme.White
 
-/**
- * ══════════════════════════════════════════════════════════════════════════════
- * ComponentTokens.kt — Synapse Component Token System
- * ══════════════════════════════════════════════════════════════════════════════
- *
- * Component-level tokens compose primitive tokens (Spacing, Radius, Elevation,
- * TypeScale, BrandColors) into ready-to-use specifications for every major
- * Synapse UI component.
- *
- * Layering contract
- * ─────────────────
- * Colors.kt → BrandColors.kt → ComponentTokens.kt
- *
- * • Component tokens reference BrandColors or ShadowTokens for all colour
- *   values — never raw Colors.kt constants (one exception: White is used as
- *   a pure semi-transparent overlay tint, not a brand colour decision).
- * • Do NOT reference MaterialTheme.colorScheme here — these tokens are
- *   statically computed. Runtime M3 role lookups belong in composables.
- *
- * Source: All measurements extracted from the React component files.
- * ══════════════════════════════════════════════════════════════════════════════
- */
-
-// TOP APP BAR
 object TopAppBarTokens {
     val Height: Dp = 64.dp
     val HorizontalPadding: Dp = Spacing.Spacing20
@@ -38,7 +14,7 @@ object TopAppBarTokens {
     val AvatarShape = Radius.ShapeCircle
     val AvatarBorderWidth: Dp = 1.5.dp
 
-    val GoProHorizontalPadding: Dp = Spacing.Spacing12 + 2.dp  // px-3.5 = 14dp
+    val GoProHorizontalPadding: Dp = Spacing.Spacing12 + 2.dp
     val GoProVerticalPadding: Dp = Spacing.Spacing8
     val GoProShape = Radius.ShapePill
     val GoProIconSize: Dp = 14.dp
@@ -51,7 +27,6 @@ object TopAppBarTokens {
     val SubtitleFontStyle = TypeScale.BodySmallRegular
 }
 
-// BOTTOM NAVIGATION BAR
 object BottomNavTokens {
     val BarHeight: Dp = 66.dp
     val HorizontalPadding: Dp = Spacing.Spacing8
@@ -73,7 +48,6 @@ object BottomNavTokens {
     val IconLabelGap: Dp = Spacing.Spacing4
 }
 
-// DECK CARD
 object PackCardTokens {
     val Shape = Radius.ShapeXL
     val InternalShape = Radius.ShapeLarge
@@ -95,47 +69,23 @@ object PackCardTokens {
 
     val SwipeRevealWidth: Dp = 180.dp
     val SwipeThreshold: Dp = 55.dp
-    // React LibraryScreen: each action button is 56px wide (3 × 56 = 168px reveal)
     val ActionButtonWidth: Dp = 56.dp
-
-    // React LibraryScreen: icon inside action button is 16px
     val ActionIconSize: Dp = 16.dp
-
-    // React LibraryScreen: progress bar is 3px height
     val ProgressBarHeight: Dp = 3.dp
-
-    // React LibraryScreen: emoji text inside icon container
     val EmojiSize: TextUnit = 20.sp
-
-    // Matches MetaFontStyle for the info row (11sp — see TypeScale.LabelMedium)
     val MetaFontStyle = TypeScale.LabelMedium
-
-    // Mastered count label (10sp muted)
     val MasteredFontStyle = TypeScale.LabelXSmall
-
-    // Circular progress percentage font size
     val CircularProgressFontSize: TextUnit = 12.sp
-    /**
-     * Action button backgrounds — all via BrandColors to maintain the layering contract.
-     *
-     * ActionButtonEditBg: BrandPrimaryAction (#4C3EC7) — mid-deep violet for the
-     *   Edit action. Slightly deeper than gradient stops so it reads as a filled surface.
-     *
-     * ActionButtonShareBg: BrandSecondaryDeep (#3730A3) — indigo for the Share action,
-     *   visually distinct from violet Edit while staying in the brand palette.
-     *
-     * ActionButtonDeleteBg: BrandErrorDestructiveBg (#991B1B) — intentionally darker
-     *   than the standard error red so white icon labels pass WCAG AA on this surface.
-     */
+
     val ActionButtonEditBg   = BrandColors.BrandPrimaryAction
     val ActionButtonShareBg  = BrandColors.BrandSecondaryDeep
     val ActionButtonDeleteBg = BrandColors.BrandErrorDestructiveBg
     val ActionButtonMoreBg   = BrandColors.BrandSuccessDark
 
     val ActionLabelFontStyle = TypeScale.LabelXSmall
+    val Shadow = ShadowTokens.ShadowPack
 }
 
-// STATS CARD
 object StatsCardTokens {
     val Shape = Radius.ShapeLarge
     val Padding: Dp = Spacing.Spacing14
@@ -147,9 +97,9 @@ object StatsCardTokens {
     val IconSize: Dp = 13.dp
     val IconLabelGap: Dp = Spacing.Spacing4
     val BorderWidth: Dp = 1.dp
+    val Shadow = ShadowTokens.ShadowStats
 }
 
-// HERO GOAL CARD
 object HeroCardTokens {
     val Shape = Radius.ShapeXXL
     val Padding: Dp = Spacing.Spacing20
@@ -164,19 +114,15 @@ object HeroCardTokens {
 
     val InnerButtonShape = Radius.ShapeLarge
     val InnerButtonVerticalPadding: Dp = 12.dp
-    /**
-     * Semi-transparent white overlay — this is the one permitted raw-colour
-     * reference in ComponentTokens. It is a pure overlay tint (not a brand
-     * colour decision) and has no meaningful BrandColors semantic.
-     */
+    /** Semi-transparent white overlay — pure tint, not a brand colour decision. */
     val InnerButtonBg = White.copy(alpha = 0.18f)
     val InnerButtonFontStyle = TypeScale.BodyMedium
 
     val CircularProgressSize: Dp = 72.dp
     val CircularProgressStrokeWidth: Dp = 6.dp
+    val Shadow = ShadowTokens.ShadowHero
 }
 
-// FAB
 object FabTokens {
     val Shape = Radius.ShapeLarge
     val HorizontalPadding: Dp = Spacing.Spacing18
@@ -192,7 +138,6 @@ object FabTokens {
     val Shadow = ShadowTokens.ShadowFab
 }
 
-// PRIMARY BUTTON
 object PrimaryButtonTokens {
     val Shape = Radius.ShapeLarge
     val Height: Dp = 56.dp
@@ -201,13 +146,12 @@ object PrimaryButtonTokens {
     val FontStyle = TypeScale.BodyXLarge
     val IconSize: Dp = 18.dp
     val IconStrokeWidth: Float = 2.5f
-    val IconTextGap: Dp = Spacing.Spacing8 + 2.dp  // gap-2.5 = 10dp
+    val IconTextGap: Dp = Spacing.Spacing8 + 2.dp
 
     val ShadowDark = ShadowTokens.ShadowCtaDark
     val ShadowLight = ShadowTokens.ShadowCtaLight
 }
 
-// FEATURE LIST ROW
 object FeatureRowTokens {
     val ContainerShape = Radius.ShapeXL
     val ContainerBorderWidth: Dp = 1.dp
@@ -231,10 +175,9 @@ object FeatureRowTokens {
     val CheckIconStrokeWidth: Float = 3f
 }
 
-// PRICING CARD
 object PricingCardTokens {
-    val Shape = Radius.ShapeXXXL
-    val Padding: Dp = Spacing.Spacing16
+    val Shape = Radius.ShapeXXL
+    val Padding: Dp = Spacing.Spacing20
     val BorderWidth: Dp = 1.dp
     val BorderWidthSelected: Dp = 1.5.dp
 
@@ -250,10 +193,9 @@ object PricingCardTokens {
 
     val CheckBadgeSize: Dp = 18.dp
     val CheckBadgeShape = Radius.ShapeCircle
-    val CheckBadgeInset: Dp = 10.dp
+    val CheckBadgeInset: Dp = Spacing.Spacing16
 }
 
-// CHIP / PILL
 object ChipTokens {
     val Shape = Radius.ShapePill
     val HorizontalPadding: Dp = Spacing.Spacing16
@@ -271,7 +213,6 @@ object ChipTokens {
     val BorderWidth: Dp = 1.dp
 }
 
-// TOGGLE SWITCH
 object ToggleSwitchTokens {
     val Width: Dp = 44.dp
     val Height: Dp = 24.dp
@@ -287,7 +228,6 @@ object ToggleSwitchTokens {
     val ThumbShadowOn = ShadowTokens.ShadowAvatar
 }
 
-// INPUT FIELD
 object InputTokens {
     val Shape = Radius.ShapeLarge
     val HorizontalPadding: Dp = Spacing.Spacing16
@@ -300,12 +240,11 @@ object InputTokens {
     val LabelFontStyle = TypeScale.LabelSmall
 }
 
-// DROP ZONE
 object DropZoneTokens {
     val Shape = Radius.ShapeXXL
     val Padding: Dp = Spacing.Spacing24
     val BorderWidth: Dp = 1.5.dp
-    val BorderStyle = "dashed"   // not a Compose type — use PathEffect in canvas
+    val BorderStyle = "dashed"
 
     val IconSize: Dp = 32.dp
     val IconContainerSize: Dp = 64.dp
@@ -316,7 +255,6 @@ object DropZoneTokens {
     val HintFontStyle = TypeScale.LabelSmall
 }
 
-// SRS RATING BUTTONS
 object SrsButtonTokens {
     val Shape = Radius.ShapeLarge
     val VerticalPadding: Dp = 12.dp
@@ -328,6 +266,7 @@ object SrsButtonTokens {
 
     val IconSize: Dp = 16.dp
     val IconStrokeWidth: Float = 2.2f
+    val Shadow = ShadowTokens.ShadowQuizAction
 
     val HardColor  = BrandColors.BrandErrorDark
     val HardBg     = BrandColors.BrandErrorDark.copy(alpha = 0.10f)
@@ -342,7 +281,6 @@ object SrsButtonTokens {
     val EasyBorder = BrandColors.BrandSuccessDark.copy(alpha = 0.35f)
 }
 
-// QUIZ FLIP CARD
 object FlipCardTokens {
     val Shape = Radius.ShapeXXL
     val Padding: Dp = Spacing.Spacing24
@@ -353,9 +291,19 @@ object FlipCardTokens {
     val FrontFontStyle = TypeScale.BodyMedium
     val BackFontStyle = TypeScale.BodySmall
     val TapHintFontStyle = TypeScale.LabelSmall
+    val Shadow = ShadowTokens.ShadowFlashcard
 }
 
-// PRO BADGE
+object QuizCardTokens {
+    val Shape = Radius.ShapeXXL
+    val Shadow = ShadowTokens.ShadowQuizAction
+}
+
+object QuizSheetTokens {
+    val Shape = Radius.ShapeXXXL
+    val Shadow = ShadowTokens.ShadowQuizSheet
+}
+
 object ProBadgeTokens {
     val Shape = Radius.ShapePill
     val HorizontalPadding: Dp = Spacing.Spacing8
@@ -367,7 +315,6 @@ object ProBadgeTokens {
     val FontStyle = TypeScale.LabelMicro
 }
 
-// AVATAR STACK
 object AvatarStackTokens {
     val AvatarSize: Dp = 26.dp
     val AvatarShape = Radius.ShapeCircle
@@ -382,7 +329,6 @@ object AvatarStackTokens {
     val SubFontStyle = TypeScale.LabelSmall
 }
 
-// CIRCULAR PROGRESS
 object CircularProgressTokens {
     val DefaultSize: Dp = 46.dp
     val DefaultStrokeWidth: Dp = 3.5.dp
@@ -392,10 +338,6 @@ object CircularProgressTokens {
 
     val TrackAlpha: Float = 0.06f
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Data class wrapper — consumed via LocalComponentTokens / MaterialTheme.synapse
-// ─────────────────────────────────────────────────────────────────────────────
 
 data class ComponentTokens(
     val topAppBar:        TopAppBarTokens       = TopAppBarTokens,
@@ -413,6 +355,8 @@ data class ComponentTokens(
     val dropZone:         DropZoneTokens         = DropZoneTokens,
     val srsButton:        SrsButtonTokens        = SrsButtonTokens,
     val flipCard:         FlipCardTokens         = FlipCardTokens,
+    val quizCard:         QuizCardTokens         = QuizCardTokens,
+    val quizSheet:        QuizSheetTokens        = QuizSheetTokens,
     val proBadge:         ProBadgeTokens         = ProBadgeTokens,
     val avatarStack:      AvatarStackTokens      = AvatarStackTokens,
     val circularProgress: CircularProgressTokens = CircularProgressTokens,
