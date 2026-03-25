@@ -59,191 +59,104 @@ val DarkGradientTokens = GradientTokens(
     streakHero = Gradients.GradientStreakHeroDark,
 )
 
+private val diag = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+
 object Gradients {
 
-    // Primary
     val GradientPrimaryLight = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandPrimaryDeep, BrandColors.BrandPrimaryBright),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(BrandColors.BrandPrimaryDeep, SynapseViolet600),
+        start = Offset.Zero, end = diag,
     )
-
     val GradientPrimaryDark = Brush.linearGradient(
-        colors = listOf(BrandColors.BrandPrimaryBright, BrandColors.BrandPrimaryDeep),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf( BrandColors.BrandSecondaryDeep, BrandColors.BrandPrimaryLight),
+        start = Offset.Zero, end = diag,
     )
 
-    // Accent
     val GradientAccentLight = Brush.linearGradient(
         colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.PackViolet),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
-    /**
-     * GradientAccentDark — `linear-gradient(135deg, #6366F1, #A5B4FC)`
-     */
     val GradientAccentDark = Brush.linearGradient(
         colors = listOf(BrandColors.PackViolet, BrandColors.BrandSecondaryPale),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
 
-    // Gold
-
-    /**
-     * GradientGoldLight — `linear-gradient(135deg, #B45309, #F59E0B)`
-     * Usage: Streak flame avatar, "Go Pro" pill, premium badges.
-     */
+    /** Streak flame avatar, "Go Pro" pill, premium badges (light). */
     val GradientGoldLight = Brush.linearGradient(
         colors = listOf(BrandColors.BrandGoldDeep, BrandColors.PackAmber),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
-    /**
-     * GradientGoldDark — `linear-gradient(135deg, #92580A, #FBB830)`
-     * Usage: Same as GradientGoldLight on dark screens.
-     */
     val GradientGoldDark = Brush.linearGradient(
         colors = listOf(SynapseGoldDeep, SynapseGold),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
 
-    // Streak Hero Card
-
-    /**
-     * GradientStreakHeroLight
-     * CSS: `linear-gradient(135deg, #FFF8E7, #FEF3C7, #FDE68A22)`
-     *
-     * Color mapping:
-     *   SynapseStreakBgLight1 → #FFF8E7 (warm ivory — custom, warmer than Amber50)
-     *   Amber100              → #FEF3C7 (exact palette match)
-     *   Amber200@α=0.13       → #FDE68A22 (0x22 = 34/255 ≈ 0.133)
-     */
+    /** Warm ivory → Amber100 → Amber200@13% — streak hero card light bg. */
     val GradientStreakHeroLight = Brush.linearGradient(
-        colors = listOf(
-            SynapseStreakBgLight1,
-            Amber100,
-            Amber200.copy(alpha = 0.13f),
-        ),
-        start = Offset(0f, 0f),
-        end   = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(SynapseStreakBgLight1, Amber100, Amber200.copy(alpha = 0.13f)),
+        start = Offset.Zero, end = diag,
     )
-
-    /**
-     * GradientStreakHeroDark
-     * CSS: `linear-gradient(135deg, #1C1200, #2D1F02, #1A1200)`
-     *
-     * Color mapping:
-     *   SynapseStreakBgDark1 → #1C1200 (start + end — third stop is imperceptibly different)
-     *   SynapseStreakBgDark2 → #2D1F02 (mid)
-     */
     val GradientStreakHeroDark = Brush.linearGradient(
         colors = listOf(SynapseStreakBgDark1, SynapseStreakBgDark2, SynapseStreakBgDark1),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
-    // Title
 
     val GradientTitleLight = Brush.linearGradient(
         colors = listOf(SynapseVioletDarkest, SynapseVioletMid, BrandColors.PackViolet),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
     val GradientTitleDark = Brush.linearGradient(
         colors = listOf(Violet300, BrandColors.BrandPrimaryDark, BrandColors.BrandPrimaryBright),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
-    // CTA
 
     val GradientCtaLight = Brush.linearGradient(
-        colors = listOf(
-            BrandColors.BrandSecondaryDeep,
-            BrandColors.BrandPrimaryLight,
-            BrandColors.BrandPrimaryBright,
-        ),
-        start = Offset(0f, 0f),
-        end   = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.BrandPrimaryLight),
+        start = Offset.Zero, end = diag,
     )
-
     val GradientCtaDark = Brush.linearGradient(
-        colors = listOf(
-            SynapseVioletMid,
-            BrandColors.BrandPrimaryBright
-        ),
-        start = Offset(0f, 0f),
-        end   = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(SynapseVioletMid, SynapseViolet600),
+        start = Offset.Zero, end = diag,
     )
-
-    // Annual Pricing
 
     val GradientAnnualLight = Brush.linearGradient(
-        colors = listOf(
-            BrandColors.BrandSecondaryDeep,
-            BrandColors.BrandPrimaryLight,
-            BrandColors.BrandPrimaryBright,
-        ),
-        start = Offset(0f, 0f),
-        end   = Offset(0.85f * Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(BrandColors.BrandSecondaryDeep, BrandColors.BrandPrimaryLight, BrandColors.BrandPrimaryBright),
+        start = Offset.Zero, end = Offset(0.85f * Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
-
     val GradientAnnualDark = Brush.linearGradient(
-        colors = listOf(
-            SynapseVioletDarkAnnual,
-            BrandColors.BrandPrimaryLight,
-            BrandColors.BrandPrimaryBright,
-        ),
-        start = Offset(0f, 0f),
-        end   = Offset(0.85f * Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        colors = listOf(SynapseVioletDarkAnnual, BrandColors.BrandPrimaryLight, BrandColors.BrandPrimaryBright),
+        start = Offset.Zero, end = Offset(0.85f * Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
     )
-
-    // Go Pro Pill
 
     val GradientGoProLight = Brush.linearGradient(
         colors = listOf(BrandColors.BrandGoldDeep, BrandColors.BrandGoldLight, BrandColors.PackAmber),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
-
     val GradientGoProDark = Brush.linearGradient(
         colors = listOf(SynapseGoldDeep, BrandColors.BrandGoldLight, SynapseGold),
-        start  = Offset(0f, 0f),
-        end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
+        start = Offset.Zero, end = diag,
     )
 
-    // Page Ambient (ShaderBrush factories)
-    // IMPORTANT: Do NOT cache these at top-level. The ShaderBrush must be
-    // recreated per call site so createShader() receives the real pixel Size.
-    // Always wrap the call in `remember { Gradients.gradientPageLight() }`.
+    // IMPORTANT: Do NOT cache at top-level — ShaderBrush must be recreated per call site.
+    // Always wrap in `remember { Gradients.GradientPageLight }`.
 
-    /** Ambient radial gradient for the app page background (light mode). */
     val GradientPageLight: ShaderBrush = object : ShaderBrush() {
         override fun createShader(size: Size) = RadialGradientShader(
-            center      = Offset(size.width * 0.5f, 0f),
-            radius      = size.width * 0.85f,
-            colors      = listOf(SynapseViolet600.copy(alpha = 0.12f), SynapsePageLight),
-            colorStops  = listOf(0f, 0.6f),
+            center     = Offset(size.width * 0.5f, 0f),
+            radius     = size.width * 0.85f,
+            colors     = listOf(SynapseViolet600.copy(alpha = 0.12f), SynapsePageLight),
+            colorStops = listOf(0f, 0.6f),
         )
     }
 
-    /** Ambient radial gradient for the app page background (dark mode). */
     val GradientPageDark: ShaderBrush = object : ShaderBrush() {
         override fun createShader(size: Size) = RadialGradientShader(
-            center      = Offset(size.width * 0.5f, 0f),
-            radius      = size.width * 0.85f,
-            colors      = listOf(Violet800.copy(alpha = 0.16f), SynapsePageDark),
-            colorStops  = listOf(0f, 0.6f),
+            center     = Offset(size.width * 0.5f, 0f),
+            radius     = size.width * 0.85f,
+            colors     = listOf(Violet800.copy(alpha = 0.16f), SynapsePageDark),
+            colorStops = listOf(0f, 0.6f),
         )
     }
-
-    // Ambient Orb Helpers
 
     fun gradientOrbPrimaryDark(): ShaderBrush = object : ShaderBrush() {
         override fun createShader(size: Size) = RadialGradientShader(
@@ -263,10 +176,9 @@ object Gradients {
         )
     }
 
-    // Shimmer Overlay
     val GradientShimmer = Brush.linearGradient(
         colors = listOf(Transparent, White.copy(alpha = 0.16f), Transparent),
-        start  = Offset(0f, 0f),
+        start  = Offset.Zero,
         end    = Offset(Float.POSITIVE_INFINITY, 0f),
     )
 }
