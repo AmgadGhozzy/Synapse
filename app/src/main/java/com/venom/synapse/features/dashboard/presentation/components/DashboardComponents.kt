@@ -2,7 +2,6 @@ package com.venom.synapse.features.dashboard.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,22 +26,23 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.sp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.Radius
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.synapse.core.theme.tokens.StatsCardTokens
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
 import com.venom.ui.components.common.asp
+import com.venom.ui.components.common.localized
 
 @Immutable
 private data class StatChipData(
@@ -69,7 +69,7 @@ fun StatsRow(
     val chips = listOf(
         StatChipData(
             labelRes = R.string.stat_streak_label,
-            value = "$streak",
+            value = streak.localized(),
             subLabel = pluralStringResource(R.plurals.streak_days_noun, streak),
             accentColor = levelColors.normal.accentColor,
             bgColor = levelColors.normal.bgColor,
@@ -78,7 +78,7 @@ fun StatsRow(
         ),
         StatChipData(
             labelRes = R.string.stat_accuracy_label,
-            value = "$accuracyPercent%",
+            value = "${accuracyPercent.localized()}${stringResource(R.string.percent_mark)}",
             subLabel = if (accuracyDelta != null) {
                 stringResource(R.string.stats_card_retention_delta, accuracyDelta)
             } else {
@@ -136,12 +136,10 @@ private fun StatChip(
 ) {
 
     Box(
-        modifier = modifier.shadow(
-            elevation = 4.adp,
+        modifier = modifier.dropShadow(
             shape = StatsCardTokens.Shape,
-            ambientColor = accentColor.copy(alpha = 0.08f),
-            spotColor = accentColor.copy(alpha = 0.14f),
-        ),
+            shadow = StatsCardTokens.Shadow.toShadow(customColor = accentColor)
+        )
     ) {
         Column(
             modifier = Modifier
@@ -149,11 +147,6 @@ private fun StatChip(
                 .clip(StatsCardTokens.Shape)
                 .background(MaterialTheme.colorScheme.surface)
                 .background(bgColor)
-                .border(
-                    width = StatsCardTokens.BorderWidth,
-                    color = borderColor,
-                    shape = StatsCardTokens.Shape,
-                )
                 .padding(StatsCardTokens.Padding),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -171,7 +164,7 @@ private fun StatChip(
                     text = label,
                     style = StatsCardTokens.LabelFontStyle,
                     color = accentColor,
-                    letterSpacing = 0.07.sp,
+                    letterSpacing = 0.07.asp,
                 )
             }
 
@@ -197,7 +190,7 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.Spacing4),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -219,9 +212,7 @@ fun SectionHeader(
                 imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(start = Spacing.Spacing2)
-                    .size(13.adp),
+                modifier = Modifier.size(13.adp),
             )
         }
     }
