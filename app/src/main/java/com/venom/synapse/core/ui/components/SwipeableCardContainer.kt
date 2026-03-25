@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.lerp
 import com.venom.synapse.core.theme.tokens.PackCardTokens
+import com.venom.synapse.core.theme.tokens.Radius
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.ui.components.common.adp
 import com.venom.ui.components.common.asp
@@ -108,7 +109,7 @@ fun SwipeableCardContainer(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .clip(PackCardTokens.Shape),
+            .clip(Radius.ShapeXL),
     ) {
         SwipeActionsPanel(
             actions    = actions,
