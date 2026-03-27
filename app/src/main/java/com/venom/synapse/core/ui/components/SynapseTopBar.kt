@@ -50,7 +50,6 @@ import com.venom.synapse.core.theme.tokens.Gradients
 import com.venom.synapse.core.theme.tokens.Spacing
 import com.venom.synapse.core.theme.tokens.TopAppBarTokens
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 
 /**
  * Shell-level top bar for the application.
@@ -65,6 +64,7 @@ fun SynapseTopBar(
     modifier: Modifier = Modifier,
     profileAvatarUrl: String? = null,
     isPremium: Boolean = false,
+    onManageSubscriptionClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
@@ -72,7 +72,7 @@ fun SynapseTopBar(
             .systemBarsPadding()
             .padding(
                 horizontal = TopAppBarTokens.HorizontalPadding,
-                vertical = Spacing.Spacing12,
+                vertical = MaterialTheme.synapse.spacing.s12,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -80,7 +80,7 @@ fun SynapseTopBar(
             initial = userInitial,
             onClick = onProfileClick,
             profileAvatarUrl = profileAvatarUrl,
-            isPremium = isPremium
+            isPremium = isPremium,
         )
 
         Spacer(Modifier.width(Spacing.ListItemVerticalGap))
@@ -101,7 +101,7 @@ fun SynapseTopBar(
 
         GoProButton(
             isPremium = isPremium,
-            onClick = onPremiumClick,
+            onClick = if (isPremium) onManageSubscriptionClick else onPremiumClick,
         )
     }
 }
@@ -127,7 +127,8 @@ private fun AvatarButton(
                 .background(MaterialTheme.synapse.gradients.primary)
                 .border(
                     width = TopAppBarTokens.AvatarBorderWidth,
-                    brush = if (isPremium) MaterialTheme.synapse.gradients.gold else MaterialTheme.synapse.gradients.primary,
+                    brush = if (isPremium) MaterialTheme.synapse.gradients.gold
+                    else MaterialTheme.synapse.gradients.primary,
                     shape = TopAppBarTokens.AvatarShape,
                 )
                 .clickable(onClick = onClick),
@@ -147,8 +148,7 @@ private fun AvatarButton(
                     text = initial.take(1).uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        fontSize = 16.asp,
-                        color = Color.White
+                        color = Color.White,
                     )
                 )
             }
@@ -165,47 +165,52 @@ private fun GoProButton(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "goPro")
 
-    // ── Shimmer sweep ──────────────────────────────────────────────────────────
+    // ── Shimmer sweep — parked off-screen for premium users ────────────────────
     val shimmerFraction by infiniteTransition.animateFloat(
-        initialValue = -1.4f,
-        targetValue = 2.4f,
+        initialValue = if (isPremium) 100f else -1.4f,
+        targetValue  = if (isPremium) 100f else  2.4f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 3_000, delayMillis = 2_000, easing = EaseInOut),
             repeatMode = RepeatMode.Restart,
-        )
+        ),
+        label = "shimmer",
     )
 
-    // ── Outer pulse ring ───────────────────────────────────────────────────────
+    // ── Outer pulse ring — frozen at 1× scale / 0 alpha for premium users ─────
     val ringScale by infiniteTransition.animateFloat(
-        initialValue = 1.0f,
-        targetValue = 1.5f,
+        initialValue = if (isPremium) 1f else 1.0f,
+        targetValue  = if (isPremium) 1f else 1.5f,
         animationSpec = infiniteRepeatable(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
-        )
+        ),
+        label = "ringScale",
     )
     val ringAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.5f,
-        targetValue = 0f,
+        initialValue = if (isPremium) 0f else 0.5f,
+        targetValue  = if (isPremium) 0f else 0f,
         animationSpec = infiniteRepeatable(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
-        )
+        ),
+        label = "ringAlpha",
     )
 
-    // ── Crown rock ─────────────────────────────────────────────────────────────
+    // ── Crown rock — kept for all users (status indicator) ────────────────────
     val crownRotation by infiniteTransition.animateFloat(
         initialValue = -10f,
-        targetValue = 10f,
+        targetValue  = 10f,
         animationSpec = infiniteRepeatable(
             animation = tween(4_000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse,
-        )
+        ),
+        label = "crownRotation",
     )
 
+    // ── Shake — kept for all users ────────────────────────────────────────────
     val shakeOffset by infiniteTransition.animateFloat(
         initialValue = 0f,
-        targetValue = 0f,
+        targetValue  = 0f,
         animationSpec = infiniteRepeatable(
             animation = keyframes {
                 durationMillis = 10_000
@@ -217,7 +222,6 @@ private fun GoProButton(
                 3f at 300
                 3f at 360
                 0f at 420
-                // silent until end of cycle
                 0f at 10_000
             },
             repeatMode = RepeatMode.Restart,
@@ -236,14 +240,14 @@ private fun GoProButton(
     ) {
         val pillWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
 
-        // Outer pulse ring (drawn behind pill)
+        // Outer pulse ring (drawn behind pill, invisible when premium)
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .graphicsLayer {
                     scaleX = ringScale
                     scaleY = ringScale
-                    alpha = ringAlpha
+                    alpha  = ringAlpha
                 }
                 .border(
                     width = 1.5.adp,
@@ -265,7 +269,7 @@ private fun GoProButton(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(MaterialTheme.synapse.gradients.goPro),
+                        .background(MaterialTheme.synapse.gradients.gold),
                 )
 
                 // Angled shimmer
@@ -274,20 +278,20 @@ private fun GoProButton(
                         .matchParentSize()
                         .graphicsLayer {
                             translationX = shimmerFraction * pillWidthPx
-                            rotationZ = 25f          // diagonal angle
-                            scaleX = 0.25f        // narrow beam width
+                            rotationZ    = 25f
+                            scaleX       = 0.25f
                         }
                         .background(Gradients.GradientShimmer),
                 )
 
-                // Content row (owns the padding)
+                // Content row
                 Row(
                     modifier = Modifier.padding(
                         horizontal = TopAppBarTokens.GoProHorizontalPadding,
-                        vertical = TopAppBarTokens.GoProVerticalPadding,
+                        vertical   = TopAppBarTokens.GoProVerticalPadding,
                     ),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_crown),
@@ -298,11 +302,11 @@ private fun GoProButton(
                             .graphicsLayer { rotationZ = crownRotation },
                     )
                     Text(
-                        text = pillLabel,
-                        fontSize = TopAppBarTokens.GoProFontSize,
-                        fontWeight = TopAppBarTokens.GoProFontWeight,
+                        text          = pillLabel,
+                        fontSize      = TopAppBarTokens.GoProFontSize,
+                        fontWeight    = TopAppBarTokens.GoProFontWeight,
                         letterSpacing = TopAppBarTokens.GoProLetterSpacing,
-                        color = Color.White,
+                        color         = Color.White,
                     )
                 }
             }
@@ -331,7 +335,7 @@ private fun SynapseTopBarPreview() {
 @Preview(
     name = "Premium · Dark",
     uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true
+    showBackground = true,
 )
 @Composable
 private fun SynapseTopBarPremiumPreview() {
@@ -343,6 +347,7 @@ private fun SynapseTopBarPremiumPreview() {
             isPremium = true,
             onProfileClick = {},
             onPremiumClick = {},
+            onManageSubscriptionClick = {},
         )
     }
 }
