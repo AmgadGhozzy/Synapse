@@ -1,5 +1,7 @@
 package com.venom.synapse.ui
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -24,7 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.core.ui.components.SynapseTopBar
@@ -42,6 +46,7 @@ import com.venom.ui.navigation.BottomBar
 import com.venom.ui.navigation.MotionTokens
 
 // ── Root composable ───────────────────────────────────────────────────────────
+
 @Composable
 fun SynapseApp(
     appState: AppState = rememberSynapseAppState(),
@@ -54,23 +59,24 @@ fun SynapseApp(
     LaunchedEffect(Unit) {
         rootViewModel.uiEffects.collect { effect ->
             when (effect) {
-                is UiEffect.Navigate -> appState.navigateTo(effect.route)
+                is UiEffect.Navigate     -> appState.navigateTo(effect.route)
                 is UiEffect.NavigateBack -> appState.navigateBack()
-                else -> Unit
+                else                     -> Unit
             }
         }
     }
 
     SynapseShell(
-        appState = appState,
-        onboardingDone = onboardingDone,
+        appState         = appState,
+        onboardingDone   = onboardingDone,
         subtitleOverride = subtitleOverride,
-        rootViewModel = rootViewModel,
+        rootViewModel    = rootViewModel,
         profileViewModel = profileViewModel,
     )
 }
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
+
 private val BarEnter =
     slideInVertically(tween(280, easing = MotionTokens.EmphasizedDecelerate)) { it } +
             fadeIn(tween(230, easing = MotionTokens.StandardDecelerate))
@@ -81,42 +87,43 @@ private val BarExit =
 
 @Composable
 private fun SynapseShell(
-    appState: AppState,
-    onboardingDone: Boolean,
+    appState        : AppState,
+    onboardingDone  : Boolean,
     subtitleOverride: Int?,
-    rootViewModel: RootViewModel = hiltViewModel(),
+    rootViewModel   : RootViewModel   = hiltViewModel(),
     profileViewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val barConfig: BarConfig = appState.barConfig
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier            = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor      = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .padding(innerPadding)
-                .fillMaxSize()
+                .fillMaxSize(),
         ) {
             SynapseNavGraph(
-                navController = appState.navController,
+                navController  = appState.navController,
                 onboardingDone = onboardingDone,
-                rootViewModel = rootViewModel,
+                rootViewModel  = rootViewModel,
             )
 
             // Bottom nav
             AnimatedVisibility(
-                visible = barConfig.showBottomBar,
-                enter = BarEnter,
-                exit = BarExit,
+                visible  = barConfig.showBottomBar,
+                enter    = BarEnter,
+                exit     = BarExit,
                 modifier = Modifier
                     .navigationBarsPadding()
                     .align(Alignment.BottomCenter),
             ) {
                 BottomBar(
-                    items = SynapseNavigationItems.visibleItems,
+                    items        = SynapseNavigationItems.visibleItems,
                     navController = appState.navController,
                     currentRoute = appState.currentRoute,
                 )
@@ -125,8 +132,8 @@ private fun SynapseShell(
             // Top bar overlaid on content with gradient backing
             AnimatedVisibility(
                 visible = barConfig.showTopBar,
-                enter = BarEnter,
-                exit = BarExit,
+                enter   = BarEnter,
+                exit    = BarExit,
             ) {
                 Box {
                     // Gradient scrim behind top bar fades
@@ -137,31 +144,58 @@ private fun SynapseShell(
                             .background(
                                 Brush.verticalGradient(
                                     colorStops = arrayOf(
-                                        0.0f to MaterialTheme.colorScheme.background,
+                                        0.0f  to MaterialTheme.colorScheme.background,
                                         0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
-                                        1.0f to Color.Transparent,
+                                        1.0f  to Color.Transparent,
                                     )
                                 )
-                            )
+                            ),
                     )
 
                     SynapseTopBar(
-                        title = stringResource(appState.currentScreen.titleRes),
+                        title    = stringResource(appState.currentScreen.titleRes),
                         subtitle = subtitleOverride
                             ?.let { stringResource(it) }
                             ?: appState.currentScreen.subtitleRes
                                 .takeIf { it != 0 }
                                 ?.let { stringResource(it) }
                             ?: "",
-                        profileAvatarUrl = profileState.avatarUrl,
-                        userInitial = profileState.avatarInitial.toString(),
-                        onProfileClick = { appState.navigateTo(SynapseScreen.Profile.route) },
-                        onPremiumClick = { appState.navigateTo(SynapseScreen.Premium.route) },
-                        isPremium = profileState.isPremium,
-                        modifier = Modifier.statusBarsPadding(),
+                        profileAvatarUrl          = profileState.avatarUrl,
+                        userInitial               = profileState.avatarInitial.toString(),
+                        isPremium                 = profileState.isPremium,
+                        onProfileClick            = { appState.navigateTo(SynapseScreen.Profile.route) },
+                        onPremiumClick            = { appState.navigateTo(SynapseScreen.Premium.route) },
+                        onManageSubscriptionClick = { openSubscriptionManagement(context) },
+                        modifier                  = Modifier.statusBarsPadding(),
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * Deep-links the user to Google Play's subscription management page for this app.
+ * @param skuId  Optional Play product ID. When provided, opens the specific
+ *               plan page instead of the full subscriptions list.
+ */
+internal fun openSubscriptionManagement(
+    context: Context,
+    skuId  : String? = null,
+) {
+    val baseUrl = "https://play.google.com/store/account/subscriptions"
+    val url = buildString {
+        append(baseUrl)
+        append("?package=${context.packageName}")
+        if (!skuId.isNullOrBlank()) append("&sku=$skuId")
+    }
+    context.startActivity(
+        Intent(Intent.ACTION_VIEW, url.toUri()).apply {
+            // Prefer the Play Store app; fall back to browser automatically.
+            setPackage("com.android.vending")
+            // If Play Store is not installed, Android strips setPackage and
+            // the Intent resolves to a browser — no crash.
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    )
 }
