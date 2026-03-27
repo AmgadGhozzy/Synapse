@@ -6,7 +6,7 @@ import android.util.Log
 import com.venom.analytics.AnalyticsManager
 import com.venom.analytics.CrashlyticsManager
 import com.venom.di.NetworkEntryPoint
-import com.venom.domain.provider.AppConfigProvider
+import com.venom.synapse.data.repo.AppConfigProvider
 import com.venom.synapse.domain.repo.IAuthRepository
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
@@ -31,6 +31,10 @@ class Application : Application() {
         initializeAnalytics()
         bootstrapAuth()
         preWarmNetworkClients()
+        
+        applicationScope.launch {
+            appConfigProvider.fetchAndActivate()
+        }
 
         if (BuildConfig.DEBUG) {
             enableStrictMode()
