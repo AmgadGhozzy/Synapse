@@ -1,9 +1,14 @@
 package com.venom.synapse.navigation
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -17,11 +22,13 @@ import com.venom.synapse.features.dashboard.presentation.viewmodel.DashboardView
 import com.venom.synapse.features.library.presentation.screen.LibraryScreen
 import com.venom.synapse.features.onboarding.presentation.screen.OnboardingScreen
 import com.venom.synapse.features.premium.presentation.screen.SynapsePremiumScreen
+import com.venom.synapse.features.premium.presentation.viewmodel.EntitlementViewModel
 import com.venom.synapse.features.profile.presentation.screen.ProfileScreen
 import com.venom.synapse.features.session.presentation.screen.QuizScreen
 import com.venom.synapse.features.session.presentation.screen.SessionSummaryScreen
 import com.venom.synapse.features.session.presentation.viewmodel.SessionViewModel
 import com.venom.synapse.features.stats.presentation.screen.StatsScreen
+import com.venom.synapse.ui.openSubscriptionManagement
 import com.venom.synapse.ui.viewmodel.RootViewModel
 import com.venom.ui.navigation.AnimatedNavHost
 import com.venom.ui.navigation.NavTransitions
@@ -97,14 +104,14 @@ fun SynapseNavGraph(
 
         // ── Quiz Flow (Shared ViewModel) ──────────────────────────────
         navigation(
-            route = SynapseScreen.Quiz.route,
+            route            = SynapseScreen.Quiz.route,
             startDestination = "synapse/quiz/content",
-            arguments = listOf(
+            arguments        = listOf(
                 navArgument(SynapseScreen.Quiz.ARG_PACK_ID) { type = NavType.LongType },
             ),
         ) {
             composable(
-                route = "synapse/quiz/content", // <-- FIX: Changed from SynapseScreen.Quiz.route to match the startDestination
+                route              = "synapse/quiz/content",
                 enterTransition    = NavTransitions.verticalEnter(),
                 exitTransition     = NavTransitions.verticalExit(),
                 popEnterTransition = NavTransitions.verticalPopEnter(),
@@ -122,7 +129,7 @@ fun SynapseNavGraph(
             }
 
             composable(
-                route = SynapseScreen.SessionSummary.route,
+                route              = SynapseScreen.SessionSummary.route,
                 enterTransition    = NavTransitions.horizontalEnter(),
                 exitTransition     = NavTransitions.horizontalExit(),
                 popEnterTransition = NavTransitions.horizontalPopEnter(),
@@ -133,8 +140,8 @@ fun SynapseNavGraph(
                 }
                 val vm: SessionViewModel = hiltViewModel(parentEntry)
                 SessionSummaryScreen(
-                    viewModel    = vm,
-                    onBack = {
+                    viewModel = vm,
+                    onBack    = {
                         navController.navigate(SynapseScreen.Dashboard.route) {
                             popUpTo(SynapseScreen.Dashboard.route) { inclusive = false }
                         }
@@ -156,7 +163,6 @@ fun SynapseNavGraph(
                 onNavigateToSession = { packId ->
                     navController.navigate(SynapseScreen.Quiz.createRoute(packId))
                 },
-                // Pack-limit hit inside the wizard → go straight to paywall.
                 onNavigateToPremium = {
                     navController.popBackStack()
                     navController.navigate(SynapseScreen.Premium.route)
@@ -172,9 +178,21 @@ fun SynapseNavGraph(
             popEnterTransition = NavTransitions.verticalPopEnter(),
             popExitTransition  = NavTransitions.verticalPopExit(),
         ) {
+            val entitlementViewModel: EntitlementViewModel = hiltViewModel()
+            val entitlement by entitlementViewModel.entitlement.collectAsStateWithLifecycle()
+            val context: Context = LocalContext.current
+
+            LaunchedEffect(entitlement) {
+                if (entitlement?.isAccessGranted == true) {
+                    navController.popBackStack()
+                    // TODO: send straight to Play billing
+                    openSubscriptionManagement(context, skuId = null)
+                }
+            }
+
             SynapsePremiumScreen(
-                onDismiss        = { navController.popBackStack() },
-                onPurchaseSuccess = {},
+                onDismiss         = { navController.popBackStack() },
+                onPurchaseSuccess = { navController.popBackStack() },
             )
         }
     }
