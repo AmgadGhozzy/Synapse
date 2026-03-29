@@ -36,12 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.Radius
-import com.venom.synapse.core.theme.tokens.Spacing
-import com.venom.synapse.core.theme.tokens.StatsCardTokens
+import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 import com.venom.ui.components.common.localized
 
 @Immutable
@@ -93,9 +90,9 @@ fun StatsRow(
             labelRes = R.string.stat_time_label,
             value = stringResource(R.string.stat_time_value, timeMinutes),
             subLabel = stringResource(R.string.stat_time_sub),
-            accentColor = levelColors.elite.accentColor,
-            bgColor = levelColors.elite.bgColor,
-            borderColor = levelColors.elite.borderColor,
+            accentColor = levelColors.master.accentColor,
+            bgColor = levelColors.master.bgColor,
+            borderColor = levelColors.master.borderColor,
             iconRes = R.drawable.ic_clock,
         ),
     )
@@ -104,7 +101,7 @@ fun StatsRow(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing10),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
     ) {
         chips.forEach { chip ->
             StatChip(
@@ -137,46 +134,45 @@ private fun StatChip(
 
     Box(
         modifier = modifier.dropShadow(
-            shape = StatsCardTokens.Shape,
-            shadow = StatsCardTokens.Shadow.toShadow(customColor = accentColor)
+            shape = MaterialTheme.synapse.radius.lg,
+            shadow = ShadowTokens.ShadowStats.toShadow(customColor = accentColor)
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(StatsCardTokens.Shape)
+                .clip(MaterialTheme.synapse.radius.lg)
                 .background(MaterialTheme.colorScheme.surface)
                 .background(bgColor)
-                .padding(StatsCardTokens.Padding),
+                .padding(MaterialTheme.synapse.spacing.s16),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(StatsCardTokens.IconLabelGap),
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
             ) {
                 Icon(
                     painter = painterResource(iconRes),
                     contentDescription = null,
                     tint = accentColor,
-                    modifier = Modifier.size(StatsCardTokens.IconSize),
+                    modifier = Modifier.size(16.adp),
                 )
                 Text(
                     text = label,
-                    style = StatsCardTokens.LabelFontStyle,
+                    style = MaterialTheme.typography.labelMedium,
                     color = accentColor,
-                    letterSpacing = 0.07.asp,
                 )
             }
 
             Text(
                 text = value,
-                style = StatsCardTokens.ValueFontStyle,
+                style = MaterialTheme.typography.headlineSmall,
                 color = accentColor,
             )
 
             Text(
                 text = subLabel,
-                style = StatsCardTokens.SubFontStyle,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -190,7 +186,7 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = Spacing.Spacing4),
+        modifier = modifier.fillMaxWidth().padding(horizontal = MaterialTheme.synapse.spacing.s4),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -204,7 +200,7 @@ fun SectionHeader(
         TextButton(onClick = onSeeAll) {
             Text(
                 text = stringResource(R.string.action_see_all),
-                fontSize = 12.asp,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -228,10 +224,10 @@ fun EmptyPacksState(
         modifier = modifier
             .fillMaxWidth()
             .height(140.adp),
-        shape = Radius.ShapeXXL,
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         border = androidx.compose.foundation.BorderStroke(
-            Spacing.Spacing2 / 2,
+            MaterialTheme.synapse.spacing.s2 / 2,
             MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
         ),
     ) {
@@ -246,10 +242,10 @@ fun EmptyPacksState(
                 tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                 modifier = Modifier.size(32.adp),
             )
-            Spacer(Modifier.height(Spacing.Spacing12))
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
             Text(
                 text = stringResource(R.string.empty_packs_hint),
-                fontSize = 13.asp,
+                style = MaterialTheme.synapse.typography.labelXLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -270,8 +266,8 @@ private fun StatsRowPreview() {
             accuracyDeltaRes = R.string.stats_card_this_week,
             timeMinutes = 18,
             modifier = Modifier.padding(
-                horizontal = Spacing.ScreenHorizontalPadding,
-                vertical = Spacing.Spacing4,
+                horizontal = MaterialTheme.synapse.spacing.screen,
+                vertical = MaterialTheme.synapse.spacing.s4,
             ),
         )
     }
@@ -289,7 +285,7 @@ private fun SectionHeaderPreview() {
         SectionHeader(
             title = "Jump Back In",
             onSeeAll = {},
-            modifier = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
@@ -305,7 +301,7 @@ private fun EmptyPacksPreview() {
     SynapseTheme {
         EmptyPacksState(
             onAddPack = {},
-            modifier = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
