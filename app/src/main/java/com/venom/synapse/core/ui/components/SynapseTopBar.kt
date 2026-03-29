@@ -15,31 +15,38 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
@@ -47,8 +54,8 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.Gradients
-import com.venom.synapse.core.theme.tokens.Spacing
-import com.venom.synapse.core.theme.tokens.TopAppBarTokens
+import com.venom.synapse.core.theme.tokens.ShadowTokens
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
 
 /**
@@ -71,8 +78,8 @@ fun SynapseTopBar(
             .fillMaxWidth()
             .systemBarsPadding()
             .padding(
-                horizontal = TopAppBarTokens.HorizontalPadding,
-                vertical = MaterialTheme.synapse.spacing.s12,
+                horizontal = MaterialTheme.synapse.spacing.s24,
+                vertical = MaterialTheme.synapse.spacing.s8,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -83,17 +90,17 @@ fun SynapseTopBar(
             isPremium = isPremium,
         )
 
-        Spacer(Modifier.width(Spacing.ListItemVerticalGap))
+        Spacer(Modifier.width(MaterialTheme.synapse.spacing.listItemGap))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = title,
-                style = TopAppBarTokens.TitleFontStyle,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -107,7 +114,7 @@ fun SynapseTopBar(
 }
 
 // ── Avatar Button ─────────────────────────────────────────────────────────────
-
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AvatarButton(
     initial: String,
@@ -116,20 +123,19 @@ private fun AvatarButton(
     isPremium: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val shape = MaterialShapes.Cookie9Sided.toShape()
+
     Box(
-        modifier = modifier.size(TopAppBarTokens.AvatarSize),
         contentAlignment = Alignment.BottomEnd,
     ) {
         Box(
-            modifier = Modifier
-                .size(TopAppBarTokens.AvatarSize)
-                .clip(TopAppBarTokens.AvatarShape)
-                .background(MaterialTheme.synapse.gradients.primary)
+            modifier = modifier
+                .size(56.adp)
+                .background(MaterialTheme.synapse.gradients.primary,shape)
                 .border(
-                    width = TopAppBarTokens.AvatarBorderWidth,
-                    brush = if (isPremium) MaterialTheme.synapse.gradients.gold
-                    else MaterialTheme.synapse.gradients.primary,
-                    shape = TopAppBarTokens.AvatarShape,
+                   2.adp,
+                    if (isPremium) MaterialTheme.synapse.gradients.gold else MaterialTheme.synapse.gradients.primary,
+                     shape
                 )
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
@@ -139,16 +145,14 @@ private fun AvatarButton(
                     model = profileAvatarUrl,
                     contentDescription = stringResource(R.string.profile_photo_description),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(80.adp)
-                        .clip(CircleShape),
+                    modifier = Modifier.fillMaxSize().clip(shape),
                 )
             } else {
                 Text(
                     text = initial.take(1).uppercase(),
-                    style = MaterialTheme.typography.labelLarge.copy(
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
+                        color = Color.White.copy(0.9f),
                     )
                 )
             }
@@ -163,7 +167,8 @@ private fun GoProButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "goPro")
+    val infiniteTransition = rememberInfiniteTransition()
+    var pillWidthPx by remember { mutableFloatStateOf(0f) }
 
     // ── Shimmer sweep — parked off-screen for premium users ────────────────────
     val shimmerFraction by infiniteTransition.animateFloat(
@@ -173,7 +178,6 @@ private fun GoProButton(
             animation = tween(durationMillis = 3_000, delayMillis = 2_000, easing = EaseInOut),
             repeatMode = RepeatMode.Restart,
         ),
-        label = "shimmer",
     )
 
     // ── Outer pulse ring — frozen at 1× scale / 0 alpha for premium users ─────
@@ -184,7 +188,6 @@ private fun GoProButton(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
         ),
-        label = "ringScale",
     )
     val ringAlpha by infiniteTransition.animateFloat(
         initialValue = if (isPremium) 0f else 0.5f,
@@ -193,7 +196,6 @@ private fun GoProButton(
             animation = tween(2_400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
         ),
-        label = "ringAlpha",
     )
 
     // ── Crown rock — kept for all users (status indicator) ────────────────────
@@ -204,7 +206,6 @@ private fun GoProButton(
             animation = tween(4_000, easing = EaseInOutSine),
             repeatMode = RepeatMode.Reverse,
         ),
-        label = "crownRotation",
     )
 
     // ── Shake — kept for all users ────────────────────────────────────────────
@@ -234,13 +235,15 @@ private fun GoProButton(
         stringResource(R.string.go_pro_label)
     }
 
-    BoxWithConstraints(
-        modifier = modifier.graphicsLayer { translationX = shakeOffset },
+    Box(
+        modifier = modifier
+            .graphicsLayer { translationX = shakeOffset }
+            .dropShadow(
+                shape  = MaterialTheme.synapse.radius.pill,
+                shadow = ShadowTokens.ShadowFab.toShadow(customColor = MaterialTheme.synapse.semantic.gold),
+            ),
         contentAlignment = Alignment.Center,
     ) {
-        val pillWidthPx = with(LocalDensity.current) { maxWidth.toPx() }
-
-        // Outer pulse ring (drawn behind pill, invisible when premium)
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -252,16 +255,17 @@ private fun GoProButton(
                 .border(
                     width = 1.5.adp,
                     color = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.70f),
-                    shape = TopAppBarTokens.GoProShape,
+                    shape = MaterialTheme.synapse.radius.pill,
                 ),
         )
 
         // Pill surface
         Surface(
             onClick = onClick,
-            shape = TopAppBarTokens.GoProShape,
+            modifier = Modifier.onSizeChanged { pillWidthPx = it.width.toFloat() },
+            shape = MaterialTheme.synapse.radius.pill,
             color = Color.Transparent,
-            contentColor = Color.White,
+            contentColor = Color.White.copy(0.9f),
         ) {
             Box(contentAlignment = Alignment.Center) {
 
@@ -284,11 +288,10 @@ private fun GoProButton(
                         .background(Gradients.GradientShimmer),
                 )
 
-                // Content row
                 Row(
                     modifier = Modifier.padding(
-                        horizontal = TopAppBarTokens.GoProHorizontalPadding,
-                        vertical   = TopAppBarTokens.GoProVerticalPadding,
+                        horizontal = MaterialTheme.synapse.spacing.s14,
+                        vertical   = MaterialTheme.synapse.spacing.s8,
                     ),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
@@ -296,17 +299,17 @@ private fun GoProButton(
                     Icon(
                         painter = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = Color.White.copy(0.9f),
                         modifier = Modifier
-                            .size(TopAppBarTokens.GoProIconSize)
+                            .size(16.adp)
                             .graphicsLayer { rotationZ = crownRotation },
                     )
                     Text(
-                        text          = pillLabel,
-                        fontSize      = TopAppBarTokens.GoProFontSize,
-                        fontWeight    = TopAppBarTokens.GoProFontWeight,
-                        letterSpacing = TopAppBarTokens.GoProLetterSpacing,
-                        color         = Color.White,
+                        text  = pillLabel,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        ),
+                        color = Color.White.copy(0.9f),
                     )
                 }
             }
@@ -315,7 +318,6 @@ private fun GoProButton(
 }
 
 // ── Previews ─────────────────────────────────────────────────────────────────
-
 @Preview(name = "Light Mode", showBackground = true)
 @Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
