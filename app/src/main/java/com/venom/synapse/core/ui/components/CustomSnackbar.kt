@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
@@ -31,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.venom.synapse.core.theme.synapse
+import com.venom.synapse.core.theme.tokens.adp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -169,7 +169,11 @@ fun SnackbarHost(
             hostState = controller.hostState,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 80.dp, start = 16.dp, end = 16.dp)
+                .padding(
+                    bottom = 80.adp,
+                    start  = MaterialTheme.synapse.spacing.screen,
+                    end    = MaterialTheme.synapse.spacing.screen,
+                )
         ) { snackbarData ->
             ModernSnackbar(
                 snackbarData = snackbarData,
@@ -241,12 +245,12 @@ private fun ModernSnackbar(
         },
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.synapse.radius.md,
         actionContentColor = contentColor
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
             verticalAlignment = Alignment.CenterVertically
         ) {
             icon?.let {
