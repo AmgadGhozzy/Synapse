@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
@@ -28,25 +29,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.Amber400
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.HeroCardTokens
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.tokens.ShadowTokens
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.core.ui.components.CardShell
 import com.venom.synapse.core.ui.utils.shake
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 import com.venom.ui.components.common.localized
 import com.venom.ui.components.other.CircularProgressRing
 
@@ -81,7 +84,7 @@ fun DailyGoalCard(
         bgGrad = MaterialTheme.synapse.gradients.primary,
         modifier = modifier,
     ) {
-        Column(Modifier.padding(HeroCardTokens.Padding)) {
+        Column(Modifier.padding(MaterialTheme.synapse.spacing.s20)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -94,7 +97,7 @@ fun DailyGoalCard(
                     )
                     GoalProgressBar(
                         progress = animatedProgress,
-                        modifier = Modifier.padding(bottom = Spacing.ListItemVerticalGap),
+                        modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.listItemGap),
                     )
                     GoalStatChips(
                         streakDays = streakDays,
@@ -106,32 +109,39 @@ fun DailyGoalCard(
                     progress = animatedProgress,
                     progressColor = Color.White.copy(alpha = 0.9f),
                     trackColor = Color.White.copy(alpha = 0.15f),
-                    strokeWidthDp = HeroCardTokens.CircularProgressStrokeWidth,
-                    fontSize = 22.asp,
-                    modifier = Modifier.size(HeroCardTokens.CircularProgressSize),
+                    strokeWidthDp = 8.adp,
+                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                    modifier = Modifier.size(86.adp),
                 )
             }
 
-            Spacer(Modifier.height(Spacing.Spacing16))
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
             Surface(
                 onClick = onStartStudying,
-                modifier = Modifier.fillMaxWidth(),
-                shape = HeroCardTokens.InnerButtonShape,
-                color = HeroCardTokens.InnerButtonBg,
-                contentColor = Color.White,
+                modifier = Modifier.fillMaxWidth()
+                    .dropShadow(
+                        shape  = MaterialTheme.shapes.medium,
+                shadow = ShadowTokens.ShadowFab.toShadow(
+                    customColor = MaterialTheme.colorScheme.primary
+                )
+            )
+                ,
+                shape = MaterialTheme.shapes.medium,
+                color = Color.White.copy(alpha = 0.2f),
+                contentColor = Color.White.copy(0.9f),
             ) {
                 Row(
-                    modifier = Modifier.padding(vertical = HeroCardTokens.InnerButtonVerticalPadding),
+                    modifier = Modifier.padding(vertical = 12.adp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = ctaText,
-                        style = HeroCardTokens.InnerButtonFontStyle,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    Spacer(Modifier.width(Spacing.Spacing6))
+                    Spacer(Modifier.width(MaterialTheme.synapse.spacing.s6))
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                         contentDescription = null,
@@ -149,8 +159,8 @@ fun DailyGoalCard(
 private fun GoalLabel() {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing4),
-        modifier = Modifier.padding(bottom = Spacing.Spacing6),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
+        modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s6),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_target),
@@ -160,8 +170,9 @@ private fun GoalLabel() {
         )
         Text(
             text = stringResource(R.string.daily_goal_label),
-            fontSize = 18.asp,
-            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.synapse.typography.titleNormal.copy(
+                fontWeight = FontWeight.ExtraBold,
+            ),
             color = Color.White.copy(alpha = 0.9f),
         )
     }
@@ -175,10 +186,18 @@ private fun AnimatedCounterRow(
     Row(verticalAlignment = Alignment.Bottom) {
         Text(
             text = animatedStudied,
-            style = MaterialTheme.typography.displayMedium,
+            style = MaterialTheme.synapse.typography.displayHero.copy(
+                lineHeightStyle = LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both,
+                ), platformStyle = PlatformTextStyle(
+                    includeFontPadding = false,
+                ),
+            ),
             fontWeight = FontWeight.Black,
-            color = Color.White,
-            modifier = Modifier.alignByBaseline(),
+            color = Color.White.copy(0.9f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.wrapContentSize(Alignment.Center).alignByBaseline(),
         )
         Text(
             text = stringResource(R.string.goal_denominator, dailyGoal),
@@ -202,20 +221,20 @@ private fun GoalProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(HeroCardTokens.ProgressBarHeight)
-            .clip(HeroCardTokens.ProgressBarShape)
-            .background(Color.White.copy(alpha = 0.15f)),
-    ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth(progress)
-                .fillMaxHeight()
-                .background(Color.White.copy(alpha = 0.9f), HeroCardTokens.ProgressBarShape),
-        )
-    }
+            modifier = modifier
+                .fillMaxWidth()
+                .height(10.adp)
+                .clip(MaterialTheme.synapse.radius.pill)
+                .background(Color.White.copy(alpha = 0.15f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .fillMaxHeight()
+                    .background(Color.White.copy(alpha = 0.9f), MaterialTheme.synapse.radius.pill),
+            )
+        }
 }
 
 @Composable
@@ -301,9 +320,8 @@ private fun HeroStatChip(
         icon()
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall.copy(
+            style = MaterialTheme.synapse.typography.labelBase.copy(
                 fontWeight = if (emphasis) FontWeight.SemiBold else FontWeight.Normal,
-                fontSize = 11.sp,
             ),
             color = Color.White.copy(alpha = if (emphasis) 0.9f else 0.6f),
             maxLines = 1,
@@ -324,7 +342,7 @@ private fun DailyGoalCardPreview() {
             streakDays = 7,
             totalDue = 87,
             onStartStudying = {},
-            modifier = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
@@ -339,7 +357,7 @@ private fun DailyGoalCardCaughtUpPreview() {
             streakDays = 14,
             totalDue = 0,
             onStartStudying = {},
-            modifier = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
@@ -354,7 +372,7 @@ private fun DailyGoalCardLongSessionPreview() {
             streakDays = 3,
             totalDue = 520,
             onStartStudying = {},
-            modifier = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
