@@ -7,13 +7,13 @@ import com.venom.synapse.R
 import com.venom.synapse.core.ui.components.PackDisplayItemBuilder
 import com.venom.synapse.core.ui.state.UiEffect
 import com.venom.synapse.core.ui.state.UiText
-import com.venom.synapse.domain.repo.IAuthRepository
+import com.venom.synapse.data.repo.AppConfigProvider
+import com.venom.synapse.data.repo.EntitlementManager
 import com.venom.synapse.domain.repo.IPackRepository
 import com.venom.synapse.domain.repo.IProgressRepository
 import com.venom.synapse.domain.repo.IQuestionRepository
 import com.venom.synapse.domain.repo.ISessionRepository
 import com.venom.synapse.features.dashboard.presentation.state.DashboardUiState
-import com.venom.synapse.features.dashboard.presentation.state.DashboardUiState.Companion.FREE_PACK_LIMIT
 import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,8 +37,8 @@ class DashboardViewModel @Inject constructor(
     private val questionRepo      : IQuestionRepository,
     private val progressRepo      : IProgressRepository,
     private val sessionRepo       : ISessionRepository,
-    private val authRepo          : IAuthRepository,
-    private val entitlementManager: com.venom.synapse.data.repo.EntitlementManager,
+    private val entitlementManager: EntitlementManager,
+    private val appConfigProvider : AppConfigProvider,
     private val ioDispatcher      : CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -49,9 +49,6 @@ class DashboardViewModel @Inject constructor(
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
     init { loadDashboard() }
-
-
-    fun refresh() = loadDashboard()
 
     fun onStartStudying() {
         val first = _uiState.value.packs.firstOrNull() ?: return
@@ -112,7 +109,7 @@ class DashboardViewModel @Inject constructor(
 
                             val isPremium          = entitlement?.isAccessGranted == true
                             val totalPackCount     = allPacks.size
-                            val isPackLimitReached = !isPremium && totalPackCount >= FREE_PACK_LIMIT
+                            val isPackLimitReached = totalPackCount >= appConfigProvider.libraryFreePackLimit
 
                             val MS_PER_DAY      = 86_400_000L
                             val nowMs           = System.currentTimeMillis()
@@ -155,7 +152,7 @@ class DashboardViewModel @Inject constructor(
                                     progressRepo = progressRepo,
                                 )
                             }
-                            val displayedPacks     = allDisplayItems.take(4)
+                            val displayedPacks     = allDisplayItems.take(2)
                             val totalDue           = allDisplayItems.sumOf { it.cardsToReview }
                             val totalCardsCount    = allDisplayItems.sumOf { it.totalCards }
                             val masteredCardsCount = allDisplayItems.sumOf { it.masteredCards }
