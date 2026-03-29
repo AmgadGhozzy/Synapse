@@ -2,7 +2,7 @@ package com.venom.synapse.features.library.presentation.state
 
 import androidx.compose.runtime.Immutable
 import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.features.library.presentation.state.LibraryUiState.Companion.FREE_PACK_LIMIT
+import com.venom.synapse.core.ui.state.UiText
 
 enum class LibrarySortOption {
     RECENT,
@@ -18,23 +18,14 @@ data class LibraryUiState(
     val availableCategories : List<String>          = listOf(ALL_CATEGORY),
     val sortBy              : LibrarySortOption     = LibrarySortOption.RECENT,
 
-    // ── Premium / pack-limit gating ──────────────────────────────
-    /** True when the signed-in user holds an active premium subscription. */
     val isPremium           : Boolean               = false,
-    /**
-     * True when a free-tier user owns ≥ [FREE_PACK_LIMIT] packs.
-     * Drives the locked visual on [AddPackCell] and routes the tap
-     * to the premium screen instead of the Add-PDF wizard.
-     */
     val isPackLimitReached  : Boolean               = false,
-    /** Total packs owned — used in the AddPackCell locked subtitle. */
     val totalPackCount      : Int                   = 0,
 
     val isLoading           : Boolean               = true,
-    val error               : String?               = null,
+    val error               : UiText?               = null,
 ) {
     companion object {
         const val ALL_CATEGORY  = "All"
-        const val FREE_PACK_LIMIT = 5
     }
 }

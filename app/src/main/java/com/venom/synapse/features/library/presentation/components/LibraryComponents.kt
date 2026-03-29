@@ -39,7 +39,6 @@ import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.ui.utils.animatedDashedBorder
 import com.venom.synapse.features.library.presentation.state.LibrarySortOption
-import com.venom.synapse.features.library.presentation.state.LibraryUiState.Companion.FREE_PACK_LIMIT
 import com.venom.ui.components.common.adp
 
 // ── Filter tab definition (UI-layer only) ─────────────────────────────────────
@@ -139,7 +138,7 @@ fun AddPackCellText(
         )
         Text(
             text = if (isLocked) {
-                stringResource(subtitleRes, packCount, FREE_PACK_LIMIT)
+                stringResource(subtitleRes, packCount)
             } else {
                 stringResource(subtitleRes)
             },
@@ -232,7 +231,6 @@ fun LibrarySearchBar(
 @Composable
 fun FilterTabRow(
     activeFilter: LibraryFilter,
-    totalDue: Int,
     onSelect: (LibraryFilter) -> Unit,
     modifier: Modifier = Modifier,
 ) {

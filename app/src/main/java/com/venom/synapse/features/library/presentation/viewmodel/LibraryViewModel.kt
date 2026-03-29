@@ -2,9 +2,13 @@ package com.venom.synapse.features.library.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.venom.synapse.R
 import com.venom.synapse.core.ui.components.PackDisplayItemBuilder
 import com.venom.synapse.core.ui.state.PackDisplayItem
 import com.venom.synapse.core.ui.state.UiEffect
+import com.venom.synapse.core.ui.state.UiText
+import com.venom.synapse.data.repo.AppConfigProvider
+import com.venom.synapse.data.repo.EntitlementManager
 import com.venom.synapse.domain.model.PackModel
 import com.venom.synapse.domain.repo.IAuthRepository
 import com.venom.synapse.domain.repo.IPackRepository
@@ -12,7 +16,6 @@ import com.venom.synapse.domain.repo.IProgressRepository
 import com.venom.synapse.domain.repo.IQuestionRepository
 import com.venom.synapse.features.library.presentation.state.LibrarySortOption
 import com.venom.synapse.features.library.presentation.state.LibraryUiState
-import com.venom.synapse.features.library.presentation.state.LibraryUiState.Companion.FREE_PACK_LIMIT
 import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -36,6 +39,8 @@ class LibraryViewModel @Inject constructor(
     private val questionRepo: IQuestionRepository,
     private val progressRepo: IProgressRepository,
     private val authRepo    : IAuthRepository,
+    private val entitlementManager: EntitlementManager,
+    private val appConfigProvider: AppConfigProvider,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -51,12 +56,13 @@ class LibraryViewModel @Inject constructor(
         _searchQuery,
         _activeCategory,
         _sortBy,
-        authRepo.userState,
-    ) { packs, query, category, sort, userState ->
+        combine(authRepo.userState, entitlementManager.entitlement, ::Pair)
+    ) { packs, query, category, sort, (userState, entitlement) ->
 
-        val isPremium       = userState.isPremium
+        val isPremium       = entitlement?.isAccessGranted == true
+        val packLimit       = appConfigProvider.libraryFreePackLimit
         val totalPackCount  = packs.size
-        val isLimitReached  = !isPremium && totalPackCount >= FREE_PACK_LIMIT
+        val isLimitReached  = totalPackCount >= packLimit
 
         val items      = enrichPacks(packs)
         val categories = buildCategoryList(items)
@@ -80,7 +86,10 @@ class LibraryViewModel @Inject constructor(
         )
     }
         .catch { e ->
-            emit(LibraryUiState(isLoading = false, error = "Failed to load library: ${e.message}"))
+            val errorText = e.message?.takeIf { it.isNotBlank() }?.let {
+                UiText.Raw(R.string.library_load_failed, it)
+            } ?: UiText.Raw(R.string.library_load_failed_generic)
+            emit(LibraryUiState(isLoading = false, error = errorText))
         }
         .stateIn(
             scope        = viewModelScope,
@@ -89,7 +98,6 @@ class LibraryViewModel @Inject constructor(
         )
 
     // ── User events ──────────────────────────────────────────────
-
     fun onSearchQueryChanged(query: String)    { _searchQuery.value    = query    }
     fun onCategoryChanged(category: String)    { _activeCategory.value = category }
     fun onSortChanged(sort: LibrarySortOption) { _sortBy.value         = sort     }
@@ -99,8 +107,7 @@ class LibraryViewModel @Inject constructor(
 
     /**
      * Tapping the AddPackCell.
-     *
-     * Free-tier users who have reached [FREE_PACK_LIMIT] are routed to the
+     * Free-tier users who have reached the limit are routed to the
      * premium screen.  All others go to the Add-PDF wizard.
      */
     fun onImportFromPdf() {
@@ -118,15 +125,17 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 withContext(ioDispatcher) { packRepo.deletePack(packId) }
-                _uiEffects.tryEmit(UiEffect.ShowToast("Pack deleted"))
+                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.library_pack_deleted)))
             }.onFailure {
-                _uiEffects.tryEmit(UiEffect.ShowError(message = "Failed to delete: ${it.message}"))
+                val errorText = it.message?.takeIf { msg -> msg.isNotBlank() }?.let { msg ->
+                    UiText.Raw(R.string.library_delete_pack_error, msg)
+                } ?: UiText.Raw(R.string.library_delete_pack_error_generic)
+                _uiEffects.tryEmit(UiEffect.ShowError(text = errorText))
             }
         }
     }
 
     // ── Private helpers ──────────────────────────────────────────
-
     private suspend fun enrichPacks(packs: List<PackModel>): List<PackDisplayItem> =
         withContext(ioDispatcher) {
             packs.map { pack ->
