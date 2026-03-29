@@ -38,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
+import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.ui.components.ErrorBanner
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.rememberSnackbarController
@@ -52,8 +53,8 @@ import com.venom.synapse.features.add_pdf.presentation.components.StepIndicator
 import com.venom.synapse.features.add_pdf.presentation.components.UploadStep
 import com.venom.synapse.features.add_pdf.presentation.components.shortLabel
 import com.venom.synapse.features.add_pdf.presentation.state.AddPdfStep
+import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiEvent
 import com.venom.synapse.features.add_pdf.presentation.state.toIndicatorIndex
-import com.venom.synapse.features.add_pdf.presentation.viewmodel.AddPdfUiEvent
 import com.venom.synapse.features.add_pdf.presentation.viewmodel.AddPdfViewModel
 import com.venom.ui.components.common.adp
 import com.venom.ui.components.other.ConfettiAnimationType
@@ -84,7 +85,7 @@ fun AddPdfScreen(
                     if (col != -1) cursor.getString(col) else "document.pdf"
                 } else "document.pdf"
             } ?: "document.pdf"
-        viewModel.onEvent(AddPdfUiEvent.FileSelected(uri, fileName))
+        viewModel.onEvent(AddPdfUiEvent.FileSelected(uri.toString(), fileName))
     }
 
     LaunchedEffect(Unit) {
@@ -95,14 +96,16 @@ fun AddPdfScreen(
                 is UiEffect.ShowToast    -> snackbarController.success(effect.text.asString(context))
 
                 is UiEffect.ShowUpgradePrompt -> {
-                    if (uiState.isPackLimitReached) {
-                        onNavigateToPremium()
-                    } else {
-                        snackbarController.info(
-                            context.getString(
-                                R.string.add_pdf_upgrade_prompt,
-                                effect.feature.asString(context)
-                            )
+                    val feature = effect.feature.asString(context)
+                    when {
+                        // Hard-navigate to Premium for pack limit or web/YouTube feature.
+                        uiState.isPackLimitReached -> onNavigateToPremium()
+                        feature == context.getString(R.string.feature_web_youtube_import) ||
+                        feature == context.getString(R.string.feature_pro_ocr) ->
+                            onNavigateToPremium()
+                        // Soft prompt (snackbar) for OCR, AI quota, etc.
+                        else -> snackbarController.info(
+                            context.getString(R.string.add_pdf_upgrade_prompt, feature)
                         )
                     }
                 }
@@ -122,7 +125,7 @@ fun AddPdfScreen(
                 onBack   = { viewModel.onEvent(AddPdfUiEvent.GoBack) },
                 modifier = Modifier
                     .statusBarsPadding()
-                    .padding(horizontal = 20.adp, vertical = 12.adp),
+                    .padding(horizontal = MaterialTheme.synapse.spacing.screen, vertical = MaterialTheme.synapse.spacing.s12),
             )
         },
         snackbarHost        = { snackbarController.SnackbarHost() },
@@ -146,8 +149,8 @@ fun AddPdfScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.adp),
-            verticalArrangement = Arrangement.spacedBy(20.adp),
+                .padding(horizontal = MaterialTheme.synapse.spacing.screen),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.sectionGap),
         ) {
             StepIndicator(
                 currentIndex = uiState.step.toIndicatorIndex(),
@@ -175,10 +178,10 @@ fun AddPdfScreen(
                     val targetIdx  = targetState.toIndicatorIndex()
                     val initialIdx = initialState.toIndicatorIndex()
                     if (targetIdx > initialIdx) {
-                        slideInHorizontally { it } + fadeIn() togetherWith
+                        slideInHorizontally  { it } + fadeIn() togetherWith
                                 slideOutHorizontally { -it } + fadeOut()
                     } else {
-                        slideInHorizontally { -it } + fadeIn() togetherWith
+                        slideInHorizontally  { -it } + fadeIn() togetherWith
                                 slideOutHorizontally { it } + fadeOut()
                     }
                 },
@@ -188,10 +191,12 @@ fun AddPdfScreen(
                     AddPdfStep.SELECT_PDF, AddPdfStep.EXTRACTING -> UploadStep(
                         uiState           = uiState,
                         onTabSelect       = { viewModel.onEvent(AddPdfUiEvent.SourceTabSelected(it)) },
-                        onPickFile        = { filePicker.launch(arrayOf("application/pdf", "image/*")) },
+                        onPickFile        = { filePicker.launch(arrayOf("application/pdf")) },
                         onClearFile       = { viewModel.onEvent(AddPdfUiEvent.ClearFile) },
                         onOcrToggle       = { viewModel.onEvent(AddPdfUiEvent.OcrToggled) },
                         onPasteTextChange = { viewModel.onEvent(AddPdfUiEvent.PasteTextChanged(it)) },
+                        onWebUrlChange    = { viewModel.onEvent(AddPdfUiEvent.WebUrlChanged(it)) },
+                        onWebTabLockedClick = { viewModel.onEvent(AddPdfUiEvent.WebTabLockedClicked) },
                         onContinue        = { viewModel.onEvent(AddPdfUiEvent.ContinueToConfigure) },
                     )
 
