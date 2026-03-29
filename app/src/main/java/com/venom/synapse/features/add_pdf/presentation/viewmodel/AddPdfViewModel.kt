@@ -1,24 +1,25 @@
 package com.venom.synapse.features.add_pdf.presentation.viewmodel
 
-import android.net.Uri
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.venom.synapse.R
 import com.venom.synapse.core.ui.state.UiEffect
+import com.venom.synapse.core.ui.state.UiText
 import com.venom.synapse.core.ui.state.toUiModel
+import com.venom.synapse.data.repo.AppConfigProvider
 import com.venom.synapse.domain.model.GeneratedPackResult
 import com.venom.synapse.domain.model.GenerationConfig
+import com.venom.synapse.domain.model.OcrEngine
 import com.venom.synapse.domain.model.PackModel
 import com.venom.synapse.domain.model.QuestionType
 import com.venom.synapse.domain.model.SourceType
 import com.venom.synapse.domain.repo.IAIRepository
-import com.venom.synapse.domain.repo.IAuthRepository
 import com.venom.synapse.domain.repo.IPackRepository
 import com.venom.synapse.domain.repo.IQuestionRepository
 import com.venom.synapse.domain.repo.IVisionRepository
 import com.venom.synapse.features.add_pdf.presentation.state.AddPdfStep
+import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiEvent
 import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiState
-import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiState.Companion.FREE_PACK_LIMIT
 import com.venom.synapse.features.add_pdf.presentation.state.SourceTab
 import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,12 +42,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddPdfViewModel @Inject constructor(
-    private val visionRepo  : IVisionRepository,
-    private val aiRepo      : IAIRepository,
-    private val packRepo    : IPackRepository,
-    private val questionRepo: IQuestionRepository,
-    private val authRepo    : IAuthRepository,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val visionRepo   : IVisionRepository,
+    private val aiRepo       : IAIRepository,
+    private val packRepo     : IPackRepository,
+    private val questionRepo : IQuestionRepository,
+    private val appConfig    : AppConfigProvider,
+    private val ioDispatcher : CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState   = MutableStateFlow(AddPdfUiState())
@@ -55,12 +56,18 @@ class AddPdfViewModel @Inject constructor(
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
-    private var generationJob: Job? = null
+    private var generationJob  : Job? = null
     private var generatedResult: GeneratedPackResult? = null
 
-    init { checkPackLimit() }
-
-    // ── Events ────────────────────────────────────────────────────────────────
+    init {
+        checkPackLimit()
+        _uiState.update {
+            it.copy(
+                isOcrFeatureLocked = appConfig.isOcrProLocked,
+                isPro              = !appConfig.isOcrProLocked,
+            )
+        }
+    }
 
     fun onEvent(event: AddPdfUiEvent) {
         when (event) {
@@ -71,6 +78,8 @@ class AddPdfViewModel @Inject constructor(
             is AddPdfUiEvent.ClearFile            -> clearSelectedFile()
             is AddPdfUiEvent.OcrToggled           -> toggleOcr()
             is AddPdfUiEvent.PasteTextChanged     -> updatePasteText(event.text)
+            is AddPdfUiEvent.WebUrlChanged        -> updateWebUrl(event.url)
+            is AddPdfUiEvent.WebTabLockedClicked  -> onWebTabLockedClicked()
             is AddPdfUiEvent.ContinueToConfigure  -> continueToConfig()
             is AddPdfUiEvent.QuestionCountChanged -> updateQuestionCount(event.count)
             is AddPdfUiEvent.QuestionTypeToggled  -> toggleQuestionType(event.type)
@@ -80,38 +89,28 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    // ── Pack limit ────────────────────────────────────────────────────────────
-
-    private fun checkPackLimit() {
-        viewModelScope.launch {
-            if (authRepo.userState.value.isPremium) return@launch
-            val count = withContext(ioDispatcher) { packRepo.observeAllPacks().first().size }
-            if (count >= FREE_PACK_LIMIT) {
-                _uiState.update { it.copy(isPackLimitReached = true) }
-                _uiEffects.emit(UiEffect.ShowUpgradePrompt("Unlimited Packs"))
-            }
-        }
-    }
-
-    // ── Source handling ───────────────────────────────────────────────────────
 
     private fun updateSourceTab(tab: SourceTab) {
         _uiState.update { it.copy(sourceTab = tab, error = null) }
     }
 
-    private fun onFileSelected(uri: Uri, fileName: String) {
-        val isImage = IMAGE_EXTENSIONS.any { fileName.lowercase().endsWith(".$it") }
+    private fun onFileSelected(uri: String, fileName: String) {
+        val ocrOnAtPickTime = _uiState.value.ocrEnabled
         _uiState.update {
             it.copy(
-                fileUri       = uri.toString(),
+                fileUri       = uri,
                 fileName      = fileName,
-                isImageUpload = isImage,
-                ocrEnabled    = false,
                 extractedText = null,
                 error         = null,
             )
         }
-        if (!isImage) extractFile(uri, isImage = false)
+        if (!ocrOnAtPickTime) {
+            extractPdf(
+                fileUri = uri,
+                useCloudOcr = false,
+                successStep = AddPdfStep.SELECT_PDF,
+            )
+        }
     }
 
     private fun clearSelectedFile() {
@@ -119,7 +118,6 @@ class AddPdfViewModel @Inject constructor(
             it.copy(
                 fileUri       = null,
                 fileName      = null,
-                isImageUpload = false,
                 ocrEnabled    = false,
                 extractedText = null,
                 isLoading     = false,
@@ -128,83 +126,116 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
+    private fun onWebTabLockedClicked() {
+        _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_web_youtube_import)))
+    }
+
     private fun toggleOcr() {
-        _uiState.update { it.copy(ocrEnabled = !it.ocrEnabled) }
-    }
+        val state = _uiState.value
+        if (state.isOcrFeatureLocked) {
+            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_pro_ocr)))
+            return
+        }
+        val newOcr = !state.ocrEnabled
 
-    private fun updatePasteText(text: String) {
-        _uiState.update { it.copy(pasteText = text, error = null) }
-    }
+        val clearExtracted = !newOcr && state.fileUri != null
+        _uiState.update {
+            it.copy(
+                ocrEnabled    = newOcr,
+                extractedText = if (clearExtracted) null else it.extractedText,
+            )
+        }
 
-    // ── Continue to Configure ─────────────────────────────────────────────────
+        // If OCR turned OFF and a file is already selected, auto-run local extraction now.
+        if (!newOcr && state.fileUri != null) {
+            extractPdf(
+                fileUri = state.fileUri,
+                useCloudOcr = false,
+                successStep = AddPdfStep.SELECT_PDF,
+            )
+        }
+    }
 
     private fun continueToConfig() {
         if (_uiState.value.isPackLimitReached) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("Unlimited Packs"))
+            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
 
         val state = _uiState.value
         when (state.sourceTab) {
+
             SourceTab.FILE -> {
                 when {
-                    state.isImageUpload && !state.ocrEnabled -> {
-                        _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("PRO OCR"))
+                    state.ocrEnabled -> {
+                        if (appConfig.isOcrProLocked) {
+                            _uiEffects.tryEmit(
+                                UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_pro_ocr))
+                            )
+                        } else {
+                            val fileUri = state.fileUri ?: return
+                            _uiState.update { it.copy(extractedText = null) }
+                            extractPdf(
+                                fileUri = fileUri,
+                                useCloudOcr = true,
+                                successStep = AddPdfStep.CONFIGURE,
+                            )
+                        }
                     }
-                    state.isImageUpload && state.ocrEnabled -> {
-                        val uri = state.fileUri?.toUri() ?: return
-                        extractFile(uri, isImage = true)
-                    }
+
                     state.extractedText != null -> {
                         _uiState.update { it.copy(step = AddPdfStep.CONFIGURE) }
                     }
+
                     else -> {
-                        _uiState.update { it.copy(error = "File is still being read. Please wait.") }
+                        _uiState.update {
+                            it.copy(error = UiText.Raw(R.string.add_pdf_error_file_still_reading))
+                        }
                     }
                 }
             }
+
             SourceTab.TEXT -> {
                 val text = state.pasteText.trim()
                 if (text.length < 10) {
-                    _uiState.update { it.copy(error = "Please paste at least a few sentences of text.") }
+                    _uiState.update {
+                        it.copy(error = UiText.Raw(R.string.add_pdf_error_paste_more_text))
+                    }
                     return
                 }
                 _uiState.update {
                     it.copy(
                         extractedText = text,
-                        packTitle     = "New Pack",
+                        packTitle     = "",
                         step          = AddPdfStep.CONFIGURE,
                         error         = null,
                     )
                 }
             }
+
             SourceTab.WEB -> {
-                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("Web & YouTube import"))
+
+                val url = state.webUrl.trim()
+                if (url.isBlank()) {
+                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_empty_url)) }
+                    return
+                }
+                _uiState.update {
+                    it.copy(
+                        packTitle = "",
+                        step      = AddPdfStep.CONFIGURE,
+                        error     = null,
+                    )
+                }
             }
         }
     }
 
-    // ── Extraction ────────────────────────────────────────────────────────────
-
-    /**
-     * BUG FIX — compile error "Unresolved reference 'text'" / "Unresolved reference 'title'":
-     *
-     * `visionRepo.extractText()` returns `Result<OcrResult>`, not `Result<String>`.
-     * `OcrResult` has `.pages: List<OcrPage>` where each `OcrPage.fullText` is
-     * the extracted text for that page. There is no `.text` or `.title` property.
-     *
-     * Previous (broken):
-     *   extracted.text   → compile error
-     *   extracted.title  → compile error
-     *
-     * Fixed:
-     *   fullText  = pages joined — Vision already inserts page markers in ML Kit path
-     *   packTitle = derived from fileName stored in state (extension stripped, _ → space)
-     *
-     * Step returns to SELECT_PDF (not CONFIGURE) so the user sees the "file ready"
-     * card and can verify before tapping Continue.
-     */
-    private fun extractFile(uri: Uri, isImage: Boolean) {
+    private fun extractPdf(
+        fileUri: String,
+        useCloudOcr: Boolean,
+        successStep: AddPdfStep,
+    ) {
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -217,38 +248,39 @@ class AddPdfViewModel @Inject constructor(
 
             val result = withContext(ioDispatcher) {
                 visionRepo.extractText(
-                    fileUri     = uri.toString(),
-                    isImage     = isImage,
-                    maxPages    = 20,
-                    forceEngine = null,
+                    fileUri     = fileUri,
+                    isImage     = false,
+                    maxPages    = appConfig.ocrMaxPages,
+                    forceEngine = if (useCloudOcr) null else OcrEngine.ML_KIT,
                 )
             }
 
             result.fold(
                 onSuccess = { ocrResult ->
-                    // Join all page texts — OcrPage.fullText has the per-page content.
                     val fullText = ocrResult.pages
                         .joinToString("\n\n") { it.fullText }
                         .trim()
 
-                    // Derive a clean title from the file name already in state.
-                    // Strips extension, replaces _ and - with spaces, trims.
                     val derivedTitle = _uiState.value.fileName
                         ?.substringBeforeLast(".")
                         ?.replace(Regex("[_\\-]+"), " ")
                         ?.trim()
                         ?.takeIf { it.isNotBlank() }
-                        ?: "New Pack"
+                        ?: ""
 
                     _uiState.update {
                         it.copy(
                             extractedText      = fullText.ifBlank { null },
                             packTitle          = derivedTitle,
-                            step               = AddPdfStep.SELECT_PDF,
+                            step               = if (fullText.isBlank()) {
+                                AddPdfStep.SELECT_PDF
+                            } else {
+                                successStep
+                            },
                             isLoading          = false,
                             extractionProgress = 1f,
-                            error              = if (fullText.isBlank())
-                                "No text could be extracted. Try a clearer file or enable OCR."
+                            error = if (fullText.isBlank())
+                                UiText.Raw(R.string.add_pdf_error_no_text_extracted)
                             else null,
                         )
                     }
@@ -258,7 +290,10 @@ class AddPdfViewModel @Inject constructor(
                         it.copy(
                             step      = AddPdfStep.SELECT_PDF,
                             isLoading = false,
-                            error     = "Extraction failed: ${error.message}",
+                            error     = UiText.Raw(
+                                R.string.add_pdf_error_extraction_failed,
+                                error.message ?: ""
+                            ),
                         )
                     }
                 },
@@ -266,41 +301,26 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    // ── Configure step ────────────────────────────────────────────────────────
-
-    private fun updateQuestionCount(count: Int) {
-        _uiState.update { it.copy(questionCount = count.coerceIn(5, 50)) }
-    }
-
-    private fun toggleQuestionType(type: QuestionType) {
-        _uiState.update { state ->
-            val current = state.selectedTypes
-            val updated = if (type in current && current.size > 1) current - type else current + type
-            state.copy(selectedTypes = updated)
-        }
-    }
-
-    private fun updateLanguage(code: String) {
-        _uiState.update { it.copy(language = code) }
-    }
-
-    private fun updateFocusNotes(notes: String) {
-        _uiState.update { it.copy(focusNotes = notes) }
-    }
-
-    // ── Generation ────────────────────────────────────────────────────────────
-
     private fun generateQuestions() {
         if (_uiState.value.isPackLimitReached) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("Unlimited Packs"))
+            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
 
-        val state = _uiState.value
-        val text  = state.extractedText
-        if (text.isNullOrBlank()) {
-            _uiState.update { it.copy(error = "No content to generate from.") }
-            return
+        val state     = _uiState.value
+        val isWebTab  = state.sourceTab == SourceTab.WEB
+        val sourceUrl = if (isWebTab) state.webUrl.ifBlank { null } else null
+        val sourceText = if (!isWebTab) state.extractedText else null
+
+        when {
+            isWebTab && sourceUrl == null -> {
+                _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_empty_url)) }
+                return
+            }
+            !isWebTab && sourceText.isNullOrBlank() -> {
+                _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_no_content)) }
+                return
+            }
         }
 
         _uiState.update {
@@ -327,14 +347,12 @@ class AddPdfViewModel @Inject constructor(
                     language      = state.language,
                     tone          = "neutral",
                     hintTone      = state.focusNotes.takeIf { it.isNotBlank() },
-                    // isMixed is intentionally NOT set — AIRepositoryImpl no longer
-                    // uses it; the actual questionTypes list drives the server request.
                 )
 
                 val result = withContext(ioDispatcher) {
                     aiRepo.generatePack(
-                        sourceText       = text,
-                        sourceUrl        = null,
+                        sourceText       = sourceText ?: "",
+                        sourceUrl        = sourceUrl,
                         generationConfig = config,
                     )
                 }
@@ -349,14 +367,21 @@ class AddPdfViewModel @Inject constructor(
                     },
                     onFailure = { error ->
                         val isQuota = error.message?.contains("upgrade", ignoreCase = true) == true
-                                || error.message?.contains("limit", ignoreCase = true) == true
-                        if (isQuota) _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("AI Generation"))
+                                || error.message?.contains("limit",   ignoreCase = true) == true
+                        if (isQuota) {
+                            _uiEffects.tryEmit(
+                                UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_ai_generation))
+                            )
+                        }
                         _uiState.update {
                             it.copy(
                                 step               = AddPdfStep.CONFIGURE,
                                 isLoading          = false,
                                 generationProgress = 0f,
-                                error              = "Generation failed: ${error.message}",
+                                error = UiText.Raw(
+                                    R.string.add_pdf_error_generation_failed,
+                                    error.message ?: ""
+                                ),
                             )
                         }
                     }
@@ -374,21 +399,26 @@ class AddPdfViewModel @Inject constructor(
                         step               = AddPdfStep.CONFIGURE,
                         isLoading          = false,
                         generationProgress = 0f,
-                        error              = "Generation error: ${e.message}",
+                        error = UiText.Raw(
+                            R.string.add_pdf_error_generation_generic,
+                            e.message ?: ""
+                        ),
                     )
                 }
             }
         }
     }
 
-    // ── Save pack ─────────────────────────────────────────────────────────────
-
     private fun savePack() {
         val state  = _uiState.value
         val result = generatedResult
         if (result == null) {
             _uiState.update {
-                it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, error = "Internal error: no generation result.")
+                it.copy(
+                    step      = AddPdfStep.CONFIGURE,
+                    isLoading = false,
+                    error     = UiText.Raw(R.string.add_pdf_error_no_generation_result)
+                )
             }
             return
         }
@@ -402,7 +432,7 @@ class AddPdfViewModel @Inject constructor(
                         SourceTab.WEB  -> SourceType.YOUTUBE
                     }
                     val pack = PackModel(
-                        title      = result.pack.title.ifBlank { state.packTitle.ifBlank { "New Pack" } },
+                        title      = result.pack.title.ifBlank { state.packTitle },
                         sourceType = sourceType,
                         createdAt  = System.currentTimeMillis(),
                         note       = result.pack.note,
@@ -426,23 +456,27 @@ class AddPdfViewModel @Inject constructor(
                         generatedQuestions = saved.third,
                     )
                 }
-                _uiEffects.tryEmit(UiEffect.ShowToast("Pack created successfully!"))
-
-                // Re-check pack limit so the NEXT attempt in this session is correctly gated.
+                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.add_pdf_pack_created)))
                 checkPackLimit()
 
             } catch (e: Exception) {
-                val isLimitError = e.message?.contains("FREE_PACK_LIMIT_REACHED", ignoreCase = true) == true
-                        || e.message?.contains("free plan limit", ignoreCase = true) == true
+                val isLimitError =
+                    e.message?.contains("FREE_PACK_LIMIT_REACHED", ignoreCase = true) == true ||
+                            e.message?.contains("free plan limit",         ignoreCase = true) == true
                 if (isLimitError) {
                     _uiState.update { it.copy(isPackLimitReached = true, isLoading = false) }
-                    _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt("Unlimited Packs"))
+                    _uiEffects.tryEmit(
+                        UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs))
+                    )
                 } else {
                     _uiState.update {
                         it.copy(
                             step      = AddPdfStep.CONFIGURE,
                             isLoading = false,
-                            error     = "Failed to save: ${e.message}",
+                            error     = UiText.Raw(
+                                R.string.add_pdf_error_save_failed,
+                                e.message ?: ""
+                            ),
                         )
                     }
                 }
@@ -450,7 +484,15 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    // ── Navigation ────────────────────────────────────────────────────────────
+    private fun checkPackLimit() {
+        viewModelScope.launch {
+            val count = withContext(ioDispatcher) { packRepo.observeAllPacks().first().size }
+            if (count >= appConfig.libraryFreePackLimit) {
+                _uiState.update { it.copy(isPackLimitReached = true) }
+                _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+            }
+        }
+    }
 
     private fun goBack() {
         when (_uiState.value.step) {
@@ -461,7 +503,12 @@ class AddPdfViewModel @Inject constructor(
             }
             AddPdfStep.CONFIGURE -> {
                 _uiState.update {
-                    it.copy(step = AddPdfStep.SELECT_PDF, extractedText = null, extractionProgress = 0f, error = null)
+                    it.copy(
+                        step               = AddPdfStep.SELECT_PDF,
+                        extractedText      = null,
+                        extractionProgress = 0f,
+                        error              = null,
+                    )
                 }
             }
             AddPdfStep.GENERATING -> {
@@ -474,18 +521,23 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    private fun clearError() {
-        _uiState.update { it.copy(error = null) }
+    private fun updatePasteText(text: String)  { _uiState.update { it.copy(pasteText = text, error = null) } }
+    private fun updateWebUrl(url: String)       { _uiState.update { it.copy(webUrl = url, error = null) } }
+    private fun updateQuestionCount(count: Int) { _uiState.update { it.copy(questionCount = count.coerceIn(5, 50)) } }
+    private fun updateLanguage(code: String)    { _uiState.update { it.copy(language = code) } }
+    private fun updateFocusNotes(notes: String) { _uiState.update { it.copy(focusNotes = notes) } }
+    private fun clearError()                    { _uiState.update { it.copy(error = null) } }
+
+    private fun toggleQuestionType(type: QuestionType) {
+        _uiState.update { state ->
+            val current = state.selectedTypes
+            val updated = if (type in current && current.size > 1) current - type else current + type
+            state.copy(selectedTypes = updated)
+        }
     }
 
     override fun onCleared() {
         generationJob?.cancel()
         super.onCleared()
-    }
-
-    private companion object {
-        val IMAGE_EXTENSIONS = setOf(
-            "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif", "heic", "heif"
-        )
     }
 }
