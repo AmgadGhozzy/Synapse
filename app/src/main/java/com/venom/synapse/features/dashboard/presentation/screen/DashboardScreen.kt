@@ -22,12 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
-import com.venom.synapse.core.theme.tokens.FabTokens
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.ui.components.GridPackCard
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.buildPackCardActions
@@ -41,7 +41,6 @@ import com.venom.synapse.features.dashboard.presentation.components.StatsRow
 import com.venom.synapse.features.dashboard.presentation.state.DashboardUiState
 import com.venom.synapse.features.dashboard.presentation.viewmodel.DashboardViewModel
 import com.venom.synapse.ui.viewmodel.RootViewModel
-import com.venom.ui.components.common.adp
 
 @Composable
 fun DashboardScreen(
@@ -53,7 +52,7 @@ fun DashboardScreen(
     val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val listState          = rememberLazyGridState()
-    val context            = androidx.compose.ui.platform.LocalContext.current
+    val context            = LocalContext.current
 
     val isFabExpanded by remember {
         derivedStateOf { listState.firstVisibleItemIndex == 0 }
@@ -88,7 +87,7 @@ fun DashboardScreen(
                 isLocked   = uiState.isPackLimitReached,
                 isExpanded = isFabExpanded,
                 onClick    = viewModel::onAddPack,
-                modifier   = Modifier.padding(bottom = FabTokens.BottomOffset),
+                modifier   = Modifier.padding(bottom = MaterialTheme.synapse.spacing.fabBottom),
             )
         },
     ) { innerPadding ->
@@ -124,13 +123,13 @@ private fun DashboardContent(
         state                = listState,
         modifier             = modifier,
         contentPadding       = PaddingValues(
-            start  = Spacing.ScreenHorizontalPadding,
-            end    = Spacing.ScreenHorizontalPadding,
-            top    = 132.adp,
-            bottom = 172.adp,
+            start  = MaterialTheme.synapse.spacing.screen,
+            end    = MaterialTheme.synapse.spacing.screen,
+            top    = MaterialTheme.synapse.spacing.screenContentTop,
+            bottom = MaterialTheme.synapse.spacing.screenContentBottom,
         ),
-        verticalArrangement   = Arrangement.spacedBy(Spacing.ListItemVerticalGap),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing12),
+        verticalArrangement   = Arrangement.spacedBy(MaterialTheme.synapse.spacing.listItemGap),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             DailyGoalCard(
@@ -139,7 +138,6 @@ private fun DashboardContent(
                 streakDays      = uiState.streakDays,
                 totalDue        = uiState.totalDue,
                 onStartStudying = onStartStudying,
-                modifier        = Modifier.padding(bottom = Spacing.ListItemVerticalGap),
             )
         }
 
@@ -150,9 +148,6 @@ private fun DashboardContent(
                 accuracyDelta    = uiState.accuracyDelta,
                 accuracyDeltaRes = uiState.accuracyDeltaRes,
                 timeMinutes      = uiState.timeStudiedMinutes,
-                modifier         = Modifier.padding(
-                    bottom = Spacing.ListItemVerticalGap,
-                ),
             )
         }
 
@@ -160,7 +155,6 @@ private fun DashboardContent(
             SectionHeader(
                 title    = stringResource(R.string.section_jump_back_in),
                 onSeeAll = onSeeAllPacks,
-                modifier = Modifier.padding(bottom = Spacing.ListItemVerticalGap),
             )
         }
 
