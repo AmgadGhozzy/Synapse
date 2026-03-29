@@ -18,9 +18,10 @@ enum class SourceTab { FILE, WEB, TEXT }
 fun AddPdfStep.toIndicatorIndex() = when (this) {
     AddPdfStep.SELECT_PDF,
     AddPdfStep.EXTRACTING -> 0
-    AddPdfStep.CONFIGURE  -> 1
+
+    AddPdfStep.CONFIGURE -> 1
     AddPdfStep.GENERATING -> 2
-    AddPdfStep.DONE       -> 3
+    AddPdfStep.DONE -> 3
 }
 
 @Immutable
@@ -29,7 +30,6 @@ data class AddPdfUiState(
     val sourceTab: SourceTab = SourceTab.FILE,
     val fileUri: String? = null,
     val fileName: String? = null,
-    val isImageUpload: Boolean = false,
     val ocrEnabled: Boolean = false,
     val pasteText: String = "",
     val webUrl: String = "",
@@ -48,8 +48,6 @@ data class AddPdfUiState(
     val isLoading: Boolean = false,
     val error: UiText? = null,
     val isPackLimitReached: Boolean = false,
-) {
-    companion object {
-        const val FREE_PACK_LIMIT = 5
-    }
-}
+    val isOcrFeatureLocked: Boolean = false,
+    val isPro: Boolean = false,
+)
