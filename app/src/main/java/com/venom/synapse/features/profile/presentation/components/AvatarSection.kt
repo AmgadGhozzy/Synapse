@@ -5,14 +5,18 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,8 +32,8 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.features.profile.presentation.state.ProfileUiState
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProfileAvatarSection(
     uiState: ProfileUiState,
@@ -38,6 +42,7 @@ fun ProfileAvatarSection(
 ) {
     val cs = MaterialTheme.colorScheme
     val semantic = MaterialTheme.synapse.semantic
+    val shape = MaterialShapes.Cookie9Sided.toShape()
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -46,9 +51,13 @@ fun ProfileAvatarSection(
         Box(contentAlignment = Alignment.BottomEnd) {
             Box(
                 modifier = Modifier
-                    .size(80.adp)
-                    .clip(CircleShape)
-                    .background(gradient),
+                    .size(86.adp)
+                    .background(gradient, shape)
+                    .border(
+                        2.adp,
+                        if (uiState.isPremium) MaterialTheme.synapse.gradients.gold else gradient,
+                        shape
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 if (uiState.avatarUrl != null) {
@@ -56,27 +65,24 @@ fun ProfileAvatarSection(
                         model = uiState.avatarUrl,
                         contentDescription = stringResource(R.string.profile_photo_description),
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(80.adp)
-                            .clip(CircleShape),
+                        modifier = Modifier.fillMaxSize().size(86.adp).clip(shape),
                     )
                 } else {
                     Text(
                         text = uiState.avatarInitial.toString(),
-                        fontSize = 30.asp,
+                        style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
+                        color = Color.White.copy(0.9f),
                     )
                 }
             }
-            // Verified badge — only for authenticated (non-anonymous) users
             if (!uiState.isAnonymous) {
                 val badgeColor = if (uiState.isPremium) semantic.gold else semantic.success
                 Icon(
                     painter = painterResource(R.drawable.ic_seal_check),
                     contentDescription = null,
                     tint = badgeColor,
-                    modifier = Modifier.size(22.adp),
+                    modifier = Modifier.size(24.adp),
                 )
             }
         }
@@ -85,7 +91,7 @@ fun ProfileAvatarSection(
 
         Text(
             text = uiState.userName ?: stringResource(R.string.profile_anonymous_user),
-            style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.asp),
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = cs.onSurface,
         )
