@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -119,36 +118,51 @@ fun DailyGoalCard(
 
             Surface(
                 onClick = onStartStudying,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .dropShadow(
                         shape  = MaterialTheme.shapes.medium,
-                shadow = ShadowTokens.ShadowFab.toShadow(
-                    customColor = MaterialTheme.colorScheme.primary
-                )
-            )
-                ,
-                shape = MaterialTheme.shapes.medium,
-                color = Color.White.copy(alpha = 0.2f),
+                        shadow = ShadowTokens.ShadowFab.toShadow(
+                            customColor = MaterialTheme.colorScheme.primary
+                        )
+                    ),
+                shape        = MaterialTheme.shapes.medium,
+                color        = Color.White.copy(alpha = 0.2f),
                 contentColor = Color.White.copy(0.9f),
             ) {
-                Row(
-                    modifier = Modifier.padding(vertical = 12.adp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
+                Box(
+                    modifier          = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.adp),
+                    contentAlignment  = Alignment.Center,
                 ) {
-                    Text(
-                        text = ctaText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.width(MaterialTheme.synapse.spacing.s6))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(18.adp)
-                            .shake(),
-                    )
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
+                    ) {
+                        Text(
+                            text       = ctaText,
+                            style      = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Icon(
+                            imageVector     = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                            contentDescription = null,
+                            modifier        = Modifier
+                                .size(18.adp)
+                                .shake(),
+                        )
+                    }
+
+                    // ETA pill
+                    if (totalDue > 0) {
+                        CtaEtaBadge(
+                            etaText  = etaLabel(totalDue),
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 14.adp),
+                        )
+                    }
                 }
             }
         }
@@ -271,6 +285,33 @@ private fun GoalStatChips(
 
                 )
             }
+        )
+    }
+}
+
+@Composable
+private fun CtaEtaBadge(
+    etaText : String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color.White.copy(alpha = 0.15f))
+            .padding(horizontal = 8.adp, vertical = 3.adp),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.adp),
+    ) {
+        Icon(
+            painter            = painterResource(R.drawable.ic_clock),
+            contentDescription = null,
+            tint               = Color.White.copy(alpha = 0.70f),
+            modifier           = Modifier.size(11.adp),
+        )
+        Text(
+            text  = etaText,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.75f),
         )
     }
 }
