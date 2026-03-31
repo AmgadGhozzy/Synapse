@@ -25,6 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
+import com.venom.synapse.core.ui.components.DeletePackDialog
 import com.venom.synapse.core.ui.components.ErrorBanner
 import com.venom.synapse.core.ui.components.GridPackCard
 import com.venom.synapse.core.ui.components.SnackbarHost
@@ -51,7 +52,7 @@ fun LibraryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val context = LocalContext.current
-
+    // TODO: implement remediation screen
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
@@ -97,7 +98,6 @@ private fun LibraryContent(
     modifier: Modifier = Modifier,
 ) {
     var activeFilter by remember { mutableStateOf(LibraryFilter.ALL) }
-    var openSwipedPackId by remember { mutableStateOf<Long?>(null) }
     var isErrorDismissed by remember(uiState.error) { mutableStateOf(false) }
 
     val displayedPacks by remember(uiState.packs, activeFilter) {
@@ -107,8 +107,18 @@ private fun LibraryContent(
         }
     }
 
-    val totalDue by remember(uiState.packs) {
-        derivedStateOf { uiState.packs.sumOf { it.cardsToReview } }
+    var openSwipedPackId by remember { mutableStateOf<Long?>(null) }
+    var pendingDeletePackId by remember { mutableStateOf<Long?>(null) }
+
+    // Delete confirmation dialog
+    pendingDeletePackId?.let { packId ->
+        DeletePackDialog(
+            onConfirm = {
+                onDeletePack(packId)
+                pendingDeletePackId = null
+            },
+            onDismiss = { pendingDeletePackId = null },
+        )
     }
 
     fun staggerDelay(index: Int) = index.coerceAtMost(5) * 60
@@ -137,7 +147,6 @@ private fun LibraryContent(
         item(span = { GridItemSpan(maxLineSpan) }) {
             FilterTabRow(
                 activeFilter = activeFilter,
-                totalDue = totalDue,
                 onSelect = { tab ->
                     activeFilter = tab
                     onSortChanged(tab.sort)
@@ -177,8 +186,7 @@ private fun LibraryContent(
                 buildPackCardActions(
                     onEdit = { onEditPack(pack.id) },
                     onExport = { onExportPack(pack.id) },
-                    onDelete = { onDeletePack(pack.id) },
-                )
+                    onDelete = { pendingDeletePackId = pack.id })
             }
             GridPackCard(
                 pack = pack,
