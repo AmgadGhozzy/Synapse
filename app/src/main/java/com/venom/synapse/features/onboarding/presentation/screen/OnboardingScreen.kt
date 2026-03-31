@@ -1,14 +1,20 @@
 package com.venom.synapse.features.onboarding.presentation.screen
 
+import android.content.Context
 import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -23,6 +29,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,12 +44,12 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,23 +75,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.Radius
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.ui.components.GoogleSignInButton
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.rememberSnackbarController
-import com.venom.synapse.features.onboarding.presentation.viewmodel.OnboardingEvent
-import com.venom.synapse.features.onboarding.presentation.viewmodel.OnboardingStepData
-import com.venom.synapse.features.onboarding.presentation.viewmodel.OnboardingUiState
+import com.venom.synapse.features.onboarding.presentation.state.OnboardingEvent
+import com.venom.synapse.features.onboarding.presentation.state.OnboardingStepData
+import com.venom.synapse.features.onboarding.presentation.state.OnboardingUiState
 import com.venom.synapse.features.onboarding.presentation.viewmodel.OnboardingViewModel
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
-
-// ─── Animation constants — match React: [0.25, 0.46, 0.45, 0.94] ─────────────
 
 private val StepEasing = CubicBezierEasing(0.25f, 0.46f, 0.45f, 0.94f)
-
-// ─── Entry point (stateful) ───────────────────────────────────────────────────
 
 @Composable
 fun OnboardingScreen(
@@ -94,19 +95,22 @@ fun OnboardingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                OnboardingEvent.Complete -> onComplete()
-                is OnboardingEvent.ShowError -> snackbarController.error(event.message)
+                OnboardingEvent.Complete ->
+                    onComplete()
+                is OnboardingEvent.ShowError ->
+                    snackbarController.error(event.message.asString(context))
             }
         }
     }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0,0,0,0),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { snackbarController.SnackbarHost() },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
@@ -122,44 +126,41 @@ fun OnboardingScreen(
 }
 
 // ─── Stateless shell (previewable) ───────────────────────────────────────────
-
 @Composable
 internal fun OnboardingContent(
     uiState: OnboardingUiState,
     onNext: () -> Unit,
     onSkip: () -> Unit,
     onGetStarted: () -> Unit,
-    onGoogleSignIn: (android.content.Context) -> Unit,
+    onGoogleSignIn: (Context) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (uiState.steps.isEmpty()) return
 
     val accentColor = stepAccentColor(uiState.currentStep)
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color    = MaterialTheme.colorScheme.background,
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .safeDrawingPadding(),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeDrawingPadding(),
-        ) {
-            // Skip ─────────────────────────────────────────────────────────────
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Skip
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        end    = Spacing.ScreenHorizontalPadding,
-                        top    = Spacing.Spacing16,
-                        bottom = Spacing.Spacing8,
+                        end    = MaterialTheme.synapse.spacing.screen,
+                        top    = MaterialTheme.synapse.spacing.s16,
+                        bottom = MaterialTheme.synapse.spacing.s8,
                     ),
                 contentAlignment = Alignment.CenterEnd,
             ) {
                 SkipButton(onSkip = onSkip)
             }
 
-            // Illustration + text — cross-fades on each step ──────────────────
+            // Animated step content
             Box(
                 modifier         = Modifier
                     .weight(1f)
@@ -169,23 +170,17 @@ internal fun OnboardingContent(
                 AnimatedContent(
                     targetState    = uiState.currentStep,
                     transitionSpec = {
-                        // React: initial={opacity:0, scale:0.88, y:20} animate={1,1,0}
                         val enter = fadeIn(tween(400, easing = StepEasing)) +
                                 scaleIn(tween(400, easing = StepEasing), initialScale = 0.88f) +
                                 slideInVertically(tween(400, easing = StepEasing)) { it / 5 }
-                        // React: exit={opacity:0, scale:0.92, y:-20}
                         val exit  = fadeOut(tween(280, easing = StepEasing)) +
                                 scaleOut(tween(280, easing = StepEasing), targetScale = 0.92f) +
                                 slideOutVertically(tween(280, easing = StepEasing)) { -it / 5 }
                         enter togetherWith exit
-                    },
-                    label = "onboarding_step",
+                    }
                 ) { stepIndex ->
                     val step = uiState.steps.getOrNull(stepIndex) ?: return@AnimatedContent
-                    StepContent(
-                        step        = step,
-                        accentColor = accentColor,
-                    )
+                    StepContent(step = step, accentColor = accentColor)
                 }
             }
 
@@ -193,15 +188,14 @@ internal fun OnboardingContent(
             BottomControls(
                 totalSteps     = uiState.steps.size,
                 currentStep    = uiState.currentStep,
-                isAnonymous    = uiState.isAnonymous,
                 isLastStep     = uiState.isLastStep,
                 onNext         = onNext,
                 onGetStarted   = onGetStarted,
                 onGoogleSignIn = onGoogleSignIn,
                 modifier       = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.ScreenHorizontalPadding)
-                    .padding(bottom = Spacing.Spacing32),
+                    .padding(horizontal = MaterialTheme.synapse.spacing.screen)
+                    .padding(bottom = MaterialTheme.synapse.spacing.s32),
             )
         }
     }
@@ -218,47 +212,36 @@ private fun StepContent(
     Column(
         modifier            = modifier
             .fillMaxWidth()
-            .padding(horizontal = Spacing.ScreenHorizontalPadding),
+            .padding(horizontal = MaterialTheme.synapse.spacing.screen),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 220dp glowing circle with inner radial glow + illustration ──────────
         IllustrationCircle(
             illustrationRes = step.illustrationRes,
             accentColor     = accentColor,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing24))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
 
-        // Colored step label pill ─────────────────────────────────────────────
         StepLabelPill(
-            label       = step.label,
+            label       = stringResource(step.labelRes),
             accentColor = accentColor,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing16))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
-        // Title — 26sp ExtraBold, −0.02em letter-spacing ─────────────────────
         Text(
-            text      = step.title,
-            style     = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight    = FontWeight.ExtraBold,
-                fontSize      = 26.asp,
-                lineHeight    = 33.asp,
-                letterSpacing = (-0.5).asp, // ≈ −0.02em at 26sp
-            ),
-            color     = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center,
+            text       = stringResource(step.titleRes),
+            style      = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.ExtraBold,
+            color      = MaterialTheme.colorScheme.onBackground,
+            textAlign  = TextAlign.Center,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing12))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
 
-        // Subtitle — 14sp, 1.65 line-height, max 290dp ────────────────────────
         Text(
-            text      = step.subtitle,
-            style     = MaterialTheme.typography.bodyMedium.copy(
-                fontSize   = 14.asp,
-                lineHeight = 23.asp,
-            ),
+            text      = stringResource(step.subtitleRes),
+            style     = MaterialTheme.typography.bodyMedium,
             color     = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier  = Modifier.widthIn(max = 290.adp),
@@ -267,24 +250,6 @@ private fun StepContent(
 }
 
 // ─── Illustration circle ──────────────────────────────────────────────────────
-
-/**
- * 220dp glowing circle card — exact match of React reference:
- *
- * ```js
- * boxShadow: `0 20px 60px ${colors.primaryLight}, 0 0 0 1px ${colors.border}`
- * border: `1.5px solid ${colors.border}`
- * background: radial-gradient(circle, ${current.color}20 0%, transparent 70%)
- * ```
- *
- * Compose equivalent:
- *   • `Modifier.shadow()` with accent-tinted `ambientColor` + `spotColor`
- *   • `Modifier.border()` with `outline.copy(alpha = 0.18f)`
- *   • Inner glow `Box` at 180dp with `accentColor.copy(alpha = 0.14f)`
- *   • Illustration `Image` above the glow
- *
- * Accent color crossfades smoothly via [animateColorAsState] as the step changes.
- */
 @Composable
 private fun IllustrationCircle(
     @DrawableRes illustrationRes: Int,
@@ -293,40 +258,89 @@ private fun IllustrationCircle(
 ) {
     val animatedAccent by animateColorAsState(
         targetValue   = accentColor,
-        animationSpec = tween(durationMillis = 500),
-        label         = "illus_accent",
+        animationSpec = tween(500)
+    )
+
+    val infiniteTransition = rememberInfiniteTransition()
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue  = 1f,
+        targetValue   = 1.22f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(2500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        )
+    )
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue  = 0.40f,
+        targetValue   = 0f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(2500, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        )
+    )
+
+    val floatPx by infiniteTransition.animateFloat(
+        initialValue  = 0f,
+        targetValue   = -10f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        )
     )
 
     Box(
-        modifier = modifier
-            // Brand-colored ambient glow — replaces CSS box-shadow
-            .shadow(
-                elevation    = 20.adp,
-                shape        = Radius.ShapeCircle,
-                ambientColor = animatedAccent.copy(alpha = 0.25f),
-                spotColor    = animatedAccent.copy(alpha = 0.20f),
-            )
-            .size(260.adp)
-            .clip(Radius.ShapeCircle)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+        modifier         = modifier.size(260.adp),
         contentAlignment = Alignment.Center,
     ) {
-        // Inner radial glow disc — ${current.color}20 → alpha ≈ 0.13f
+        // pulsing outer ring
         Box(
             modifier = Modifier
-                .size(250.adp)
-                .background(
-                    color  = animatedAccent.copy(alpha = 0.13f),
-                    shape  = Radius.ShapeCircle,
+                .matchParentSize()
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    alpha  = pulseAlpha
+                }
+                .border(
+                    width = 1.5.adp,
+                    color = animatedAccent,
+                    shape = CircleShape,
                 ),
         )
 
-        // Illustration rendered above the glow
+        // backdrop circle with colored shadow + inner glow
+        Box(
+            modifier = Modifier
+                .shadow(
+                    elevation    = 20.adp,
+                    shape        = CircleShape,
+                    ambientColor = animatedAccent.copy(alpha = 0.25f),
+                    spotColor    = animatedAccent.copy(alpha = 0.18f),
+                )
+                .size(240.adp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(210.adp)
+                    .background(
+                        color = animatedAccent.copy(alpha = 0.13f),
+                        shape = CircleShape,
+                    ),
+            )
+        }
+
+        // illustration with float
         Image(
             painter            = painterResource(illustrationRes),
             contentDescription = null,
             contentScale       = ContentScale.Fit,
-            modifier           = Modifier.size(240.adp),
+            modifier           = Modifier
+                .size(200.adp)
+                .graphicsLayer { translationY = floatPx },
         )
     }
 }
@@ -340,36 +354,37 @@ private fun StepLabelPill(
 ) {
     val animatedAccent by animateColorAsState(
         targetValue   = accentColor,
-        animationSpec = tween(durationMillis = 400),
-        label         = "label_accent",
+        animationSpec = tween(400)
     )
 
     Row(
         modifier = modifier
-            .clip(Radius.ShapePill)
+            .clip(MaterialTheme.synapse.radius.pill)
             .background(animatedAccent.copy(alpha = 0.10f))
             .border(
                 width = 1.adp,
                 color = animatedAccent.copy(alpha = 0.22f),
-                shape = Radius.ShapePill,
+                shape = MaterialTheme.synapse.radius.pill,
             )
-            .padding(horizontal = Spacing.Spacing12, vertical = Spacing.Spacing4),
+            .padding(
+                horizontal = MaterialTheme.synapse.spacing.s12,
+                vertical   = MaterialTheme.synapse.spacing.s4,
+            ),
         verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
     ) {
         Box(
             modifier = Modifier
                 .size(6.adp)
-                .background(color = animatedAccent, shape = Radius.ShapeCircle),
+                .background(color = animatedAccent, shape = CircleShape),
         )
         Text(
-            text  = label.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight    = FontWeight.ExtraBold,
-                fontSize      = 11.asp,
-                letterSpacing = 0.7.asp,
+            text       = label.uppercase(),
+            style      = MaterialTheme.typography.labelSmall.copy(
+
             ),
-            color = animatedAccent,
+            fontWeight = FontWeight.ExtraBold,
+            color      = animatedAccent,
         )
     }
 }
@@ -383,7 +398,7 @@ private fun SkipButton(
 ) {
     Text(
         text     = stringResource(R.string.onboarding_skip),
-        style    = MaterialTheme.typography.labelMedium,
+        style    = MaterialTheme.typography.titleSmall,
         color    = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -399,27 +414,28 @@ private fun SkipButton(
 private fun BottomControls(
     totalSteps: Int,
     currentStep: Int,
-    isAnonymous: Boolean,
     isLastStep: Boolean,
     onNext: () -> Unit,
     onGetStarted: () -> Unit,
-    onGoogleSignIn: (android.content.Context) -> Unit,
+    onGoogleSignIn: (Context) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier              = modifier,
         horizontalAlignment   = Alignment.CenterHorizontally,
-        verticalArrangement   = Arrangement.spacedBy(Spacing.Spacing24),
+        verticalArrangement   = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s24),
     ) {
         StepDots(totalSteps = totalSteps, currentStep = currentStep)
 
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.Spacing16)) {
+        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16)) {
             val context = LocalContext.current
 
-            if (isLastStep && isAnonymous) {
+            if (isLastStep) {
                 GoogleSignInButton(
-                    onClick = { onGoogleSignIn(context) },
-                    modifier = Modifier.fillMaxWidth().height(56.adp)
+                    onClick  = { onGoogleSignIn(context) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.adp),
                 )
             }
 
@@ -449,25 +465,22 @@ private fun StepDots(
 
     Row(
         modifier              = modifier,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing8),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
         verticalAlignment     = Alignment.CenterVertically,
     ) {
         repeat(totalSteps) { index ->
             val isActive = index == currentStep
 
-            val dotWidth: Dp by animateDpAsState(
+            val dotWidth by animateDpAsState(
                 targetValue   = if (isActive) activeDotWidth else inactiveDotWidth,
                 animationSpec = spring(
                     stiffness    = Spring.StiffnessMediumLow,
                     dampingRatio = Spring.DampingRatioMediumBouncy,
-                ),
-                label = "dot_w_$index",
+                )
             )
-
             val dotAlpha by animateFloatAsState(
                 targetValue   = if (isActive) 1f else 0.30f,
-                animationSpec = tween(durationMillis = 300),
-                label         = "dot_a_$index",
+                animationSpec = tween(300)
             )
 
             Box(
@@ -475,7 +488,7 @@ private fun StepDots(
                     .width(dotWidth)
                     .height(dotHeight)
                     .graphicsLayer { alpha = dotAlpha }
-                    .clip(Radius.ShapePill)
+                    .clip(MaterialTheme.synapse.radius.pill)
                     .background(MaterialTheme.colorScheme.primary),
             )
         }
@@ -490,21 +503,30 @@ private fun CtaButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
 
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val shadowToken = if (isDark) MaterialTheme.synapse.components.primaryButton.ShadowDark else MaterialTheme.synapse.components.primaryButton.ShadowLight
+    val scale by animateFloatAsState(
+        targetValue   = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessHigh),
+    )
+
+    val isDark        = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val shadowToken   = if (isDark) ShadowTokens.ShadowCtaDark else ShadowTokens.ShadowCtaLight
+
     Box(
         modifier = modifier
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .shadow(
                 elevation    = shadowToken.elevation,
-                shape        = Radius.ShapeXXL,
+                shape        = MaterialTheme.synapse.radius.lg,
                 ambientColor = shadowToken.color,
                 spotColor    = shadowToken.color,
             )
-            .clip(Radius.ShapeXXL)
+            .clip(MaterialTheme.synapse.radius.lg)
             .background(MaterialTheme.synapse.gradients.primary)
             .clickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = interactionSource,
                 indication        = null,
                 onClick           = onClick,
             ),
@@ -512,21 +534,19 @@ private fun CtaButton(
     ) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing6),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
         ) {
             Text(
-                text  = stringResource(labelRes),
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize   = 16.asp,
-                ),
-                color = Color.White,
+                text       = stringResource(labelRes),
+                style      = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color      = Color.White.copy(alpha = 0.95f),
             )
             if (showTrailingIcon) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
-                    tint               = Color.White,
+                    tint               = Color.White.copy(alpha = 0.95f),
                     modifier           = Modifier.size(18.adp),
                 )
             }
@@ -542,39 +562,13 @@ private fun stepAccentColor(stepIndex: Int): Color = when (stepIndex) {
     else -> MaterialTheme.colorScheme.tertiary
 }
 
-// ─── Previews ─────────────────────────────────────────────────────────────────
-
-private val previewSteps = listOf(
-    OnboardingStepData(
-        index              = 0,
-        label              = "Upload",
-        title              = "Turn any PDF into\na study engine",
-        subtitle           = "Import documents, textbooks, or lecture notes. Synapse reads them all.",
-        illustrationRes    = R.drawable.ic_onboarding_upload,
-    ),
-    OnboardingStepData(
-        index              = 1,
-        label              = "Generate",
-        title              = "AI crafts perfect\nquestions for you",
-        subtitle            = "Our engine extracts key concepts and generates MCQs, flashcards, and more.",
-        illustrationRes = R.drawable.ic_onboarding_generate,
-    ),
-    OnboardingStepData(
-        index                 = 2,
-        label           = "Master",
-        title           = "SRS keeps your\nknowledge sharp",
-        subtitle        = "Our spaced repetition algorithm schedules reviews right when you need them.",
-        illustrationRes = R.drawable.ic_onboarding_master,
-    ),
-)
-
 @Preview(name = "Step 1 Upload — Light", showBackground = true)
 @Preview(name = "Step 1 Upload — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun OnboardingStep1Preview() {
     SynapseTheme {
         OnboardingContent(
-            uiState        = OnboardingUiState(currentStep = 0, steps = previewSteps),
+            uiState        = OnboardingUiState(currentStep = 0, steps = OnboardingStepData.steps),
             onNext         = {},
             onSkip         = {},
             onGetStarted   = {},
@@ -589,7 +583,7 @@ private fun OnboardingStep1Preview() {
 private fun OnboardingStep2Preview() {
     SynapseTheme {
         OnboardingContent(
-            uiState        = OnboardingUiState(currentStep = 1, steps = previewSteps),
+            uiState        = OnboardingUiState(currentStep = 1, steps = OnboardingStepData.steps),
             onNext         = {},
             onSkip         = {},
             onGetStarted   = {},
@@ -604,7 +598,7 @@ private fun OnboardingStep2Preview() {
 private fun OnboardingStep3Preview() {
     SynapseTheme {
         OnboardingContent(
-            uiState        = OnboardingUiState(currentStep = 2, steps = previewSteps),
+            uiState        = OnboardingUiState(currentStep = 2, steps = OnboardingStepData.steps),
             onNext         = {},
             onSkip         = {},
             onGetStarted   = {},
