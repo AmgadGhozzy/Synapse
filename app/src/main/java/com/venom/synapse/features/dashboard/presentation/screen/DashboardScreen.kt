@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.synapse
+import com.venom.synapse.core.ui.components.DeletePackDialog
 import com.venom.synapse.core.ui.components.GridPackCard
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.buildPackCardActions
@@ -49,10 +50,10 @@ fun DashboardScreen(
     rootViewModel: RootViewModel = hiltViewModel(),
     modifier     : Modifier = Modifier,
 ) {
-    val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
-    val snackbarController = rememberSnackbarController()
-    val listState          = rememberLazyGridState()
-    val context            = LocalContext.current
+    val uiState            by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarController  = rememberSnackbarController()
+    val listState           = rememberLazyGridState()
+    val context             = LocalContext.current
 
     val isFabExpanded by remember {
         derivedStateOf { listState.firstVisibleItemIndex == 0 }
@@ -74,14 +75,14 @@ fun DashboardScreen(
     }
 
     DisposableEffect(Unit) {
-        onDispose { rootViewModel.setSubtitleResOverride(null) }
+        onDispose { rootViewModel.clearSubtitleResOverride() }
     }
 
     Scaffold(
-        modifier            = modifier,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor      = MaterialTheme.colorScheme.background,
-        snackbarHost        = { snackbarController.SnackbarHost() },
+        modifier             = modifier,
+        contentWindowInsets  = WindowInsets(0, 0, 0, 0),
+        containerColor       = MaterialTheme.colorScheme.background,
+        snackbarHost         = { snackbarController.SnackbarHost() },
         floatingActionButton = {
             DashboardFab(
                 isLocked   = uiState.isPackLimitReached,
@@ -97,6 +98,8 @@ fun DashboardScreen(
             onStartStudying = viewModel::onStartStudying,
             onPackTapped    = viewModel::onPackTapped,
             onDeletePack    = viewModel::onDeletePack,
+            onEditPack      = viewModel::onEditPack,
+            onExportPack    = viewModel::onExportPack,
             onSeeAllPacks   = viewModel::onSeeAllPacks,
             onAddPack       = viewModel::onAddPack,
             modifier        = Modifier.padding(innerPadding),
@@ -112,17 +115,31 @@ private fun DashboardContent(
     onStartStudying: () -> Unit,
     onPackTapped   : (Long) -> Unit,
     onDeletePack   : (Long) -> Unit,
+    onEditPack     : (Long) -> Unit,
+    onExportPack   : (Long) -> Unit,
     onSeeAllPacks  : () -> Unit,
     onAddPack      : () -> Unit,
     modifier       : Modifier = Modifier,
 ) {
-    var openSwipedPackId by remember { mutableStateOf<Long?>(null) }
+    var openSwipedPackId    by remember { mutableStateOf<Long?>(null) }
+    var pendingDeletePackId by remember { mutableStateOf<Long?>(null) }
+
+    // Delete confirmation dialog
+    pendingDeletePackId?.let { packId ->
+        DeletePackDialog(
+            onConfirm = {
+                onDeletePack(packId)
+                pendingDeletePackId = null
+            },
+            onDismiss = { pendingDeletePackId = null },
+        )
+    }
 
     LazyVerticalGrid(
-        columns              = GridCells.Fixed(2),
-        state                = listState,
-        modifier             = modifier,
-        contentPadding       = PaddingValues(
+        columns               = GridCells.Fixed(2),
+        state                 = listState,
+        modifier              = modifier,
+        contentPadding        = PaddingValues(
             start  = MaterialTheme.synapse.spacing.screen,
             end    = MaterialTheme.synapse.spacing.screen,
             top    = MaterialTheme.synapse.spacing.screenContentTop,
@@ -162,17 +179,16 @@ private fun DashboardContent(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 EmptyPacksState(
                     onAddPack = onAddPack,
-                    modifier  = Modifier,
                 )
             }
         } else {
             val displayedPacks = uiState.packs.take(4)
             items(displayedPacks, key = { it.id }) { pack ->
-                val actions = remember(pack.id, onDeletePack) {
+                val actions = remember(pack.id, onEditPack, onExportPack, onDeletePack) {
                     buildPackCardActions(
-                        onEdit   = { /* TODO */ },
-                        onExport = { /* TODO */ },
-                        onDelete = { onDeletePack(pack.id) },
+                        onEdit   = { onEditPack(pack.id) },
+                        onExport = { onExportPack(pack.id) },
+                        onDelete = { pendingDeletePackId = pack.id },
                     )
                 }
                 GridPackCard(

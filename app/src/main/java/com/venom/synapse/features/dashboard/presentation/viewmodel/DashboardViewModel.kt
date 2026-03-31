@@ -1,6 +1,9 @@
 package com.venom.synapse.features.dashboard.presentation.viewmodel
 
 import android.icu.util.Calendar
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.venom.synapse.R
@@ -39,6 +42,7 @@ class DashboardViewModel @Inject constructor(
     private val sessionRepo       : ISessionRepository,
     private val entitlementManager: EntitlementManager,
     private val appConfigProvider : AppConfigProvider,
+    private val dataStore         : DataStore<Preferences>,
     private val ioDispatcher      : CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -73,9 +77,10 @@ class DashboardViewModel @Inject constructor(
             try {
                 packRepo.deletePack(packId)
             } catch (e: Exception) {
+                val message = e.message?.takeIf { it.isNotBlank() }
                 _uiEffects.emit(
                     UiEffect.ShowError(
-                        text = if (e.message != null) UiText.Dynamic(e.message!!)
+                        text = if (message != null) UiText.Dynamic(message)
                         else UiText.Raw(R.string.dashboard_delete_pack_error),
                     )
                 )
@@ -102,12 +107,15 @@ class DashboardViewModel @Inject constructor(
                     packRepo.observeAllPacks(),
                     entitlementManager.entitlement,
                     sessionRepo.observeLastSessionFinishedAt(),
-                ) { packs, entitlement, _ -> packs to entitlement }
-                    .collectLatest { (rawPacks, entitlement) ->
+                    dataStore.data,
+                ) { packs, entitlement, _, prefs ->
+                    Triple(packs, entitlement, prefs[intPreferencesKey("daily_goal")] ?: 20)
+                }
+                    .collectLatest { (rawPacks, entitlement, dailyGoal) ->
                         withContext(ioDispatcher) {
                             val allPacks = rawPacks.sortedByDescending { it.createdAt }
 
-                            val isPremium          = entitlement?.isAccessGranted == true
+                            val isPremium          = entitlement.isAccessGranted
                             val totalPackCount     = allPacks.size
                             val isPackLimitReached = totalPackCount >= appConfigProvider.libraryFreePackLimit
 
@@ -161,7 +169,7 @@ class DashboardViewModel @Inject constructor(
                                 DashboardUiState(
                                     greetingRes         = resolveGreeting(),
                                     todayStudied        = todayStudied,
-                                    dailyGoal           = 30,
+                                    dailyGoal           = dailyGoal,
                                     streakDays          = currentStreak,
                                     accuracyPercent     = accuracyPct,
                                     accuracyDeltaRes    = R.string.stats_card_this_week,
@@ -183,6 +191,14 @@ class DashboardViewModel @Inject constructor(
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
+    }
+
+    fun onEditPack(packId: Long) {
+        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
+    }
+
+    fun onExportPack(packId: Long) {
+        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
     }
 
     private fun resolveGreeting(): Int =
