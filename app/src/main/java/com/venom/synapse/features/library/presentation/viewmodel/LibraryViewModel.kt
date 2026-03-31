@@ -59,7 +59,7 @@ class LibraryViewModel @Inject constructor(
         combine(authRepo.userState, entitlementManager.entitlement, ::Pair)
     ) { packs, query, category, sort, (userState, entitlement) ->
 
-        val isPremium       = entitlement?.isAccessGranted == true
+        val isPremium       = entitlement.isAccessGranted
         val packLimit       = appConfigProvider.libraryFreePackLimit
         val totalPackCount  = packs.size
         val isLimitReached  = totalPackCount >= packLimit
@@ -118,8 +118,13 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    fun onEditPack(packId: Long)   { /* TODO */ }
-    fun onExportPack(packId: Long) { /* TODO */ }
+    fun onEditPack(packId: Long) {
+        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
+    }
+
+    fun onExportPack(packId: Long) {
+        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
+    }
 
     fun onDeletePack(packId: Long) {
         viewModelScope.launch {
