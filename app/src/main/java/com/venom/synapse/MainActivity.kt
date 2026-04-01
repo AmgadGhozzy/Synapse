@@ -5,18 +5,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.runtime.Composable
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
+import androidx.core.os.LocaleListCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.features.profile.presentation.viewmodel.ProfileViewModel
 import com.venom.synapse.ui.SynapseApp
 import com.venom.synapse.ui.viewmodel.RootViewModel
 import com.venom.ui.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import java.util.Locale
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Single-Activity host.
@@ -35,27 +39,30 @@ class MainActivity : ComponentActivity() {
         val showOnboarding = intent.getBooleanExtra(EXTRA_SHOW_ONBOARDING, false)
         rootViewModel.setOnboardingState(showOnboarding)
 
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                settingsViewModel.uiState
+                    .map { it.appLanguage.code }
+                    .distinctUntilChanged()
+                    .collect { code ->
+                        val localeList = if (code.isEmpty()) {
+                            LocaleListCompat.getEmptyLocaleList()
+                        } else {
+                            LocaleListCompat.forLanguageTags(code)
+                        }
+                        AppCompatDelegate.setApplicationLocales(localeList)
+                    }
+            }
+        }
+
         setContent {
             val settings by settingsViewModel.uiState.collectAsStateWithLifecycle()
             val appTheme = settings.themePrefs.appTheme
-            val languageCode = settings.appLanguage.code
-
-            ApplySelectedLanguage("")
 
             SynapseTheme(appTheme = appTheme) {
                 SynapseApp(rootViewModel = rootViewModel, profileViewModel = profileViewModel)
             }
         }
-    }
-
-    @Composable
-    private fun ApplySelectedLanguage(languageCode: String) {
-        val locale = if (languageCode.isEmpty()) Locale.getDefault() else Locale(languageCode)
-        val config = LocalConfiguration.current
-
-        config.setLocale(locale)
-        val context = LocalContext.current
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
     }
 
     companion object {
