@@ -304,117 +304,54 @@ val White       = Color(0xFFFFFFFF)
 val Black       = Color(0xFF000000)
 val Transparent = Color(0x00000000)
 
-// SECTION 2 — Synapse Custom Intermediaries
-// Non-Tailwind hex values for the brand system.
+// SECTION 2 — Synapse Brand Overrides
 
-// Primary (Violet)
+// ── Primary Brand ─────────────────────────────────────────────────────────────
 
 /** #5B4EE8 — Synapse primary violet (light mode) */
 val SynapseViolet600 = Color(0xFF5B4EE8)
 
-/** #9D93FF — Synapse primary violet (dark mode) */
-val SynapseViolet300 = Color(0xFF9D93FF)
-
-/** #4A3DD6 — Deep violet — primary gradient start */
+/** #4A3DD6 — Deep violet for primary gradients and active emphasis */
 val SynapseVioletDeep = Color(0xFF4A3DD6)
 
-/** #7B6FFF — Bright violet — primary gradient end */
+/** #7B6FFF — Signature bright violet reserved for hero accents */
 val SynapseVioletBright = Color(0xFF7B6FFF)
 
-/** #BDB6FF — Pale violet — dark-mode gradient end, onPrimaryContainer dark */
-val SynapseVioletPale = Color(0xFFBDB6FF)
-
-/** #4C3EC7 — Mid-deep violet — CTA gradient start, interactive action button BG */
+/** #4C3EC7 — Mid-deep violet for action surfaces and focus emphasis */
 val SynapseVioletMid = Color(0xFF4C3EC7)
 
-/** #3B2FA8 — Dark annual gradient start */
-val SynapseVioletDarkAnnual = Color(0xFF3B2FA8)
+// ── Premium Gold ──────────────────────────────────────────────────────────────
 
-/** #2D1B8C — Darkest violet — title gradient start */
-val SynapseVioletDarkest = Color(0xFF2D1B8C)
-
-// ── Tertiary (Gold / Amber) ───────────────────────────────────────────────────
-
-/** #FBB830 — Synapse gold (dark mode primary tertiary) */
+/** #FBB830 — Premium gold accent */
 val SynapseGold = Color(0xFFFBB830)
 
-/** #FDCA6E — Pale gold — streak chips, shimmer highlights */
+/** #FDCA6E — Pale premium highlight for shimmer and small accent chips */
 val SynapseGoldPale = Color(0xFFFDCA6E)
 
-/** #92580A — Deep gold — dark-mode gradient start (note: darker than Amber800 #92400E) */
+/** #92580A — Deep premium gold for darker gradient anchors */
 val SynapseGoldDeep = Color(0xFF92580A)
 
-// ── Neutral — Dark Surface Stack ─────────────────────────────────────────────
+// ── Neutral Surface Stack ─────────────────────────────────────────────────────
 
-/** #06051A — App background (dark) */
-val SynapseDeepDark = Color(0xFF06051A)
+/** #09090F — App background (dark) updated per request */
+val SynapseDeepDark = Color(0xFF09090F)
 
 /** #0D0B25 — Surface level 1 (dark) */
 val SynapseSurfaceDark = Color(0xFF0D0B25)
 
-/** #0D0B22 — Near-black violet — onBackground in light scheme */
+/** #0D0B22 — Near-black violet used for readable light-mode text */
 val SynapseNearBlack = Color(0xFF0D0B22)
 
 /** #13112E — Card surface (dark) */
 val SynapseCardDark = Color(0xFF13112E)
 
-/** #1B183E — Elevated card (dark) — dialogs, selected pricing cards */
+/** #1B183E — Elevated dark surface for dialogs and selections */
 val SynapseElevatedDark = Color(0xFF1B183E)
 
-// ── Neutral — Light Surface ───────────────────────────────────────────────────
+// ── Supporting Text / Outline Roles ───────────────────────────────────────────
 
-/** #EBE9FF — Ghost white — onBackground in dark scheme */
-val SynapseGhostWhite = Color(0xFFEBE9FF)
-
-/** #EDE8FF — Lavender — light-mode elevated card surface */
-val SynapseLavender = Color(0xFFEDE8FF)
-
-/** #F4F2FF — App background (light) */
-val SynapseLightBg = Color(0xFFF4F2FF)
-
-/** #E8E4FF — Page gradient end (light) */
-val SynapsePageLight = Color(0xFFE8E4FF)
-
-/** #04030F — Page gradient end (dark) */
-val SynapsePageDark = Color(0xFF04030F)
-
-// ── Text Roles ────────────────────────────────────────────────────────────────
-
-/** #9896C8 — TextSub (dark mode) — onSurfaceVariant dark */
+/** #9896C8 — Secondary text on dark surfaces */
 val SynapseTextSub = Color(0xFF9896C8)
-
-// ── Container / Semantic Roles ────────────────────────────────────────────────
-
-/** #EEF0FF — Light secondary container */
-val SynapseSecContainerLt = Color(0xFFEEF0FF)
-
-/** #1E1870 — Dark indigo — onSecondaryContainer light */
-val SynapseIndigoDeep = Color(0xFF1E1870)
-
-/** #FEF3D0 — Amber-tinted tertiary container (light) */
-val SynapseAmberContainer = Color(0xFFFEF3D0)
-
-/** #7A3D02 — Amber-900 — onTertiaryContainer (light) */
-val SynapseAmberOnContainer = Color(0xFF7A3D02)
-
-/** #2A1F04 — Amber-950 — dark tertiary container */
-val SynapseAmberContainerDk = Color(0xFF2A1F04)
-
-/** #FFDAD6 — Error container (light) */
-val SynapseErrorContainerLt = Color(0xFFFFDAD6)
-
-/** #7A0012 — onErrorContainer (light) */
-val SynapseOnErrorContainerLt = Color(0xFF7A0012)
-
-/** #2A0E0E — Error container (dark) */
-val SynapseErrorContainerDk = Color(0xFF2A0E0E)
-
-/** #1A0808 — onError (dark) */
-val SynapseOnErrorDk = Color(0xFF1A0808)
-
-// ── Border / Outline Roles ────────────────────────────────────────────────────
-// Used directly in ColorScheme.kt for the M3 `outline` and `outlineVariant` roles.
-// Calibrated to pass WCAG AA at their respective surface backgrounds.
 
 /** #4A4570 — onSurfaceVariant (light) */
 val SynapseOnSurfaceVariantLt = Color(0xFF4A4570)
@@ -425,7 +362,7 @@ val SynapseOutlineLt = Color(0xFF8B87B8)
 /** #D4CFEE — Outline variant / subtle divider (light) */
 val SynapseOutlineVariantLt = Color(0xFFD4CFEE)
 
-/** #0A0820 — Scrim */
+/** #0A0820 — Brand scrim */
 val SynapseScrim = Color(0xFF0A0820)
 
 /** #524D8A — Outline (dark) — card borders, input fields */
@@ -434,29 +371,10 @@ val SynapseOutlineDk = Color(0xFF524D8A)
 /** #1B1A3A — Outline variant / subtle divider (dark) */
 val SynapseOutlineVariantDk = Color(0xFF1B1A3A)
 
-// ── Streak Hero Card ─────────────────────────────────────────────────────────
-// Source: /src/app/components/StatsScreen.tsx (StreakHeroCard background gradient)
-// Always consume via Gradients.GradientStreakHeroLight / GradientStreakHeroDark —
-// never reference these constants directly in composables.
+// ── Streak Hero Card ──────────────────────────────────────────────────────────
 
 /** #1C1200 — Streak hero dark bg start (near-black amber) */
 val SynapseStreakBgDark1 = Color(0xFF1C1200)
 
 /** #2D1F02 — Streak hero dark bg mid */
 val SynapseStreakBgDark2 = Color(0xFF2D1F02)
-
-/** #FFF8E7 — Streak hero light bg start (warm ivory; slightly warmer than Amber50 #FFFBEB) */
-val SynapseStreakBgLight1 = Color(0xFFFFF8E7)
-
-// ── Semantic Dark Containers ──────────────────────────────────────────────────
-// Used by SynapseSemanticColors for dark-mode container backgrounds.
-// Never reference these directly in composables — use semantic tokens instead.
-
-/** #3D2000 — Gold container surface (dark mode) */
-val SynapseGoldContainerDk = Color(0xFF3D2000)
-
-/** #002818 — Success/emerald container surface (dark mode) */
-val SynapseSuccessContainerDk = Color(0xFF002818)
-
-/** #1A1650 — Accent/indigo container surface (dark mode) */
-val SynapseAccentContainerDk = Color(0xFF1A1650)
