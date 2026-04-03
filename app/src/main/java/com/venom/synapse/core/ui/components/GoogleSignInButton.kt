@@ -8,9 +8,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,8 +20,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.venom.resources.R
+import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 import com.venom.synapse.R as SynapseR
 
 @Composable
@@ -34,7 +34,7 @@ fun GoogleSignInButton(
         modifier = modifier
             .fillMaxWidth()
             .height(56.adp),
-        shape = RoundedCornerShape(20.adp),
+        shape = MaterialTheme.synapse.radius.xl,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
             contentColor = Color(0xFF1F1F1F)
@@ -46,17 +46,17 @@ fun GoogleSignInButton(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 8.adp)
+            modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s8)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.icon_google),
                 contentDescription = stringResource(SynapseR.string.google_logo_description),
                 modifier = Modifier.size(24.adp)
             )
-            Spacer(modifier = Modifier.width(12.adp))
+            Spacer(modifier = Modifier.width(MaterialTheme.synapse.spacing.s12))
             Text(
                 text = stringResource(SynapseR.string.google_sign_in_button),
-                fontSize = 16.asp,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
         }
