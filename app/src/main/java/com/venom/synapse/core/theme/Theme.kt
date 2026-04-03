@@ -3,41 +3,31 @@ package com.venom.synapse.core.theme
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.core.view.WindowCompat
 import com.venom.domain.model.AppTheme
 import com.venom.domain.model.FontStyles
 import com.venom.synapse.core.theme.tokens.DarkGradientTokens
-import com.venom.synapse.core.theme.tokens.DarkLevelColors
 import com.venom.synapse.core.theme.tokens.LightGradientTokens
-import com.venom.synapse.core.theme.tokens.LightLevelColors
-import com.venom.synapse.core.theme.tokens.LocalLevelColors
 import com.venom.synapse.core.theme.tokens.SynapseShapes
-import com.venom.synapse.core.theme.tokens.adp
-import com.venom.synapse.core.theme.tokens.buildAdaptiveElevation
 import com.venom.synapse.core.theme.tokens.buildAdaptiveRadius
 import com.venom.synapse.core.theme.tokens.buildAdaptiveSpacing
-import com.venom.synapse.core.theme.tokens.buildAdaptiveTypography
-import com.venom.synapse.core.theme.tokens.defaultComponentTokens
+import com.venom.synapse.core.theme.tokens.buildThemedTypography
 import com.venom.ui.theme.Alexandria
-import com.venom.ui.theme.BiScriptFonts
 import com.venom.ui.theme.Cairo
 import com.venom.ui.theme.Caveat
 import com.venom.ui.theme.Inter
+import com.venom.ui.theme.InterBold
 import com.venom.ui.theme.JosefinSans
-import com.venom.ui.theme.LocalBiScriptFonts
 import com.venom.ui.theme.PlaypenSans
 import com.venom.ui.theme.Quicksand
 import com.venom.ui.theme.Roboto
-import com.venom.ui.theme.getTypographyForLocale
-import com.venom.ui.theme.isArabicLocale
 import com.venom.ui.theme.tokens.DarkGlassColors
 import com.venom.ui.theme.tokens.LightGlassColors
 import com.venom.ui.theme.tokens.LocalGlassColors
@@ -49,12 +39,11 @@ fun SynapseTheme(
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current
-
     val arabicLocale = isArabicLocale()
 
     val biScriptFonts = remember(fontFamilyStyle) {
         when (fontFamilyStyle) {
-            FontStyles.Default -> BiScriptFonts(latin = Inter, arabic = Cairo)
+            FontStyles.Default -> BiScriptFonts(latin = InterBold, arabic = Cairo)
             else -> {
                 val chosen = try {
                     when (fontFamilyStyle) {
@@ -68,9 +57,7 @@ fun SynapseTheme(
                         FontStyles.PLAYPEN_SANS -> PlaypenSans
                         else -> Inter
                     }
-                } catch (_: Exception) {
-                    Inter
-                }
+                } catch (_: Exception) { Inter }
                 BiScriptFonts(latin = chosen, arabic = chosen)
             }
         }
@@ -83,22 +70,24 @@ fun SynapseTheme(
     }
 
     val colorScheme = if (isDark) SynapseDarkColorScheme else SynapseLightColorScheme
-    val navBarColor = colorScheme.surfaceColorAtElevation(3.adp)
 
-    val config = LocalConfiguration.current
-    val w = config.screenWidthDp
-    val h = config.screenHeightDp
+    val windowInfo = LocalWindowInfo.current
+    val density = LocalDensity.current
+    val w = with(density) { windowInfo.containerSize.width.toDp().value.toInt() }
+    val h = with(density) { windowInfo.containerSize.height.toDp().value.toInt() }
 
-    val adaptiveSpacing    = remember(w, h) { buildAdaptiveSpacing(w, h) }
-    val adaptiveRadius     = remember(w, h) { buildAdaptiveRadius(w, h) }
-    val adaptiveTypography = remember(w, h) { buildAdaptiveTypography(w, h) }
-    val adaptiveElevation  = remember(w, h) { buildAdaptiveElevation(w, h) }
+    val adaptiveSpacing   = remember(w, h) { buildAdaptiveSpacing(w, h) }
+    val adaptiveRadius    = remember(w, h) { buildAdaptiveRadius(w, h) }
+
+    val fontFamily = if (arabicLocale) biScriptFonts.arabic else biScriptFonts.latin
+    val themedTypography = remember(w, h, fontFamily, isDark) {
+        buildThemedTypography(w, h, fontFamily, isDark)
+    }
 
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             val controller = WindowCompat.getInsetsController(window, view)
-            window.navigationBarColor = navBarColor.toArgb()
             WindowCompat.setDecorFitsSystemWindows(window, false)
             controller.isAppearanceLightStatusBars = !isDark
             controller.isAppearanceLightNavigationBars = !isDark
@@ -113,19 +102,13 @@ fun SynapseTheme(
         LocalGradientTokens provides if (isDark) DarkGradientTokens else LightGradientTokens,
         LocalSpacingTokens provides adaptiveSpacing,
         LocalRadiusTokens provides adaptiveRadius,
-        LocalTypographyTokens provides adaptiveTypography,
-        LocalElevationTokens provides adaptiveElevation,
-        LocalComponentTokens provides defaultComponentTokens,
+        LocalTypographyTokens provides themedTypography.custom,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = getTypographyForLocale(
-                latinFamily = biScriptFonts.latin,
-                arabicFamily = biScriptFonts.arabic,
-                isArabic = arabicLocale,
-            ),
+            typography = themedTypography.material,
             shapes = SynapseShapes,
-            content = content,
+            content = content
         )
     }
 }
