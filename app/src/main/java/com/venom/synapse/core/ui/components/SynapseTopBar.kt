@@ -70,8 +70,7 @@ fun SynapseTopBar(
     onPremiumClick: () -> Unit,
     modifier: Modifier = Modifier,
     profileAvatarUrl: String? = null,
-    isPremium: Boolean = false,
-    onManageSubscriptionClick: () -> Unit = {},
+    isPremium: Boolean = false
 ) {
     Row(
         modifier = modifier
@@ -108,7 +107,7 @@ fun SynapseTopBar(
 
         GoProButton(
             isPremium = isPremium,
-            onClick = if (isPremium) onManageSubscriptionClick else onPremiumClick,
+            onClick = onPremiumClick,
         )
     }
 }
@@ -131,7 +130,8 @@ private fun AvatarButton(
         Box(
             modifier = modifier
                 .size(56.adp)
-                .background(MaterialTheme.synapse.gradients.primary,shape)
+                .clip(shape)
+                .background(MaterialTheme.synapse.gradients.primary)
                 .border(
                    2.adp,
                     if (isPremium) MaterialTheme.synapse.gradients.gold else MaterialTheme.synapse.gradients.primary,
@@ -182,19 +182,19 @@ private fun GoProButton(
 
     // ── Outer pulse ring — frozen at 1× scale / 0 alpha for premium users ─────
     val ringScale by infiniteTransition.animateFloat(
-        initialValue = if (isPremium) 1f else 1.0f,
+        initialValue = if (isPremium) 1f else 0.8f,
         targetValue  = if (isPremium) 1f else 1.5f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2_400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
+            animation = tween(2_800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
         ),
     )
     val ringAlpha by infiniteTransition.animateFloat(
         initialValue = if (isPremium) 0f else 0.5f,
         targetValue  = if (isPremium) 0f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2_400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart,
+            animation = tween(2_800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
         ),
     )
 
@@ -240,7 +240,7 @@ private fun GoProButton(
             .graphicsLayer { translationX = shakeOffset }
             .dropShadow(
                 shape  = MaterialTheme.synapse.radius.pill,
-                shadow = ShadowTokens.ShadowFab.toShadow(customColor = MaterialTheme.synapse.semantic.gold),
+                shadow = ShadowTokens.GoldGlow.toShadow(),
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -254,7 +254,7 @@ private fun GoProButton(
                 }
                 .border(
                     width = 1.5.adp,
-                    color = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.70f),
+                    color = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.7f),
                     shape = MaterialTheme.synapse.radius.pill,
                 ),
         )
@@ -290,7 +290,7 @@ private fun GoProButton(
 
                 Row(
                     modifier = Modifier.padding(
-                        horizontal = MaterialTheme.synapse.spacing.s14,
+                        horizontal = MaterialTheme.synapse.spacing.s16,
                         vertical   = MaterialTheme.synapse.spacing.s8,
                     ),
                     verticalAlignment = Alignment.CenterVertically,
@@ -301,7 +301,7 @@ private fun GoProButton(
                         contentDescription = null,
                         tint = Color.White.copy(0.9f),
                         modifier = Modifier
-                            .size(16.adp)
+                            .size(18.adp)
                             .graphicsLayer { rotationZ = crownRotation },
                     )
                     Text(
@@ -348,8 +348,7 @@ private fun SynapseTopBarPremiumPreview() {
             userInitial = "A",
             isPremium = true,
             onProfileClick = {},
-            onPremiumClick = {},
-            onManageSubscriptionClick = {},
+            onPremiumClick = {}
         )
     }
 }

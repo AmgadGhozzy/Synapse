@@ -19,8 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.tokens.Radius
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
 
 /**
@@ -35,14 +34,14 @@ fun ErrorBanner(
     Surface(
         modifier = modifier,
         color    = MaterialTheme.colorScheme.errorContainer,
-        shape    = Radius.ShapeMedium,
+        shape    = MaterialTheme.synapse.radius.md,
     ) {
         Row(
             modifier              = Modifier
                 .fillMaxWidth()
-                .padding(Spacing.ListItemVerticalGap),
+                .padding(MaterialTheme.synapse.spacing.listItemGap),
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing8),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
         ) {
             Text(
                 text     = message,
@@ -75,7 +74,7 @@ private fun ErrorBannerPreview() {
         ErrorBanner(
             message   = "Something went wrong. Please try again.",
             onDismiss = {},
-            modifier  = Modifier.padding(Spacing.ScreenHorizontalPadding),
+            modifier  = Modifier.padding(MaterialTheme.synapse.spacing.screen),
         )
     }
 }
