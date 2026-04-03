@@ -49,15 +49,12 @@ import androidx.compose.ui.unit.dp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.PackCardTokens
-import com.venom.synapse.core.theme.tokens.Radius
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.core.ui.state.LastStudiedLabel
 import com.venom.synapse.core.ui.state.PackDisplayItem
 import com.venom.synapse.core.ui.state.displayString
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 import kotlinx.coroutines.delay
 
 /**
@@ -106,8 +103,8 @@ fun GridPackCard(
             onTap           = onClick,
             verticalActions = true,
             modifier = modifier.dropShadow(
-                shape = PackCardTokens.Shape,
-                shadow = PackCardTokens.Shadow.toShadow(customColor = colorSet.accent)
+                shape = MaterialTheme.synapse.radius.xl,
+                shadow = ShadowTokens.Subtle.toShadow(customColor = colorSet.accent)
             ),
         ) {
             GridPackCardSurface(
@@ -133,8 +130,8 @@ fun GridPackCard(
             surfaceOnClick = onClick,
             onClick = onClick,
             modifier = modifier.dropShadow(
-                shape = PackCardTokens.Shape,
-                shadow = PackCardTokens.Shadow.toShadow(customColor = colorSet.accent)
+                shape = MaterialTheme.synapse.radius.xl,
+                shadow = ShadowTokens.Subtle.toShadow(customColor = colorSet.accent)
             ),
         )
     }
@@ -158,9 +155,8 @@ private fun GridPackCardSurface(
         Card(
             onClick  = surfaceOnClick,
             modifier = modifier,
-            shape    = PackCardTokens.Shape,
-            colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape    = MaterialTheme.synapse.radius.lg,
+            colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             GridPackCardContent(
                 pack = pack,
@@ -175,7 +171,7 @@ private fun GridPackCardSurface(
     } else {
         Surface(
             modifier = modifier,
-            shape    = PackCardTokens.Shape,
+            shape    = MaterialTheme.synapse.radius.xl,
             color    = MaterialTheme.colorScheme.surface,
         ) {
             GridPackCardContent(
@@ -205,10 +201,10 @@ private fun GridPackCardContent(
         modifier = Modifier
             .fillMaxHeight()
             .padding(
-                start  = Spacing.Spacing12,
-                end    = Spacing.Spacing12,
-                top    = Spacing.Spacing14,
-                bottom = Spacing.Spacing12,
+                start  = MaterialTheme.synapse.spacing.s12,
+                end    = MaterialTheme.synapse.spacing.s12,
+                top    = MaterialTheme.synapse.spacing.s14,
+                bottom = MaterialTheme.synapse.spacing.s12,
             ),
     ) {
         // ── Row 1: Icon + Category pill ───────────────────────────────
@@ -218,19 +214,19 @@ private fun GridPackCardContent(
             colorSet = colorSet,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing12))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
 
         // ── Title ─────────────────────────────────────────────────────
         Text(
             text       = pack.title,
-            fontSize   = 13.asp,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 17.5.asp,
+            style      = MaterialTheme.synapse.typography.labelXLarge.copy(
+                fontWeight = FontWeight.Bold,
+            ),
             color      = MaterialTheme.colorScheme.onSurface,
             maxLines   = 2,
             minLines   = 2,
             overflow   = TextOverflow.Ellipsis,
-            modifier   = Modifier.padding(bottom = 10.adp),
+            modifier   = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s10),
         )
 
         // ── Progress bar ──────────────────────────────────────────────
@@ -239,7 +235,7 @@ private fun GridPackCardContent(
             accent   = colorSet.accent,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing6))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s6))
 
         // ── Learned / total + pct ─────────────────────────────────────
         LearnedRow(
@@ -249,7 +245,7 @@ private fun GridPackCardContent(
             accent   = colorSet.accent,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing4))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
 
         // ── Last studied + Due badge / streak ─────────────────────────
         DueAndLastStudiedRow(
@@ -260,7 +256,7 @@ private fun GridPackCardContent(
             hasDue      = hasDue,
         )
 
-        Spacer(Modifier.height(Spacing.Spacing4))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
 
         // ── Continue CTA ──────────────────────────────────────────────
         ContinueButton(
@@ -287,26 +283,31 @@ private fun IconAndCategoryRow(
         Box(
             modifier         = Modifier
                 .size(38.adp)
-                .clip(Radius.ShapeMedium)
+                .clip(MaterialTheme.synapse.radius.xxxl)
                 .background(colorSet.bg),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = emoji, fontSize = 18.asp)
+            Text(
+                text = emoji, 
+                style = MaterialTheme.synapse.typography.titleNormal,
+            )
         }
 
         // Category pill — uppercase, tiny bold
         Box(
             modifier = Modifier
-                .clip(Radius.ShapePill)
+                .clip(MaterialTheme.synapse.radius.xxxl)
                 .background(colorSet.bg)
-                .padding(horizontal = Spacing.Spacing6),
+                .padding(horizontal = MaterialTheme.synapse.spacing.s6),
         ) {
             Text(
                 text          = category.uppercase(),
-                fontSize      = 10.asp,
-                fontWeight    = FontWeight.ExtraBold,
-                color      = colorSet.accent,
-                letterSpacing = 0.06.asp,
+                style         = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight    = FontWeight.ExtraBold,
+                ),
+                color         = colorSet.accent,
+                maxLines      = 1,
+                overflow      = TextOverflow.Ellipsis,
             )
         }
     }
@@ -324,7 +325,7 @@ private fun ProgressBar(
         modifier = modifier
             .fillMaxWidth()
             .height(6.adp)
-            .clip(Radius.ShapePill)
+            .clip(MaterialTheme.synapse.radius.xxxl)
             .background(accent.copy(alpha = 0.13f)),
     ) {
         Box(
@@ -332,10 +333,10 @@ private fun ProgressBar(
                 .fillMaxWidth(fraction)
                 .fillMaxHeight()
                 .dropShadow(
-                    shape  = Radius.ShapePill,
+                    shape  = MaterialTheme.synapse.radius.xxxl,
                     shadow = Shadow(radius = 8.dp, color = accent, alpha = 0.55f),
                 )
-                .clip(Radius.ShapePill)
+                .clip(MaterialTheme.synapse.radius.xxxl)
                 .background(
                     Brush.horizontalGradient(
                         colors = listOf(accent.copy(alpha = 0.7f), accent),
@@ -359,14 +360,16 @@ private fun LearnedRow(
     ) {
         Text(
             text       = stringResource(R.string.grid_card_learned, mastered, total),
-            fontSize   = 10.asp,
-            fontWeight = FontWeight.Medium,
+            style      = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Medium,
+            ),
             color      = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text       = stringResource(R.string.grid_card_pct, pct),
-            fontSize   = 10.asp,
-            fontWeight = FontWeight.Bold,
+            style      = MaterialTheme.typography.labelMedium.copy(
+                fontWeight = FontWeight.Bold,
+            ),
             color      = accent,
         )
     }
@@ -389,7 +392,7 @@ private fun DueAndLastStudiedRow(
         // Clock + last studied
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing4),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         ) {
             Icon(
                 painter           = painterResource(R.drawable.ic_clock),
@@ -399,14 +402,14 @@ private fun DueAndLastStudiedRow(
             )
             Text(
                 text     = lastStudied.displayString(),
-                fontSize = 9.asp,
+                style    = MaterialTheme.typography.labelSmall,
                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing4),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         ) {
             if (hasDue) {
                 DueBadge(dueCards = dueCards, goldColor = goldColor)
@@ -426,14 +429,15 @@ private fun DueBadge(
 ) {
     Box(
         modifier = modifier
-            .clip(Radius.ShapePill)
+            .clip(MaterialTheme.synapse.radius.pill)
             .background(goldColor.copy(alpha = 0.14f))
-            .padding(horizontal = Spacing.Spacing6),
+            .padding(horizontal = MaterialTheme.synapse.spacing.s6),
     ) {
         Text(
             text       = stringResource(R.string.due_badge, dueCards),
-            fontSize   = 9.asp,
-            fontWeight = FontWeight.Bold,
+            style      = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+            ),
             color      = goldColor,
         )
     }
@@ -448,7 +452,7 @@ private fun StreakChip(
     Row(
         modifier              = modifier,
         verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing2),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s2),
     ) {
         Icon(
             painter            = painterResource(R.drawable.ic_zap),
@@ -458,8 +462,9 @@ private fun StreakChip(
         )
         Text(
             text       = stringResource(R.string.grid_card_streak, streakDays),
-            fontSize   = 9.asp,
-            fontWeight = FontWeight.Bold,
+            style      = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Bold,
+            ),
             color      = goldColor,
         )
     }
@@ -472,16 +477,16 @@ private fun ContinueButton(
     onClick:  () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ctaGradient = MaterialTheme.synapse.gradients.cta
+    val ctaGradient = MaterialTheme.synapse.gradients.primary
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(42.adp)
-            .clip(Radius.ShapeMedium)
+            .height(38.adp)
+            .clip(MaterialTheme.synapse.radius.lg)
             .then(
                 if (hasDue) Modifier.background(ctaGradient)
-                else Modifier.border(1.5.dp, colorSet.accent.copy(alpha = 0.33f), Radius.ShapeMedium)
+                else Modifier.border(1.5.dp, colorSet.accent.copy(alpha = 0.33f), MaterialTheme.synapse.radius.lg)
             )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -493,18 +498,19 @@ private fun ContinueButton(
     ) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.Spacing4),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         ) {
             Text(
-                text       = stringResource(R.string.grid_card_continue),
-                fontSize   = 12.asp,
-                fontWeight = FontWeight.Bold,
-                color      = if (hasDue) Color.White else colorSet.accent,
+                text       = stringResource(if (hasDue) R.string.grid_card_continue else R.string.grid_card_done),
+                style      = MaterialTheme.typography.labelLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
+                color      = if (hasDue) Color.White.copy(0.9f) else colorSet.accent,
             )
             Icon(
                 imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                 contentDescription = null,
-                tint               = if (hasDue) Color.White else colorSet.accent,
+                tint               = if (hasDue) Color.White.copy(0.9f) else colorSet.accent,
                 modifier           = Modifier.size(11.adp),
             )
         }

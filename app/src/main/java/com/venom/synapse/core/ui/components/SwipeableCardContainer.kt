@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,11 +47,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.lerp
-import com.venom.synapse.core.theme.tokens.PackCardTokens
-import com.venom.synapse.core.theme.tokens.Radius
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 import kotlin.math.roundToInt
 
 @Composable
@@ -68,7 +66,7 @@ fun SwipeableCardContainer(
     val haptic  = LocalHapticFeedback.current
 
     val actionWidth    = 68.adp
-    val panelPadding   = Spacing.Spacing4
+    val panelPadding   = MaterialTheme.synapse.spacing.s4
     // Panel width = action slots + gaps between them + outer padding
     val revealWidthDp: Dp = if (verticalActions) {
         actionWidth + panelPadding
@@ -109,7 +107,7 @@ fun SwipeableCardContainer(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .clip(Radius.ShapeXL),
+            .clip(MaterialTheme.synapse.radius.xl),
     ) {
         SwipeActionsPanel(
             actions    = actions,
@@ -168,7 +166,7 @@ fun SwipeActionsPanel(
         return alpha to scale
     }
 
-    val spacing  = Spacing.Spacing4
+    val spacing  = MaterialTheme.synapse.spacing.s4
     val paddings = Modifier.padding(
         start  = spacing,
         end    = spacing,
@@ -228,27 +226,28 @@ fun ActionButton(
                 scaleY          = scale
                 transformOrigin = TransformOrigin(1f, 0.5f)
             }
-            .background(action.color, PackCardTokens.IconContainerShape)
+            .background(action.color, MaterialTheme.synapse.radius.md)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Column(
-            modifier            = Modifier.padding(vertical = Spacing.Spacing8, horizontal = Spacing.Spacing4),
+            modifier            = Modifier.padding(vertical = MaterialTheme.synapse.spacing.s8, horizontal = MaterialTheme.synapse.spacing.s4),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Icon(
                 painter            = painterResource(action.iconRes),
                 contentDescription = stringResource(action.labelRes),
-                tint               = Color.White,
+                tint               = Color.White.copy(0.9f),
                 modifier           = Modifier.size(18.adp),
             )
-            Spacer(Modifier.height(Spacing.Spacing4))
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
             Text(
                 text       = stringResource(action.labelRes).uppercase(),
-                fontSize   = 9.asp,
-                fontWeight = FontWeight.ExtraBold,
-                color      = Color.White,
+                style      = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+                color      = Color.White.copy(0.9f),
             )
         }
     }
