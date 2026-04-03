@@ -33,8 +33,11 @@ fun buildAdaptiveSpacing(w: Int, h: Int): SpacingTokens {
         s28 = dp(28f),
         s32 = dp(32f),
         s48 = dp(48f),
-        s68 = dp(68f),
+        s56 = dp(56f),
+        s72 = dp(72f),
         screen       = dp(20f),
+        screenContentTop = dp(128f),
+        screenContentBottom = dp(172f),
         cardInternal = dp(16f),
         cardLarge    = dp(20f),
         sectionGap   = dp(20f),
@@ -42,7 +45,7 @@ fun buildAdaptiveSpacing(w: Int, h: Int): SpacingTokens {
         iconTextGap  = dp(8f),
         chipH        = dp(16f),
         chipV        = dp(6f),
-        fabBottom    = dp(68f),
+        fabBottom    = dp(72f),
         fabEnd       = dp(20f),
     )
 }
@@ -57,7 +60,7 @@ fun buildAdaptiveRadius(w: Int, h: Int): RadiusTokens {
         xl     = RoundedCornerShape(dp(20f)),
         xxl    = RoundedCornerShape(dp(24f)),
         xxxl   = RoundedCornerShape(dp(28f)),
-        pill   = Radius.ShapePill,
+        pill   = RoundedCornerShape(50),
         circle = CircleShape,
         stripe = RoundedCornerShape(
             topStart    = dp(12f),
@@ -92,15 +95,15 @@ fun buildThemedTypography(
     )
 
     val material = Typography(
-        displayLarge   = TypeScale.DisplayLarge.themed(34f, 40f),
+        displayLarge   = TypeScale.DisplayLarge.themed(50f, 60f),
         displayMedium  = TypeScale.DisplayMedium.themed(32f, 38f),
-        displaySmall   = TypeScale.HeadlineLarge.themed(28f, 32f),
-        headlineLarge  = TypeScale.HeadlineLarge.themed(28f, 32f),
-        headlineMedium = TypeScale.HeadlineMedium.themed(26f, 26f),
+        displaySmall   = TypeScale.HeadlineLarge.themed(28f, 36f),
+        headlineLarge  = TypeScale.HeadlineLarge.themed(28f, 36f),
+        headlineMedium = TypeScale.HeadlineMedium.themed(26f, 32f),
         headlineSmall  = TypeScale.HeadlineSmall.themed(22f, 28f),
         titleLarge     = TypeScale.TitleLarge.themed(20f, 24f),
-        titleMedium    = TypeScale.TitleMedium.themed(15f, 22f),
-        titleSmall     = TypeScale.TitleSmall.themed(16f, 26f),
+        titleMedium    = TypeScale.TitleMedium.themed(16f, 26f),
+        titleSmall     = TypeScale.TitleSmall.themed(15f, 22f),
         bodyLarge      = TypeScale.BodyLarge.themed(16f, 24f),
         bodyMedium     = TypeScale.TitleSmall.themed(16f, 26f),
         bodySmall      = TypeScale.BodySmall.themed(13f, 18f),
@@ -113,21 +116,10 @@ fun buildThemedTypography(
         displayHero   = TypeScale.DisplayHero.themed(40f, 40f),
         titleNormal   = TypeScale.TitleNormal.themed(18f, 24f),
         bodySmallBold = TypeScale.BodySmallBold.themed(13f, 18f),
-        labelXLarge   = TypeScale.LabelXLarge.themed(13.5f, 18f),
+        labelXLarge   = TypeScale.LabelXLarge.themed(14f, 18f),
         labelBase     = TypeScale.LabelBase.themed(11f, 14f),
         labelMicro    = TypeScale.LabelMicro.themed(8f, 10f),
     )
 
     return ThemedTypography(material, custom)
-}
-
-fun buildAdaptiveElevation(w: Int, h: Int): ElevationTokens {
-    fun dp(v: Float) = adaptDp(v, w, h)
-    return ElevationTokens(
-        xs = dp(1f),
-        sm = dp(3f),
-        md = dp(6f),
-        lg = dp(8f),
-        xl = dp(12f),
-    )
 }
