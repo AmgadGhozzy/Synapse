@@ -38,15 +38,11 @@ fun buildAdaptiveSpacing(w: Int, h: Int): SpacingTokens {
         screen       = dp(20f),
         screenContentTop = dp(128f),
         screenContentBottom = dp(172f),
-        cardInternal = dp(16f),
         cardLarge    = dp(20f),
         sectionGap   = dp(20f),
         listItemGap  = dp(12f),
         iconTextGap  = dp(8f),
-        chipH        = dp(16f),
-        chipV        = dp(6f),
         fabBottom    = dp(72f),
-        fabEnd       = dp(20f),
     )
 }
 
