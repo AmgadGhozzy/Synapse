@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import com.venom.synapse.R
-import com.venom.synapse.core.theme.tokens.PackCardTokens
+import com.venom.synapse.core.theme.tokens.BrandColors
 
 
 // ── SwipeAction model ─────────────────────────────────────────────────────────
@@ -32,19 +32,19 @@ fun buildPackCardActions(
     SwipeAction(
         labelRes = R.string.action_edit,
         iconRes  = R.drawable.ic_edit,
-        color    = PackCardTokens.ActionButtonEditBg,
+        color    = BrandColors.BrandPrimaryAction,
         onClick  = onEdit,
     ),
     SwipeAction(
         labelRes = R.string.action_export,
         iconRes  = R.drawable.ic_share_2,
-        color    = PackCardTokens.ActionButtonShareBg,
+        color    = BrandColors.BrandSecondaryDeep,
         onClick  = onExport,
     ),
     SwipeAction(
         labelRes = R.string.action_delete,
         iconRes  = R.drawable.ic_trash_2,
-        color    = PackCardTokens.ActionButtonDeleteBg,
+        color    = BrandColors.BrandErrorLight,
         onClick  = onDelete,
     ),
 )

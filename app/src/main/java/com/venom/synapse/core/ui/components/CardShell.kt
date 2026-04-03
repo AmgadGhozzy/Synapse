@@ -1,7 +1,6 @@
 package com.venom.synapse.core.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -15,11 +14,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.HeroCardTokens
+import com.venom.synapse.core.theme.tokens.ShadowTokens
+import com.venom.synapse.core.theme.tokens.adp
 import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.ui.components.common.adp
 
 @Composable
 fun CardShell(
@@ -28,23 +25,21 @@ fun CardShell(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val cardStyle = MaterialTheme.synapse.components.heroCard
     Box(
         modifier = modifier
             .fillMaxWidth()
             .dropShadow(
-                shape = cardStyle.Shape,
-                shadow = cardStyle.Shadow.toShadow(customColor = color)
+                shape = MaterialTheme.shapes.large,
+                shadow = ShadowTokens.Strong.toShadow(customColor = color)
             )
-            .clip(cardStyle.Shape)
+            .clip(MaterialTheme.shapes.large)
             .background(bgGrad)
-            .border(0.5.adp, color.copy(alpha = 0.20f), HeroCardTokens.Shape)
     ) {
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 48.dp, y = (-56).dp)
-                .size(172.dp)
+                .offset(x = 48.adp, y = (-56).adp)
+                .size(172.adp)
                 .background(
                     brush = Brush.radialGradient(
                         colors = listOf(color.copy(alpha = 0.15f), Color.Transparent),
