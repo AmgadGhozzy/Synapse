@@ -33,9 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.PrimaryButtonTokens
-import com.venom.synapse.core.theme.tokens.ProBadgeTokens
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.ui.components.common.adp
 
 /**
  * Full-width gradient CTA button.
@@ -51,7 +49,7 @@ fun PrimaryGradientButton(
 ) {
 
     val gradient: Brush = if (enabled) {
-        MaterialTheme.synapse.gradients.cta
+        MaterialTheme.synapse.gradients.primary
     } else {
         Brush.linearGradient(
             listOf(
@@ -71,8 +69,8 @@ fun PrimaryGradientButton(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .height(PrimaryButtonTokens.Height)
-            .clip(PrimaryButtonTokens.Shape)
+            .height(56.adp)
+            .clip(MaterialTheme.synapse.radius.lg)
             .background(gradient)
             .then(
                 if (enabled) Modifier.clickable(onClick = onClick) else Modifier
@@ -80,11 +78,11 @@ fun PrimaryGradientButton(
     ) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(PrimaryButtonTokens.IconTextGap),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
         ) {
             Text(
                 text  = text,
-                style = PrimaryButtonTokens.FontStyle,
+                style = MaterialTheme.typography.titleMedium,
                 color = contentColor,
             )
             when {
@@ -93,7 +91,7 @@ fun PrimaryGradientButton(
                         imageVector         = icon,
                         contentDescription  = null,
                         tint                = contentColor,
-                        modifier            = Modifier.size(PrimaryButtonTokens.IconSize),
+                        modifier            = Modifier.size(18.adp),
                     )
                 }
                 iconRes != null -> {
@@ -101,7 +99,7 @@ fun PrimaryGradientButton(
                         painter            = painterResource(iconRes),
                         contentDescription = null,
                         tint               = contentColor,
-                        modifier           = Modifier.size(PrimaryButtonTokens.IconSize),
+                        modifier           = Modifier.size(18.adp),
                     )
                 }
             }
@@ -122,10 +120,10 @@ fun SecondaryButton(
         onClick  = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(PrimaryButtonTokens.Height),
-        shape   = PrimaryButtonTokens.Shape,
+            .height(56.adp),
+        shape   = MaterialTheme.synapse.radius.lg,
         border  = BorderStroke(
-            width = Spacing.Spacing2 / 2,
+            width = MaterialTheme.synapse.spacing.s2 / 2,
             color = MaterialTheme.colorScheme.outline,
         ),
         colors  = ButtonDefaults.outlinedButtonColors(
@@ -150,29 +148,29 @@ fun ProBadge(modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         color    = gold.copy(alpha = 0.15f),
-        shape    = ProBadgeTokens.Shape,
+        shape    = MaterialTheme.synapse.radius.pill,
         border   = BorderStroke(
-            width = ProBadgeTokens.BorderWidth,
+            width = 1.adp,
             color = gold.copy(alpha = 0.50f),
         ),
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = ProBadgeTokens.HorizontalPadding,
-                vertical   = ProBadgeTokens.VerticalPadding,
+                horizontal = MaterialTheme.synapse.spacing.s8,
+                vertical   = MaterialTheme.synapse.spacing.s4,
             ),
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ProBadgeTokens.IconTextGap),
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         ) {
             Icon(
                 painter            = painterResource(R.drawable.ic_crown),
                 contentDescription = null,
                 tint               = gold,
-                modifier           = Modifier.size(ProBadgeTokens.IconSize),
+                modifier           = Modifier.size(14.adp),
             )
             Text(
                 text  = stringResource(R.string.pro_badge_label),
-                style = ProBadgeTokens.FontStyle,
+                style = MaterialTheme.typography.labelSmall,
                 color = gold,
             )
         }
@@ -185,8 +183,8 @@ fun ProBadge(modifier: Modifier = Modifier) {
 private fun ButtonsPreview() {
     SynapseTheme {
         Column(
-            modifier  = Modifier.padding(Spacing.ScreenHorizontalPadding),
-            verticalArrangement = Arrangement.spacedBy(Spacing.Spacing12),
+            modifier  = Modifier.padding(MaterialTheme.synapse.spacing.screen),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
         ) {
             PrimaryGradientButton(
                 text     = "Start Free Trial",
