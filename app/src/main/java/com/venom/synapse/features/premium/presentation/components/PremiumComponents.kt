@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,7 +52,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
@@ -60,7 +60,6 @@ import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.LocalGradientTokens
-import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.White
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.theme.tokens.ShadowTokens
@@ -79,7 +78,7 @@ fun HeroSection(
     modifier: Modifier = Modifier,
 ) {
     val gradients = LocalGradientTokens.current
-    val pulseTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseTransition = rememberInfiniteTransition()
     val pulseAlpha by pulseTransition.animateFloat(
         initialValue = 1f,
         targetValue = 0.3f,
@@ -95,6 +94,23 @@ fun HeroSection(
                 bottom = MaterialTheme.synapse.spacing.s20
             ),
     ) {
+
+        AppIconDisplay()
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
+        ) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displayLarge.copy(brush = gradients.accent, fontWeight = FontWeight.ExtraBold),
+                textAlign = TextAlign.Center,
+            )
+            ProBadgeChip()
+        }
+
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
+
         Text(
             text = stringResource(R.string.premium_tagline),
             style = MaterialTheme.typography.bodySmall,
@@ -103,20 +119,7 @@ fun HeroSection(
             modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s32),
         )
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
-        ) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displayLarge.copy(brush = gradients.accent),
-            )
-            ProBadgeChip()
-        }
-
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -151,10 +154,12 @@ fun HeroSection(
 
 @Composable
 fun ProBadgeChip(modifier: Modifier = Modifier) {
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         modifier = modifier
+            .padding(top = MaterialTheme.synapse.spacing.s12)
             .clip(MaterialTheme.synapse.radius.pill)
             .background(
                 Brush.linearGradient(
@@ -170,19 +175,19 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
                 shape = MaterialTheme.synapse.radius.pill,
             )
             .padding(
-                horizontal = MaterialTheme.synapse.spacing.s8,
-                vertical = MaterialTheme.synapse.spacing.s4
+                horizontal = MaterialTheme.synapse.spacing.s12,
+                vertical = MaterialTheme.synapse.spacing.s2
             ),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_crown),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.size(10.adp),
+            modifier = Modifier.size(16.adp),
         )
         Text(
             text = stringResource(R.string.premium_pro_label),
-            style = MaterialTheme.synapse.typography.labelMicro,
+            style = MaterialTheme.synapse.typography.labelXLarge,
             color = MaterialTheme.colorScheme.tertiary,
         )
     }
@@ -196,20 +201,12 @@ internal fun PremiumFeaturesCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = MaterialTheme.synapse.spacing.s28)
             .dropShadow(
                 shape = MaterialTheme.shapes.large,
                 shadow = ShadowTokens.ShadowStats.toShadow()
             )
             .clip(MaterialTheme.shapes.large)
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         features.forEachIndexed { index, feature ->
             PremiumFeatureRow(feature = feature)
@@ -240,18 +237,13 @@ internal fun PremiumFeatureRow(
     modifier: Modifier = Modifier,
 ) {
     val featureColor = feature.colorRole.toColor()
-    val shape = MaterialShapes.Cookie7Sided.toShape()
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s14),
         modifier = modifier
             .fillMaxWidth()
-            .padding(end =  MaterialTheme.synapse.spacing.s8)
-            .padding(
-                horizontal = 16.adp,
-                vertical = 12.adp,
-            ),
+            .padding(vertical = 12.adp)
+            .padding(start = 18.adp, end = 8.adp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -276,31 +268,17 @@ internal fun PremiumFeatureRow(
             )
             Text(
                 text = feature.sublabel,
-                style = MaterialTheme.synapse.typography.labelBase,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s2),
             )
         }
 
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(24.adp)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                .border(
-                    width = 1.adp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    shape = shape,
-                )
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_check),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.adp),
-            )
-        }
+        CheckIndicator(
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+            borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+            iconTint = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
@@ -328,6 +306,36 @@ fun PlansRow(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
+internal fun CheckIndicator(
+    backgroundColor: Color,
+    borderColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(20.adp)
+            .size(24.adp)
+            .clip(MaterialShapes.Cookie7Sided.toShape())
+            .background(backgroundColor)
+            .border(
+                width = 1.adp,
+                color = borderColor,
+                shape = MaterialShapes.Cookie7Sided.toShape(),
+            ),
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_check),
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(12.adp),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
 fun PlanCard(
     plan: PremiumPlanUiModel,
     isSelected: Boolean,
@@ -342,8 +350,8 @@ fun PlanCard(
     } else {
         Brush.linearGradient(
             colors = listOf(
-                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = if (isSelected) 1f else 0.7f),
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isSelected) 0.95f else 0.6f),
+                MaterialTheme.colorScheme.background.copy(alpha = if (isSelected) 0.95f else 0.6f),
+                MaterialTheme.colorScheme.surface.copy(alpha = if (isSelected) 0.95f else 0.6f),
             )
         )
     }
@@ -366,16 +374,15 @@ fun PlanCard(
             alpha = 0.75f
         )
 
-    val shadow = if (isGradient) ShadowTokens.ShadowAnnualCard.toShadow()
-    else if (isSelected) ShadowTokens.ShadowStats.toShadow()
-    else ShadowTokens.ShadowPack.toShadow()
+    val shadow = if (isGradient) ShadowTokens.ShadowAnnualCard.toShadow() else ShadowTokens.ShadowPack.toShadow()
+    val shape = MaterialTheme.shapes.large
 
     Box(
         modifier = modifier
-            .dropShadow(shape = MaterialTheme.shapes.large, shadow = shadow)
-            .clip(MaterialTheme.shapes.large)
+            .dropShadow(shape = shape, shadow = shadow)
+            .clip(shape)
             .background(cardBg)
-            .border(width = borderWidth, color = borderColor, shape = MaterialTheme.shapes.large)
+            .border(width = borderWidth, color = borderColor, shape = shape)
             .clickable(onClick = onSelect),
     ) {
         if (isGradient) {
@@ -422,7 +429,7 @@ fun PlanCard(
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s2))
             Text(
                 text = plan.noteDisplay,
-                style = MaterialTheme.synapse.typography.labelBase,
+                style = MaterialTheme.typography.labelMedium,
                 color = noteColor
             )
         }
@@ -432,7 +439,7 @@ fun PlanCard(
                 contentAlignment = Alignment.TopEnd,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(16.adp)
+                    .padding(18.adp)
                     .clip(MaterialTheme.synapse.radius.pill)
                     .background(MaterialTheme.synapse.gradients.gold)
                     .padding(
@@ -442,39 +449,21 @@ fun PlanCard(
             ) {
                 Text(
                     text = plan.badgeLabel.resolve(),
-                    style = MaterialTheme.synapse.typography.labelMicro,
+                    style = MaterialTheme.typography.labelMedium,
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
 
         }
-        val shape = MaterialShapes.Cookie7Sided.toShape()
         if (isSelected) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.adp)
-                    .size(22.adp)
-                    .clip(shape)
-                    .background(
-                        if (isGradient) Color.White.copy(alpha = 0.26f)
-                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.80f)
-                    )
-                    .border(
-                        width = 1.adp,
-                        color = if (isGradient) Color.White.copy(alpha = 0.45f)
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.40f),
-                        shape = shape,
-                    ),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_check),
-                    contentDescription = null,
-                    tint = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(10.adp),
-                )
-            }
+            CheckIndicator(
+                backgroundColor = if (isGradient) Color.White.copy(alpha = 0.26f)
+                else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                borderColor = if (isGradient) Color.White.copy(alpha = 0.45f)
+                else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                iconTint = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            )
         }
     }
 }
@@ -498,9 +487,10 @@ fun CtaSection(
             onClick = onStartTrial,
         )
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-
-        SocialProofRow(socialProof = socialProof)
+        socialProof?.let {
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
+            SocialProofRow(socialProof = it)
+        }
 
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
 
@@ -508,7 +498,7 @@ fun CtaSection(
 
         Text(
             text = stringResource(R.string.premium_cta_skip),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
             modifier = Modifier
@@ -529,16 +519,17 @@ internal fun PremiumCtaButton(
     modifier: Modifier = Modifier,
 ) {
     val gradients = MaterialTheme.synapse.gradients
-    val ctaShadow = ShadowTokens.ShadowCtaDark.toShadow()
+    val shape = MaterialTheme.shapes.medium
+    val ctaShadow = ShadowTokens.ShadowCta.toShadow()
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(shape = MaterialTheme.synapse.radius.lg, shadow = ctaShadow)
-            .height(56.adp)
-            .clip(MaterialTheme.synapse.radius.lg)
-            .background(gradients.button)
+            .dropShadow(shape = shape, shadow = ctaShadow)
+            .height(68.adp)
+            .clip(shape)
+            .background(gradients.primary)
             .clickable(enabled = !isPurchasing, onClick = onClick)
             .semantics { contentDescription = "Start trial" },
     ) {
@@ -593,11 +584,11 @@ internal fun PremiumCtaButton(
 
 @Composable
 fun SocialProofRow(
-    socialProof: SocialProofData?,
+    socialProof: SocialProofData,
     modifier: Modifier = Modifier,
 ) {
-    val initials = socialProof?.avatarInitials ?: listOf("A", "J", "M", "S", "K")
-    val countLabel = socialProof?.userCountLabel ?: "5,000+"
+    val initials = socialProof.avatarInitials
+    val countLabel = socialProof.userCountLabel
 
     val avatarStep = 32.adp - 12.adp
     val stackWidth = remember(initials.size) {
@@ -609,12 +600,12 @@ fun SocialProofRow(
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraLarge)
+            .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
             .border(
                 width = 1.adp,
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.extraLarge,
+                shape = MaterialTheme.shapes.large,
             )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s16,
@@ -715,17 +706,17 @@ internal fun SectionLabel(
 ) {
     Text(
         text = text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-        modifier = modifier.padding(start = MaterialTheme.synapse.spacing.s2),
+        modifier = modifier.padding(start = MaterialTheme.synapse.spacing.s12),
     )
 }
 
 @Composable
 internal fun ShimmerSweep(
+    modifier: Modifier = Modifier,
     durationMs: Int = 2_600,
     delayMs: Int = 1_200,
-    modifier: Modifier = Modifier,
 ) {
     val transition = rememberInfiniteTransition()
     val offset by transition.animateFloat(
@@ -789,17 +780,66 @@ fun PremiumErrorContent(
     }
 }
 
-@Preview(name = "SocialProofRow · With data", showBackground = true)
-@Preview(name = "SocialProofRow · Loading (null)", showBackground = true)
 @Composable
-fun SocialProofRowPreview() {
-    SynapseTheme {
-        Column(
-            Modifier.padding(MaterialTheme.synapse.spacing.s16),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+internal fun AppIconDisplay(
+    modifier: Modifier = Modifier,
+) {
+    val glowTransition = rememberInfiniteTransition()
+    val glowAlpha by glowTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        )
+    )
+
+    val shape = MaterialShapes.Cookie9Sided.toShape()
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier,
+    ) {
+        // ── Animated glow orb behind the icon ──────────────────────────
+        Box(
+            modifier = Modifier
+                .size(148.adp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = glowAlpha * 0.45f),
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = glowAlpha * 0.25f),
+                            Color.Transparent,
+                        )
+                    )
+                )
+        )
+
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(124.adp)
+                .dropShadow(shape = shape, shadow = ShadowTokens.ShadowAnnualCard.toShadow())
+                .clip(shape)
+                .border(width = 3.adp, brush = MaterialTheme.synapse.gradients.gold, shape = shape),
         ) {
-            SocialProofRow(socialProof = SocialProofData(userCountLabel = "50,000+"))
-            SocialProofRow(socialProof = null)
+            // ── App icon fills the shaped container ───────────────────
+            Image(
+                painter = painterResource(R.drawable.ic_launcher),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .clipToBounds(),
+            ) {
+                ShimmerSweep(durationMs = 3000, delayMs = 0)
+            }
         }
     }
 }
