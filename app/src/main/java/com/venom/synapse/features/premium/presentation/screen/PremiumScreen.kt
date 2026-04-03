@@ -2,7 +2,6 @@ package com.venom.synapse.features.premium.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -14,9 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -71,7 +72,6 @@ fun SynapsePremiumScreen(
         snackbarHost        = { snackbarController.SnackbarHost() },
         modifier            = modifier,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor      = Color.Transparent,
     ) { innerPadding ->
         when (val state = uiState) {
             is PremiumUiState.Loading      -> LoadingContent(Modifier.padding(innerPadding))
@@ -123,37 +123,41 @@ private fun PremiumReadyContent(
                 .offset(x = (-60).adp, y = 120.adp),
         )
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(
-                        end = MaterialTheme.synapse.spacing.s24,
-                        top = MaterialTheme.synapse.spacing.s20,
-                    ),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = stringResource(R.string.premium_close),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.8f),
-                    modifier           = Modifier.size(24.adp),
-                )
-            }
-
             LazyColumn(
-                contentPadding = PaddingValues(bottom = MaterialTheme.synapse.spacing.s32),
+                contentPadding = PaddingValues(
+                   MaterialTheme.synapse.spacing.screen,
+                ),
                 modifier       = Modifier.fillMaxSize(),
             ) {
+                stickyHeader {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Transparent)
+                            .statusBarsPadding()
+                            .padding(),
+                        contentAlignment = Alignment.CenterEnd,
+                    ) {
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(40.adp),
+                            shape = CircleShape,
+                        ) {
+                            Icon(
+                                imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                                contentDescription = stringResource(R.string.premium_close),
+                                tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.8f),
+                            )
+                        }
+                    }
+                }
+
                 item { HeroSection(trialDays = state.trialDays) }
 
                 item {
                     SectionLabel(
                         text     = stringResource(R.string.premium_section_features),
                         modifier = Modifier.padding(
-                            start   = MaterialTheme.synapse.spacing.s20,
-                            end     = MaterialTheme.synapse.spacing.s20,
                             top     = MaterialTheme.synapse.spacing.s4,
                             bottom  = MaterialTheme.synapse.spacing.s10,
                         ),
@@ -166,8 +170,6 @@ private fun PremiumReadyContent(
                     SectionLabel(
                         text     = stringResource(R.string.premium_section_plans),
                         modifier = Modifier.padding(
-                            start   = MaterialTheme.synapse.spacing.s20,
-                            end     = MaterialTheme.synapse.spacing.s20,
                             top     = MaterialTheme.synapse.spacing.s20,
                             bottom  = MaterialTheme.synapse.spacing.s10,
                         ),
@@ -178,8 +180,7 @@ private fun PremiumReadyContent(
                     PlansRow(
                         plans          = state.plans,
                         selectedPlanId = state.selectedPlanId,
-                        onPlanSelected = onPlanSelected,
-                        modifier       = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s20),
+                        onPlanSelected = onPlanSelected
                     )
                 }
 
@@ -190,11 +191,9 @@ private fun PremiumReadyContent(
                         isPurchasing = state.isPurchasing,
                         socialProof  = state.socialProof,
                         onStartTrial = onStartTrial,
-                        onDismiss    = onDismiss,
-                        modifier     = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s20),
+                        onDismiss    = onDismiss
                     )
                 }
             }
-        }
     }
 }
