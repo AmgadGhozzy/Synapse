@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
@@ -62,7 +63,6 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.LocalGradientTokens
 import com.venom.synapse.core.theme.White
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.features.premium.presentation.state.PremiumPlanUiModel
 import com.venom.synapse.features.premium.presentation.state.ProFeatureUiModel
@@ -70,7 +70,6 @@ import com.venom.synapse.features.premium.presentation.state.SocialProofData
 import com.venom.synapse.features.premium.presentation.state.iconKeyToDrawableRes
 import com.venom.synapse.features.premium.presentation.state.toColor
 import com.venom.ui.components.common.adp
-
 
 @Composable
 fun HeroSection(
@@ -187,8 +186,9 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
         )
         Text(
             text = stringResource(R.string.premium_pro_label),
-            style = MaterialTheme.synapse.typography.labelXLarge,
+            style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.wrapContentSize(Alignment.Center).alignByBaseline()
         )
     }
 }
@@ -203,7 +203,7 @@ internal fun PremiumFeaturesCard(
             .fillMaxWidth()
             .dropShadow(
                 shape = MaterialTheme.shapes.large,
-                shadow = ShadowTokens.ShadowStats.toShadow()
+                shadow = MaterialTheme.synapse.shadows.subtle.toShadow()
             )
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.background)
@@ -263,12 +263,12 @@ internal fun PremiumFeatureRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = feature.label,
-                style = MaterialTheme.synapse.typography.labelXLarge,
+                style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = feature.sublabel,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s2),
             )
@@ -374,7 +374,7 @@ fun PlanCard(
             alpha = 0.75f
         )
 
-    val shadow = if (isGradient) ShadowTokens.ShadowAnnualCard.toShadow() else ShadowTokens.ShadowPack.toShadow()
+    val shadow = if (isGradient) MaterialTheme.synapse.shadows.strong.toShadow() else MaterialTheme.synapse.shadows.subtle.toShadow()
     val shape = MaterialTheme.shapes.large
 
     Box(
@@ -449,7 +449,7 @@ fun PlanCard(
             ) {
                 Text(
                     text = plan.badgeLabel.resolve(),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
@@ -520,7 +520,7 @@ internal fun PremiumCtaButton(
 ) {
     val gradients = MaterialTheme.synapse.gradients
     val shape = MaterialTheme.shapes.medium
-    val ctaShadow = ShadowTokens.ShadowCta.toShadow()
+    val ctaShadow = MaterialTheme.synapse.shadows.strong.toShadow()
 
     Box(
         contentAlignment = Alignment.Center,
@@ -821,7 +821,7 @@ internal fun AppIconDisplay(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(124.adp)
-                .dropShadow(shape = shape, shadow = ShadowTokens.ShadowAnnualCard.toShadow())
+                .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.strong.toShadow())
                 .clip(shape)
                 .border(width = 3.adp, brush = MaterialTheme.synapse.gradients.gold, shape = shape),
         ) {
