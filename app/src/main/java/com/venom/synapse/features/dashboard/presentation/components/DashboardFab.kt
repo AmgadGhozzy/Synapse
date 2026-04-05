@@ -1,6 +1,16 @@
 package com.venom.synapse.features.dashboard.presentation.components
 
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -19,11 +29,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
 
@@ -32,76 +40,114 @@ import com.venom.ui.components.common.adp
 fun DashboardFab(
     isLocked  : Boolean,
     isExpanded: Boolean,
+    isVisible : Boolean,
     onClick   : () -> Unit,
     modifier  : Modifier = Modifier,
 ) {
-    val gradientBg = MaterialTheme.synapse.gradients.primary
-    val lockedBg   = MaterialTheme.synapse.gradients.gold
-    val fabShape   = MaterialTheme.shapes.medium
+    val tokens     = MaterialTheme.synapse
+    val gradientBg = tokens.gradients.primary
+    val lockedBg   = tokens.gradients.gold
+    val fabShape   = MaterialTheme.shapes.large
 
-    Box(
-        modifier = modifier
-            .dropShadow(
-                shape  = fabShape,
-                shadow = ShadowTokens.ShadowFab.toShadow(
-                    customColor = if (isLocked) MaterialTheme.synapse.semantic.gold else MaterialTheme.colorScheme.primary
-                )
-            )
-            .clip(fabShape)
-            .background(if (isLocked) lockedBg else gradientBg),
+    val shadowColor = if (isLocked) tokens.semantic.gold
+    else MaterialTheme.colorScheme.primary
+
+    AnimatedVisibility(
+        visible  = isVisible,
+        modifier = modifier,
+        enter    = fadeIn(
+            animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        ) + scaleIn(
+            initialScale  = 0.65f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness    = Spring.StiffnessMediumLow,
+            ),
+        ) + slideInVertically(
+            initialOffsetY = { it / 3 },
+            animationSpec  = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness    = Spring.StiffnessMediumLow,
+            ),
+        ),
+        exit     = fadeOut(
+            animationSpec = tween(200),
+        ) + scaleOut(
+            targetScale   = 0.80f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness    = Spring.StiffnessMedium,
+            ),
+        ) + slideOutVertically(
+            targetOffsetY = { it / 3 },
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness    = Spring.StiffnessMedium,
+            ),
+        ),
     ) {
-        ExtendedFloatingActionButton(
-            text = {
-                Text(
-                    text = if (isLocked) {
-                        stringResource(R.string.go_pro_label)
-                    } else {
-                        stringResource(R.string.fab_new_pack)
-                    },
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+        Box(
+            modifier = Modifier
+                .dropShadow(
+                    shape  = fabShape,
+                    shadow = tokens.shadows.medium.toShadow(customColor = shadowColor),
                 )
-            },
-            icon = {
-                Icon(
-                    painter = painterResource(
-                        if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus,
-                    ),
-                    contentDescription = if (isLocked) {
-                        stringResource(R.string.fab_upgrade_description)
-                    } else {
-                        stringResource(R.string.fab_new_pack_description)
-                    },
-                    modifier = Modifier.size(20.adp),
-                )
-            },
-            onClick        = onClick,
-            expanded       = isExpanded,
-            containerColor = Color.Transparent,
-            contentColor   = if (isLocked) {
-                MaterialTheme.colorScheme.onTertiary
-            } else {
-                Color.White.copy(0.9f)
-            },
-            shape     = fabShape,
-            elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
-        )
+                .clip(fabShape)
+                .background(if (isLocked) lockedBg else gradientBg),
+        ) {
+            ExtendedFloatingActionButton(
+                text = {
+                    Text(
+                        text  = stringResource(
+                            if (isLocked) R.string.go_pro_label else R.string.fab_new_pack,
+                        ),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                    )
+                },
+                icon = {
+                    Icon(
+                        painter            = painterResource(
+                            if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus,
+                        ),
+                        contentDescription = stringResource(
+                            if (isLocked) R.string.fab_upgrade_description
+                            else          R.string.fab_new_pack_description,
+                        ),
+                        modifier           = Modifier.size(24.adp),
+                    )
+                },
+                onClick        = onClick,
+                expanded       = isExpanded,
+                containerColor = Color.Transparent,
+                contentColor   = Color.White.copy(alpha = 0.9f),
+                shape          = fabShape,
+                elevation      = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 0.adp,
+                    pressedElevation = 0.adp,
+                    focusedElevation = 0.adp,
+                    hoveredElevation = 0.adp,
+                ),
+            )
+        }
     }
 }
 
 @Preview(name = "Light — Normal", showBackground = true)
-@Preview(name = "Dark — Normal", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Dark — Normal",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun DashboardFabNormalPreview() {
     SynapseTheme {
-        DashboardFab(isLocked = false, isExpanded = true, onClick = {})
+        DashboardFab(isLocked = false, isExpanded = true, isVisible = true, onClick = {})
     }
 }
 
 @Preview(name = "Light — Locked", showBackground = true)
-@Preview(name = "Dark — Locked", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Dark — Locked",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun DashboardFabLockedPreview() {
     SynapseTheme {
-        DashboardFab(isLocked = true, isExpanded = true, onClick = {})
+        DashboardFab(isLocked = true, isExpanded = true, isVisible = true, onClick = {})
     }
 }
