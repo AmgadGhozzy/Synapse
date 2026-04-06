@@ -33,8 +33,8 @@ fun GoogleSignInButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(56.adp),
-        shape = MaterialTheme.synapse.radius.xl,
+            .height(60.adp),
+        shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
             contentColor = Color(0xFF1F1F1F)
@@ -56,7 +56,7 @@ fun GoogleSignInButton(
             Spacer(modifier = Modifier.width(MaterialTheme.synapse.spacing.s12))
             Text(
                 text = stringResource(SynapseR.string.google_sign_in_button),
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
         }
