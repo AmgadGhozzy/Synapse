@@ -32,10 +32,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.HeroCardTokens
 import com.venom.synapse.core.ui.components.CardShell
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 
 @Composable
 fun PremiumBannerCard(
@@ -50,8 +48,7 @@ fun PremiumBannerCard(
         bgGrad   = bgGrad,
         modifier = modifier,
     ) {
-        Column(Modifier.padding(HeroCardTokens.Padding)) {
-            // ── Header row ────────────────────────────────────────────────────
+        Column(Modifier.padding(MaterialTheme.synapse.spacing.cardLarge)) {
             Row(
                 verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.adp),
@@ -59,7 +56,7 @@ fun PremiumBannerCard(
                 // Crown icon box
                 Box(
                     modifier = Modifier
-                        .size(52.adp)
+                        .size(56.adp)
                         .clip(RoundedCornerShape(16.adp))
                         .background(goldGrad),
                     contentAlignment = Alignment.Center,
@@ -67,7 +64,7 @@ fun PremiumBannerCard(
                     Icon(
                         painter            = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
-                        tint               = Color.White,
+                        tint               = Color.White.copy(0.9f),
                         modifier           = Modifier.size(24.adp),
                     )
                 }
@@ -75,30 +72,30 @@ fun PremiumBannerCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text       = stringResource(R.string.profile_premium_title),
-                        style      = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.asp),
+                        style      = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
                         color      = gold,
                     )
                     Spacer(Modifier.height(2.adp))
                     Text(
                         text  = stringResource(R.string.profile_premium_subtitle),
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.asp),
+                        style = MaterialTheme.typography.labelLarge,
                         color = gold.copy(alpha = 0.65f),
                     )
                 }
             }
 
-            Spacer(Modifier.height(16.adp))
+            Spacer(Modifier.height(20.adp))
 
             // ── CTA button ────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(56.adp)
                     .clip(RoundedCornerShape(16.adp))
                     .background(goldGrad)
                     .semantics { role = Role.Button }
-                    .clickable(onClick = onUpgrade)
-                    .padding(vertical = 13.adp),
+                    .clickable(onClick = onUpgrade),
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
@@ -108,14 +105,14 @@ fun PremiumBannerCard(
                     Icon(
                         painter            = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
-                        tint               = Color.White,
-                        modifier           = Modifier.size(14.adp),
+                        tint               = Color.White.copy(0.9f),
+                        modifier           = Modifier.size(16.adp),
                     )
                     Text(
                         text       = stringResource(R.string.profile_premium_cta),
-                        fontSize   = 14.asp,
+                        style      = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color      = Color.White,
+                        color      = Color.White.copy(0.9f),
                     )
                 }
             }

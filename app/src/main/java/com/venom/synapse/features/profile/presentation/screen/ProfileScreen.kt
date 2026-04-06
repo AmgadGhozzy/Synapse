@@ -1,5 +1,6 @@
 package com.venom.synapse.features.profile.presentation.screen
 
+import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -7,6 +8,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,10 +22,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,9 +37,12 @@ import com.venom.domain.model.AppTheme
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.core.ui.components.rememberSnackbarController
+import com.venom.synapse.core.ui.components.GoogleSignInButton
+import com.venom.synapse.core.ui.components.LoadingContent
 import com.venom.synapse.core.ui.components.SnackbarHost
+import com.venom.synapse.core.ui.components.rememberSnackbarController
+import com.venom.synapse.core.ui.state.UiEffect
+import com.venom.synapse.features.profile.presentation.components.ClearDataConfirmDialog
 import com.venom.synapse.features.profile.presentation.components.DeleteAccountConfirmDialog
 import com.venom.synapse.features.profile.presentation.components.DestructiveSettingsRow
 import com.venom.synapse.features.profile.presentation.components.LifetimeProgressCard
@@ -55,10 +62,7 @@ import com.venom.synapse.features.profile.presentation.state.StudySettingsUiStat
 import com.venom.synapse.features.profile.presentation.viewmodel.ProfileViewModel
 import com.venom.synapse.features.profile.presentation.viewmodel.StudySettingsViewModel
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.onboarding.GoogleSignInButton
 import com.venom.ui.viewmodel.SettingsViewModel
-
-// ── Screen entry ──────────────────────────────────────────────────────────────
 
 @Composable
 fun ProfileScreen(
@@ -67,42 +71,48 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isActionLoading by viewModel.isActionLoading.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
+    val context            = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate      -> onNavigate(effect.route)
                 is UiEffect.OpenExternal  -> onNavigate(effect.url)
-                is UiEffect.ShowToast     -> snackbarController.success(effect.message)
-                is UiEffect.ShowError     -> snackbarController.error(effect.message)
+                is UiEffect.ShowToast     -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.ShowError     -> snackbarController.error(effect.text.asString(context))
                 else                      -> Unit
             }
         }
     }
 
     Scaffold(
-        modifier            = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor      = MaterialTheme.colorScheme.background,
-        snackbarHost        = { snackbarController.SnackbarHost() },
+        snackbarHost = { snackbarController.SnackbarHost() },
+        containerColor       = Color.Transparent,
     ) { innerPadding ->
-        ProfileContent(
-            uiState             = uiState,
-            onUpgrade           = viewModel::onUpgradeTapped,
-            onPrivacy           = viewModel::onPrivacyTapped,
-            onHelp              = viewModel::onHelpTapped,
-            onRateApp           = viewModel::onRateAppTapped,
-            onClearAllData      = viewModel::onClearAllData,
-            onDeleteAccount     = viewModel::onDeleteAccount,
-            onSignOut           = viewModel::onSignOut,
-            onGoogleSignIn      = viewModel::onGoogleSignIn,
-            modifier            = Modifier.padding(innerPadding),
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            ProfileContent(
+                uiState             = uiState,
+                onUpgrade           = viewModel::onUpgradeTapped,
+                onPrivacy           = viewModel::onPrivacyTapped,
+                onHelp              = viewModel::onHelpTapped,
+                onRateApp           = viewModel::onRateAppTapped,
+                onClearAllData      = viewModel::onClearAllData,
+                onDeleteAccount     = viewModel::onDeleteAccount,
+                onSignOut           = viewModel::onSignOut,
+                onGoogleSignIn      = viewModel::onGoogleSignIn,
+                modifier            = Modifier.padding(innerPadding),
+            )
+
+            if (isActionLoading) {
+                LoadingContent(modifier = Modifier.align(Alignment.Center))
+            }
+        }
     }
 }
-
-// ── Content ───────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ProfileContent(
@@ -113,11 +123,10 @@ private fun ProfileContent(
     onPrivacy: () -> Unit,
     onHelp: () -> Unit,
     onRateApp: () -> Unit,
-    onExportData: () -> Unit = {},
     onClearAllData: () -> Unit = {},
     onDeleteAccount: () -> Unit,
     onSignOut: () -> Unit,
-    onGoogleSignIn: (android.content.Context) -> Unit,
+    onGoogleSignIn: (Context) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val settings      by settingsViewModel.uiState.collectAsStateWithLifecycle()
@@ -131,6 +140,7 @@ private fun ProfileContent(
     // Local UI state — time picker + delete account dialog visibility
     var showTimePicker         by rememberSaveable { mutableStateOf(false) }
     var showDeleteAccountDialog by rememberSaveable { mutableStateOf(false) }
+    var showClearDataDialog     by rememberSaveable { mutableStateOf(false) }
 
     // Show M3 TimePicker dialog when requested
     if (showTimePicker) {
@@ -157,9 +167,22 @@ private fun ProfileContent(
         )
     }
 
+    if (showClearDataDialog) {
+        ClearDataConfirmDialog(
+            onDismiss = { showClearDataDialog = false },
+            onConfirm = {
+                showClearDataDialog = false
+                onClearAllData()
+            },
+        )
+    }
+
     LazyColumn(
         modifier            = modifier.fillMaxSize(),
-        contentPadding      = PaddingValues(bottom = 96.adp, top = 132.adp),
+        contentPadding      = PaddingValues(
+            bottom = MaterialTheme.synapse.spacing.screenContentBottom,
+            top    = MaterialTheme.synapse.spacing.screenContentTop
+        ),
         verticalArrangement = Arrangement.spacedBy(20.adp),
     ) {
 
@@ -173,7 +196,7 @@ private fun ProfileContent(
         }
 
         // ── Google sign-in prompt (anonymous) ────────────────────────────────
-        if (uiState.isAnonymous) {
+        if (uiState.isAnonymous && !uiState.isLoading) {
             item {
                 val context = LocalContext.current
                 GoogleSignInButton(
@@ -193,12 +216,12 @@ private fun ProfileContent(
             )
         }
 
-        // ── Premium banner (free users only) ─────────────────────────────────
-        if (!uiState.isPremium) {
+        // ── Premium banner (free users only) ───────────────────
+        if (!uiState.isPremium && !uiState.isLoading) {
             item {
                 PremiumBannerCard(
                     gold      = semantic.gold,
-                    goldGrad  = synapse.gradients.goPro,
+                    goldGrad  = synapse.gradients.gold,
                     bgGrad    = synapse.gradients.streakHero,
                     onUpgrade = onUpgrade,
                     modifier  = Modifier.padding(horizontal = 20.adp),
@@ -249,32 +272,33 @@ private fun ProfileContent(
 //            )
 //        }
 
-//        // ── 4. Data Management ────────────────────────────────────────────────
-//        item {
-//            DataManagementSection(
-//                onExportData   = onExportData,
-//                onClearAllData = onClearAllData,
-//                modifier       = Modifier.padding(horizontal = 20.adp),
-//            )
-//        }
-
         // ── 5. Account ────────────────────────────────────────────────────────
         item {
             AccountSection(
                 onPrivacy          = onPrivacy,
                 onHelp             = onHelp,
                 onRateApp          = onRateApp,
-                onDeleteAccount    = { showDeleteAccountDialog = true },
                 modifier           = Modifier.padding(horizontal = 20.adp),
             )
         }
 
-        // ── Sign Out ──────────────────────────────────────────────────────────
         item {
-            ProfileSignOutRow(
-                onClick  = onSignOut,
-                modifier = Modifier.padding(horizontal = 20.adp),
+            DangerZoneSection(
+                isAnonymous     = uiState.isAnonymous,
+                onClearAllData  = { showClearDataDialog = true },
+                onDeleteAccount = { showDeleteAccountDialog = true },
+                modifier        = Modifier.padding(horizontal = 20.adp),
             )
+        }
+
+        // Sign Out authenticated only
+        if (!uiState.isAnonymous && !uiState.isLoading) {
+            item {
+                ProfileSignOutRow(
+                    onClick  = onSignOut,
+                    modifier = Modifier.padding(horizontal = 20.adp),
+                )
+            }
         }
     }
 }
@@ -385,41 +409,10 @@ private fun NotificationsSection(
 }
 
 @Composable
-private fun DataManagementSection(
-    onExportData: () -> Unit,
-    onClearAllData: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ProfileSettingsSection(
-        title    = stringResource(R.string.settings_section_data),
-        modifier = modifier,
-    ) {
-        ProfileSettingsRow(
-            label      = stringResource(R.string.settings_export_data),
-            subLabel   = stringResource(R.string.settings_export_data_sub),
-            iconRes    = R.drawable.ic_download,
-            iconTint   = MaterialTheme.synapse.semantic.success,
-            iconBg     = MaterialTheme.synapse.semantic.success.copy(alpha = 0.12f),
-            hasDivider = true,
-            onClick    = onExportData,
-        ) { ProfileChevron() }
-
-        DestructiveSettingsRow(
-            label      = stringResource(R.string.settings_clear_data),
-            subLabel   = stringResource(R.string.settings_clear_data_sub),
-            iconRes    = R.drawable.ic_trash_2,
-            hasDivider = false,
-            onClick    = onClearAllData,
-        )
-    }
-}
-
-@Composable
 private fun AccountSection(
     onPrivacy: () -> Unit,
     onHelp: () -> Unit,
     onRateApp: () -> Unit,
-    onDeleteAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -453,17 +446,40 @@ private fun AccountSection(
             iconRes    = R.drawable.ic_star,
             iconTint   = MaterialTheme.synapse.semantic.gold,
             iconBg     = MaterialTheme.synapse.semantic.goldContainer,
-            hasDivider = true,
+            hasDivider = false,
             onClick    = onRateApp,
         ) { ProfileChevron() }
+    }
+}
 
+@Composable
+private fun DangerZoneSection(
+    isAnonymous: Boolean,
+    onClearAllData: () -> Unit,
+    onDeleteAccount: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ProfileSettingsSection(
+        title    = stringResource(R.string.settings_section_danger_zone),
+        modifier = modifier,
+    ) {
         DestructiveSettingsRow(
-            label      = stringResource(R.string.settings_delete_account),
-            subLabel   = stringResource(R.string.settings_delete_account_sub),
-            iconRes    = R.drawable.ic_user_x,
-            hasDivider = false,
-            onClick    = onDeleteAccount,
+            label      = stringResource(R.string.settings_clear_data),
+            subLabel   = stringResource(R.string.settings_clear_data_sub),
+            iconRes    = R.drawable.ic_trash_2,
+            hasDivider = !isAnonymous,
+            onClick    = onClearAllData,
         )
+
+        if (!isAnonymous) {
+            DestructiveSettingsRow(
+                label      = stringResource(R.string.settings_delete_account),
+                subLabel   = stringResource(R.string.settings_delete_account_sub),
+                iconRes    = R.drawable.ic_user_x,
+                hasDivider = false,
+                onClick    = onDeleteAccount,
+            )
+        }
     }
 }
 
@@ -472,7 +488,7 @@ private fun AccountSection(
 private val previewProfile = ProfileUiState(
     userName        = "Alex Johnson",
     userEmail       = "alex.johnson@email.com",
-    planLabel       = "Free Plan",
+    planLabelRes    = R.string.profile_plan_free,
     avatarInitial   = 'A',
     packCount       = 4,
     cardCount       = 470,
@@ -519,7 +535,7 @@ private fun StudySettingsSectionPreview() {
 private fun LifetimeProgressPreview() {
     SynapseTheme {
         val semantic = MaterialTheme.synapse.semantic
-        androidx.compose.foundation.layout.Column(
+        Column(
             modifier            = Modifier.padding(16.adp),
             verticalArrangement = Arrangement.spacedBy(12.adp),
         ) {

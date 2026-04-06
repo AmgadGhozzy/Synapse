@@ -26,7 +26,6 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
 
 @Composable
 fun ProfileStatRow(
@@ -85,8 +84,9 @@ private fun ProfileStatChip(
         ) {
             Text(
                 text       = value,
-                fontSize   = 20.asp,
-                fontWeight = FontWeight.ExtraBold,
+                style      = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                ),
                 color      = valueColor,
                 textAlign  = TextAlign.Center,
             )
