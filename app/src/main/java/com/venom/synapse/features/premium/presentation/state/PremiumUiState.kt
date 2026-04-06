@@ -1,30 +1,25 @@
 package com.venom.synapse.features.premium.presentation.state
 
-import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
+import com.venom.synapse.R
+import com.venom.synapse.core.ui.state.UiText
 import com.venom.synapse.domain.model.BillingPeriod
 import com.venom.synapse.domain.model.FeatureColorRole
 import com.venom.synapse.domain.model.PaywallConfig
 import com.venom.synapse.domain.model.PremiumPlan
 import com.venom.synapse.domain.model.ProFeature
 
-/**
- * ═══════════════════════════════════════════════════════════════════
- * PREMIUM UI MODELS
- * ═══════════════════════════════════════════════════════════════════
- */
-
 @Immutable
 data class PremiumPlanUiModel(
     val id: String,
-    val label: String,
-    val badgeLabel: String?,
+    val label: UiText,
+    val badgeLabel: UiText?,
     val priceDisplay: String,
-    val periodDisplay: String,
+    val periodDisplay: UiText,
     val noteDisplay: String,
     val isHighlighted: Boolean,
     val skuId: String,
@@ -32,11 +27,35 @@ data class PremiumPlanUiModel(
 
 @Immutable
 data class ProFeatureUiModel(
-    @DrawableRes val iconRes: Int,
+    val iconKey: String,
     val label: String,
     val sublabel: String,
     val colorRole: FeatureColorRole,
 )
+
+@DrawableRes
+fun iconKeyToDrawableRes(iconKey: String): Int = when (iconKey) {
+    "layers"        -> R.drawable.ic_layers
+    "brain"         -> R.drawable.ic_brain
+    "file_text"     -> R.drawable.ic_file_text
+    "youtube"       -> R.drawable.ic_youtube
+    "globe"         -> R.drawable.ic_globe
+    "sparkles"      -> R.drawable.ic_sparkles
+    "zap"           -> R.drawable.ic_zap
+    "crown"         -> R.drawable.ic_crown
+    "gem"           -> R.drawable.ic_gem
+    "book_open"     -> R.drawable.ic_book_open
+    "target"        -> R.drawable.ic_target
+    "clock"         -> R.drawable.ic_clock
+    "award"         -> R.drawable.ic_award
+    "lock"          -> R.drawable.ic_lock
+    "check"         -> R.drawable.ic_check
+    "star"          -> R.drawable.ic_star
+    "flame"         -> R.drawable.ic_flame
+    "trending_up"   -> R.drawable.ic_trending_up
+    "trending_down" -> R.drawable.ic_trending_down
+    else            -> R.drawable.ic_sparkles
+}
 
 @Composable
 fun FeatureColorRole.toColor(): Color {
@@ -51,20 +70,15 @@ fun FeatureColorRole.toColor(): Color {
     }
 }
 
-/**
- * Thin wrapper around [com.android.billingclient.api.ProductDetails] price data.
- */
 data class PlayPriceInfo(
     val formattedPrice: String,
     val billingNote: String,
 )
 
-// ══════════════════════════════════════════════════════════════════
-// UI STATE
-// ══════════════════════════════════════════════════════════════════
-
 sealed interface PremiumUiState {
+
     data object Loading : PremiumUiState
+    data object AlreadyPremium : PremiumUiState
 
     @Immutable
     data class Ready(
@@ -73,80 +87,61 @@ sealed interface PremiumUiState {
         val selectedPlanId: String,
         val trialDays: Int,
         val isPurchasing: Boolean = false,
+        val socialProof: SocialProofData? = null,
     ) : PremiumUiState
 
     @Immutable
     data class Error(val message: String) : PremiumUiState
 }
 
-// ══════════════════════════════════════════════════════════════════
-// EVENTS
-// ══════════════════════════════════════════════════════════════════
-
 sealed interface PremiumEvent {
     data class PurchaseSuccess(val planId: String) : PremiumEvent
     data class PurchaseFailed(val reason: String) : PremiumEvent
     data object Dismissed : PremiumEvent
+    data object RequiresSignIn : PremiumEvent
+    data object NavigateToProfile : PremiumEvent
     data class ShowSnackbar(val message: String) : PremiumEvent
 }
 
-// ══════════════════════════════════════════════════════════════════
-// MAPPERS
-// ══════════════════════════════════════════════════════════════════
-
 internal fun PaywallConfig.toUiModels(
-    context: Context,
     playPrices: Map<String, PlayPriceInfo> = emptyMap(),
+    isArabic: Boolean = false,
 ): Pair<List<PremiumPlanUiModel>, List<ProFeatureUiModel>> {
     val planModels    = plans.map { it.toUiModel(playPrices[it.skuId]) }
-    val featureModels = features.map { it.toUiModel(context) }
+    val featureModels = features.map { it.toUiModel(isArabic) }
     return planModels to featureModels
 }
 
-internal fun PremiumPlan.toUiModel(playPrice: PlayPriceInfo? = null): PremiumPlanUiModel {
-    val price  = playPrice?.formattedPrice ?: defaultPriceDisplay()
-    val period = billingPeriod.toPeriodDisplay()
-    val note   = playPrice?.billingNote    ?: billingPeriod.toNoteDisplay()
-
-    return PremiumPlanUiModel(
+internal fun PremiumPlan.toUiModel(playPrice: PlayPriceInfo? = null): PremiumPlanUiModel =
+    PremiumPlanUiModel(
         id            = id,
-        label         = billingPeriod.toLabel(),
-        badgeLabel    = savingsPercent?.let { "SAVE $it%" },
-        priceDisplay  = price,
-        periodDisplay = period,
-        noteDisplay   = note,
+        label         = billingPeriod.toLabelUiText(),
+        badgeLabel    = savingsPercent?.let { pct -> UiText.Raw(R.string.premium_badge_save, pct) },
+        priceDisplay  = playPrice?.formattedPrice ?: defaultPriceDisplay(),
+        periodDisplay = UiText.Raw(R.string.premium_period_per_month),
+        noteDisplay   = playPrice?.billingNote ?: billingPeriod.toNoteDisplay(),
         isHighlighted = isHighlighted,
         skuId         = skuId,
     )
+
+internal fun ProFeature.toUiModel(isArabic: Boolean): ProFeatureUiModel = ProFeatureUiModel(
+    iconKey   = iconKey,
+    label     = if (isArabic) labelAr.takeUnless { it.isNullOrBlank() } ?: label else label,
+    sublabel  = if (isArabic) sublabelAr.takeUnless { it.isNullOrBlank() } ?: sublabel else sublabel,
+    colorRole = colorRole,
+)
+
+private fun BillingPeriod.toLabelUiText(): UiText = when (this) {
+    BillingPeriod.ANNUAL  -> UiText.Raw(R.string.premium_billing_period_annual)
+    BillingPeriod.MONTHLY -> UiText.Raw(R.string.premium_billing_period_monthly)
 }
 
-internal fun ProFeature.toUiModel(context: Context): ProFeatureUiModel {
-    val resolvedRes = context.resources.getIdentifier(
-        "ic_${iconKey.replace("-", "_")}", "drawable", context.packageName,
-    ).takeIf { it != 0 } ?: context.resources.getIdentifier(
-        "ic_sparkles", "drawable", context.packageName,
-    )
-    return ProFeatureUiModel(
-        iconRes   = resolvedRes,
-        label     = label,
-        sublabel  = sublabel,
-        colorRole = colorRole,
-    )
-}
-
-private fun BillingPeriod.toLabel() = when (this) {
-    BillingPeriod.ANNUAL  -> "Annual"
-    BillingPeriod.MONTHLY -> "Monthly"
-}
-
-private fun BillingPeriod.toPeriodDisplay() = "/mo"
-
-private fun BillingPeriod.toNoteDisplay() = when (this) {
+private fun BillingPeriod.toNoteDisplay(): String = when (this) {
     BillingPeriod.ANNUAL  -> "Billed annually"
     BillingPeriod.MONTHLY -> "Cancel anytime"
 }
 
-private fun PremiumPlan.defaultPriceDisplay() = when (billingPeriod) {
-    BillingPeriod.ANNUAL  -> "\$4.99"
-    BillingPeriod.MONTHLY -> "\$9.99"
+private fun PremiumPlan.defaultPriceDisplay(): String = when (billingPeriod) {
+    BillingPeriod.ANNUAL  -> "$3.99"
+    BillingPeriod.MONTHLY -> "$6.99"
 }
