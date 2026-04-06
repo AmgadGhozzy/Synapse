@@ -47,10 +47,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,10 +61,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -75,7 +77,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.ShadowTokens
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.core.ui.components.GoogleSignInButton
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.rememberSnackbarController
@@ -112,7 +114,7 @@ fun OnboardingScreen(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { snackbarController.SnackbarHost() },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor       = Color.Transparent,
     ) { innerPadding ->
         OnboardingContent(
             uiState        = uiState,
@@ -237,7 +239,7 @@ private fun StepContent(
             textAlign  = TextAlign.Center,
         )
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
         Text(
             text      = stringResource(step.subtitleRes),
@@ -249,7 +251,7 @@ private fun StepContent(
     }
 }
 
-// ─── Illustration circle ──────────────────────────────────────────────────────
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun IllustrationCircle(
     @DrawableRes illustrationRes: Int,
@@ -289,6 +291,8 @@ private fun IllustrationCircle(
         )
     )
 
+    val shape = MaterialShapes.Pentagon.toShape()
+
     Box(
         modifier         = modifier.size(260.adp),
         contentAlignment = Alignment.Center,
@@ -305,21 +309,19 @@ private fun IllustrationCircle(
                 .border(
                     width = 1.5.adp,
                     color = animatedAccent,
-                    shape = CircleShape,
+                    shape = shape,
                 ),
         )
 
         // backdrop circle with colored shadow + inner glow
         Box(
             modifier = Modifier
-                .shadow(
-                    elevation    = 20.adp,
-                    shape        = CircleShape,
-                    ambientColor = animatedAccent.copy(alpha = 0.25f),
-                    spotColor    = animatedAccent.copy(alpha = 0.18f),
+                .dropShadow(
+                    shape = shape,
+                    shadow = MaterialTheme.synapse.shadows.medium.toShadow(animatedAccent)
                 )
                 .size(240.adp)
-                .clip(CircleShape)
+                .clip(MaterialShapes.Pentagon.toShape())
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
@@ -328,7 +330,7 @@ private fun IllustrationCircle(
                     .size(210.adp)
                     .background(
                         color = animatedAccent.copy(alpha = 0.13f),
-                        shape = CircleShape,
+                        shape = shape,
                     ),
             )
         }
@@ -380,9 +382,7 @@ private fun StepLabelPill(
         )
         Text(
             text       = label.uppercase(),
-            style      = MaterialTheme.typography.labelSmall.copy(
-
-            ),
+            style      = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.ExtraBold,
             color      = animatedAccent,
         )
@@ -511,17 +511,14 @@ private fun CtaButton(
         animationSpec = spring(stiffness = Spring.StiffnessHigh),
     )
 
-    val isDark        = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    val shadowToken   = if (isDark) ShadowTokens.ShadowCtaDark else ShadowTokens.ShadowCtaLight
+    val shadowToken   = MaterialTheme.synapse.shadows.strong
 
     Box(
         modifier = modifier
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(
-                elevation    = shadowToken.elevation,
-                shape        = MaterialTheme.synapse.radius.lg,
-                ambientColor = shadowToken.color,
-                spotColor    = shadowToken.color,
+            .dropShadow(
+                shape = MaterialTheme.synapse.radius.lg,
+                shadow = shadowToken.toShadow()
             )
             .clip(MaterialTheme.synapse.radius.lg)
             .background(MaterialTheme.synapse.gradients.primary)
