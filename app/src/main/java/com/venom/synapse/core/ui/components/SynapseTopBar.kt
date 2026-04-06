@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -33,7 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,23 +46,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import coil.compose.AsyncImage
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.Gradients
-import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
 
-/**
- * Shell-level top bar for the application.
- */
 @Composable
 fun SynapseTopBar(
     title: String,
@@ -70,7 +69,7 @@ fun SynapseTopBar(
     onPremiumClick: () -> Unit,
     modifier: Modifier = Modifier,
     profileAvatarUrl: String? = null,
-    isPremium: Boolean = false
+    isPremium: Boolean = false,
 ) {
     Row(
         modifier = modifier
@@ -94,21 +93,22 @@ fun SynapseTopBar(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
 
-        GoProButton(
-            isPremium = isPremium,
-            onClick = onPremiumClick,
-        )
+        GoProButton(isPremium = isPremium, onClick = onPremiumClick)
     }
 }
 
@@ -124,18 +124,17 @@ private fun AvatarButton(
 ) {
     val shape = MaterialShapes.Cookie9Sided.toShape()
 
-    Box(
-        contentAlignment = Alignment.BottomEnd,
-    ) {
+    Box(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
         Box(
-            modifier = modifier
+            modifier = Modifier
                 .size(56.adp)
                 .clip(shape)
                 .background(MaterialTheme.synapse.gradients.primary)
                 .border(
-                   2.adp,
-                    if (isPremium) MaterialTheme.synapse.gradients.gold else MaterialTheme.synapse.gradients.primary,
-                     shape
+                    width = 2.adp,
+                    brush = if (isPremium) MaterialTheme.synapse.gradients.gold
+                    else MaterialTheme.synapse.gradients.primary,
+                    shape = shape,
                 )
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
@@ -145,15 +144,18 @@ private fun AvatarButton(
                     model = profileAvatarUrl,
                     contentDescription = stringResource(R.string.profile_photo_description),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().clip(shape),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape),
                 )
             } else {
                 Text(
                     text = initial.take(1).uppercase(),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White.copy(0.9f),
-                    )
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        color = Color.White.copy(alpha = 0.9f),
+                    ),
                 )
             }
         }
@@ -167,188 +169,166 @@ private fun GoProButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val infiniteTransition = rememberInfiniteTransition()
-    var pillWidthPx by remember { mutableFloatStateOf(0f) }
+    val transition = rememberInfiniteTransition()
+    val density = LocalDensity.current
 
-    // ── Shimmer sweep — parked off-screen for premium users ────────────────────
-    val shimmerFraction by infiniteTransition.animateFloat(
-        initialValue = if (isPremium) 100f else -1.4f,
-        targetValue  = if (isPremium) 100f else  2.4f,
+    // Measured from the pill's inner content Box — shadow-free, accurate
+    var pillSize by remember { mutableStateOf(IntSize.Zero) }
+    val pillW = with(density) { pillSize.width.toDp() }
+    val pillH = with(density) { pillSize.height.toDp() }
+
+    val shimmerFraction by transition.animateFloat(
+        initialValue = -1.4f,
+        targetValue = 2.4f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3_000, delayMillis = 2_000, easing = EaseInOut),
-            repeatMode = RepeatMode.Restart,
+            tween(3_000, delayMillis = 2_000, easing = EaseInOut),
+            RepeatMode.Restart,
         ),
     )
-
-    // ── Outer pulse ring — frozen at 1× scale / 0 alpha for premium users ─────
-    val ringScale by infiniteTransition.animateFloat(
-        initialValue = if (isPremium) 1f else 0.8f,
-        targetValue  = if (isPremium) 1f else 1.5f,
+    val ringScale by transition.animateFloat(
+        initialValue = 0.8f,
+        targetValue = 2f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2_800, easing = FastOutSlowInEasing),
+            animation = tween(durationMillis = 2000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse,
         ),
     )
-    val ringAlpha by infiniteTransition.animateFloat(
-        initialValue = if (isPremium) 0f else 0.5f,
-        targetValue  = if (isPremium) 0f else 0f,
+    val ringAlpha by transition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2_800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
+            tween(2000, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
         ),
     )
-
-    // ── Crown rock — kept for all users (status indicator) ────────────────────
-    val crownRotation by infiniteTransition.animateFloat(
+    val crownRotation by transition.animateFloat(
         initialValue = -10f,
-        targetValue  = 10f,
+        targetValue = 10f,
         animationSpec = infiniteRepeatable(
-            animation = tween(4_000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse,
+            tween(4_000, easing = EaseInOutSine),
+            RepeatMode.Reverse
+        ),
+    )
+    val shakeOffset by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            keyframes {
+                durationMillis = 10_000
+                0f at 0; 6f at 60; 6f at 120; 5f at 180
+                5f at 240; 3f at 300; 3f at 360; 0f at 420; 0f at 10_000
+            },
+            RepeatMode.Restart,
         ),
     )
 
-    // ── Shake — kept for all users ────────────────────────────────────────────
-    val shakeOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue  = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 10_000
-                0f at 0
-                6f at 60
-                6f at 120
-                5f at 180
-                5f at 240
-                3f at 300
-                3f at 360
-                0f at 420
-                0f at 10_000
-            },
-            repeatMode = RepeatMode.Restart,
-        )
-    )
-
-    val pillLabel = if (isPremium) {
-        stringResource(R.string.go_pro_label_premium)
-    } else {
-        stringResource(R.string.go_pro_label)
-    }
+    val pillLabel = if (isPremium) stringResource(R.string.go_pro_label_premium)
+    else stringResource(R.string.go_pro_label)
 
     Box(
-        modifier = modifier
-            .graphicsLayer { translationX = shakeOffset }
-            .dropShadow(
-                shape  = MaterialTheme.synapse.radius.pill,
-                shadow = ShadowTokens.GoldGlow.toShadow(),
-            ),
+        modifier = modifier.graphicsLayer { translationX = shakeOffset },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .graphicsLayer {
-                    scaleX = ringScale
-                    scaleY = ringScale
-                    alpha  = ringAlpha
-                }
-                .border(
-                    width = 1.5.adp,
-                    color = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.7f),
-                    shape = MaterialTheme.synapse.radius.pill,
-                ),
-        )
-
-        // Pill surface
-        Surface(
-            onClick = onClick,
-            modifier = Modifier.onSizeChanged { pillWidthPx = it.width.toFloat() },
-            shape = MaterialTheme.synapse.radius.pill,
-            color = Color.Transparent,
-            contentColor = Color.White.copy(0.9f),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-
-                // Full pill gradient background
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(MaterialTheme.synapse.gradients.gold),
-                )
-
-                // Angled shimmer
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .graphicsLayer {
-                            translationX = shimmerFraction * pillWidthPx
-                            rotationZ    = 25f
-                            scaleX       = 0.25f
-                        }
-                        .background(Gradients.GradientShimmer),
-                )
-
-                Row(
-                    modifier = Modifier.padding(
-                        horizontal = MaterialTheme.synapse.spacing.s16,
-                        vertical   = MaterialTheme.synapse.spacing.s8,
+        if (!isPremium) {
+            Box(
+                modifier = Modifier
+                    .size(width = pillW, height = pillH)
+                    .graphicsLayer { scaleX = ringScale; scaleY = ringScale; alpha = ringAlpha }
+                    .border(
+                        width = 1.5.adp,
+                        color = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.80f),
+                        shape = CircleShape,
                     ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
+            )
+        }
+
+        Box(
+            modifier = Modifier.dropShadow(
+                shape = MaterialTheme.synapse.radius.pill,
+                shadow = MaterialTheme.synapse.shadows.goldGlow.toShadow(),
+            ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                onClick = onClick,
+                shape = CircleShape,
+                color = Color.Transparent,
+                contentColor = Color.White.copy(alpha = 0.9f),
+            ) {
+                Box(
+                    modifier = Modifier.onSizeChanged { pillSize = it },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_crown),
-                        contentDescription = null,
-                        tint = Color.White.copy(0.9f),
+                    // Gold gradient background
+                    Box(
                         modifier = Modifier
-                            .size(18.adp)
-                            .graphicsLayer { rotationZ = crownRotation },
+                            .matchParentSize()
+                            .background(MaterialTheme.synapse.gradients.gold),
                     )
-                    Text(
-                        text  = pillLabel,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    // Shimmer sweep
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer {
+                                translationX = shimmerFraction * pillSize.width
+                                rotationZ = 25f
+                                scaleX = 0.25f
+                            }
+                            .background(MaterialTheme.synapse.gradients.shimmer),
+                    )
+                    // Label row
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = MaterialTheme.synapse.spacing.s16,
+                            vertical = MaterialTheme.synapse.spacing.s10,
                         ),
-                        color = Color.White.copy(0.9f),
-                    )
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_crown),
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier
+                                .size(16.adp)
+                                .graphicsLayer { rotationZ = crownRotation },
+                        )
+                        Text(
+                            text = pillLabel,
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                            ),
+                            color = Color.White.copy(alpha = 0.9f),
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// ── Previews ─────────────────────────────────────────────────────────────────
-@Preview(name = "Light Mode", showBackground = true)
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+
+@Preview(name = "Light", showBackground = true, locale = "ar")
+@Preview(name = "Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun SynapseTopBarPreview() {
     SynapseTheme {
         SynapseTopBar(
-            title = "Dashboard",
-            subtitle = "Good morning",
-            userInitial = "A",
-            onProfileClick = {},
-            onPremiumClick = {},
+            title = "Dashboard", subtitle = "Good morning",
+            userInitial = "A", onProfileClick = {}, onPremiumClick = {},
         )
     }
 }
 
 @Preview(name = "Premium · Light", showBackground = true)
-@Preview(
-    name = "Premium · Dark",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true,
-)
+@Preview(name = "Premium · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun SynapseTopBarPremiumPreview() {
     SynapseTheme {
         SynapseTopBar(
-            title = "Library",
-            subtitle = "Your collection",
-            userInitial = "A",
-            isPremium = true,
-            onProfileClick = {},
-            onPremiumClick = {}
+            title = "Library", subtitle = "Your collection",
+            userInitial = "A", isPremium = true, onProfileClick = {}, onPremiumClick = {},
         )
     }
 }
