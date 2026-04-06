@@ -15,10 +15,13 @@ import com.venom.domain.model.AppTheme
 import com.venom.domain.model.FontStyles
 import com.venom.synapse.core.theme.tokens.DarkGradientTokens
 import com.venom.synapse.core.theme.tokens.LightGradientTokens
-import com.venom.synapse.core.theme.tokens.SynapseShapes
+import com.venom.synapse.core.theme.tokens.LocalAdaptiveScale
+import com.venom.synapse.core.theme.tokens.buildAdaptiveMaterialShapes
 import com.venom.synapse.core.theme.tokens.buildAdaptiveRadius
+import com.venom.synapse.core.theme.tokens.buildAdaptiveShadowTokens
 import com.venom.synapse.core.theme.tokens.buildAdaptiveSpacing
 import com.venom.synapse.core.theme.tokens.buildThemedTypography
+import com.venom.synapse.core.theme.tokens.computeAdaptiveScale
 import com.venom.ui.theme.Alexandria
 import com.venom.ui.theme.Cairo
 import com.venom.ui.theme.Caveat
@@ -34,9 +37,9 @@ import com.venom.ui.theme.tokens.LocalGlassColors
 
 @Composable
 fun SynapseTheme(
-    appTheme: AppTheme = AppTheme.SYSTEM,
-    fontFamilyStyle: FontStyles = FontStyles.Default,
-    content: @Composable () -> Unit,
+    appTheme         : AppTheme    = AppTheme.SYSTEM,
+    fontFamilyStyle  : FontStyles  = FontStyles.Default,
+    content          : @Composable () -> Unit,
 ) {
     val view = LocalView.current
     val arabicLocale = isArabicLocale()
@@ -47,15 +50,15 @@ fun SynapseTheme(
             else -> {
                 val chosen = try {
                     when (fontFamilyStyle) {
-                        FontStyles.INTER -> Inter
-                        FontStyles.CAIRO -> Cairo
-                        FontStyles.ALEXANDRIA -> Alexandria
-                        FontStyles.CAVEAT -> Caveat
-                        FontStyles.ROBOTO -> Roboto
-                        FontStyles.QUICKSAND -> Quicksand
+                        FontStyles.INTER        -> Inter
+                        FontStyles.CAIRO        -> Cairo
+                        FontStyles.ALEXANDRIA   -> Alexandria
+                        FontStyles.CAVEAT       -> Caveat
+                        FontStyles.ROBOTO       -> Roboto
+                        FontStyles.QUICKSAND    -> Quicksand
                         FontStyles.JOSEFIN_SANS -> JosefinSans
                         FontStyles.PLAYPEN_SANS -> PlaypenSans
-                        else -> Inter
+                        else                    -> Inter
                     }
                 } catch (_: Exception) { Inter }
                 BiScriptFonts(latin = chosen, arabic = chosen)
@@ -64,50 +67,53 @@ fun SynapseTheme(
     }
 
     val isDark = when (appTheme) {
-        AppTheme.DARK -> true
-        AppTheme.LIGHT -> false
+        AppTheme.DARK   -> true
+        AppTheme.LIGHT  -> false
         AppTheme.SYSTEM -> isSystemInDarkTheme()
     }
-
     val colorScheme = if (isDark) SynapseDarkColorScheme else SynapseLightColorScheme
 
     val windowInfo = LocalWindowInfo.current
-    val density = LocalDensity.current
+    val density    = LocalDensity.current
     val w = with(density) { windowInfo.containerSize.width.toDp().value.toInt() }
     val h = with(density) { windowInfo.containerSize.height.toDp().value.toInt() }
 
-    val adaptiveSpacing   = remember(w, h) { buildAdaptiveSpacing(w, h) }
-    val adaptiveRadius    = remember(w, h) { buildAdaptiveRadius(w, h) }
+    val scale = remember(w, h) { computeAdaptiveScale(w, h) }
 
-    val fontFamily = if (arabicLocale) biScriptFonts.arabic else biScriptFonts.latin
-    val themedTypography = remember(w, h, fontFamily, isDark) {
-        buildThemedTypography(w, h, fontFamily, isDark)
+    val adaptiveSpacing  = remember(scale)              { buildAdaptiveSpacing(scale) }
+    val adaptiveRadius   = remember(scale)              { buildAdaptiveRadius(scale) }
+    val adaptiveShapes = remember(scale)              { buildAdaptiveMaterialShapes(scale) }
+    val adaptiveShadows  = remember(scale)              { buildAdaptiveShadowTokens(scale) }
+    val fontFamily       = if (arabicLocale) biScriptFonts.arabic else biScriptFonts.latin
+    val themedTypography = remember(scale, fontFamily, isDark) {
+        buildThemedTypography(scale, fontFamily, isDark)
     }
 
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            val window     = (view.context as Activity).window
             val controller = WindowCompat.getInsetsController(window, view)
             WindowCompat.setDecorFitsSystemWindows(window, false)
-            controller.isAppearanceLightStatusBars = !isDark
+            controller.isAppearanceLightStatusBars     = !isDark
             controller.isAppearanceLightNavigationBars = !isDark
         }
     }
 
     CompositionLocalProvider(
-        LocalBiScriptFonts provides biScriptFonts,
-        LocalSemanticColors provides if (isDark) DarkSynapseSemanticColors else LightSynapseSemanticColors,
-        LocalLevelColors provides if (isDark) DarkLevelColors else LightLevelColors,
-        LocalGlassColors provides if (isDark) DarkGlassColors else LightGlassColors,
-        LocalGradientTokens provides if (isDark) DarkGradientTokens else LightGradientTokens,
-        LocalSpacingTokens provides adaptiveSpacing,
-        LocalRadiusTokens provides adaptiveRadius,
-        LocalTypographyTokens provides themedTypography.custom,
+        LocalAdaptiveScale   provides scale,
+        LocalBiScriptFonts   provides biScriptFonts,
+        LocalSemanticColors  provides if (isDark) DarkSynapseSemanticColors else LightSynapseSemanticColors,
+        LocalLevelColors     provides if (isDark) DarkLevelColors           else LightLevelColors,
+        LocalGlassColors     provides if (isDark) DarkGlassColors           else LightGlassColors,
+        LocalGradientTokens  provides if (isDark) DarkGradientTokens        else LightGradientTokens,
+        LocalSpacingTokens   provides adaptiveSpacing,
+        LocalRadiusTokens    provides adaptiveRadius,
+        LocalShadowTokens    provides adaptiveShadows,
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = themedTypography.material,
-            shapes = SynapseShapes,
+            typography  = themedTypography,
+            shapes      = adaptiveShapes,
             content = content
         )
     }
