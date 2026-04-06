@@ -123,7 +123,7 @@ internal fun SwipeableFlashcard(
 
     val semantic = MaterialTheme.synapse.semantic
     val cameraDistance = remember(density) { 12f * density.density }
-    val cornerRadius = 28.adp
+    val cornerRadius = 32.adp
     val borderCornerPx = remember(cornerRadius, density) { with(density) { cornerRadius.toPx() } }
     val borderThinPx = remember(density) { with(density) { 1.dp.toPx() } }
     val borderThickPx = remember(density) { with(density) { 2.dp.toPx() } }
@@ -213,10 +213,7 @@ internal fun SwipeableFlashcard(
                                                     )
                                                 }
                                                 launch {
-                                                    offsetY.animateTo(
-                                                        THROW_TARGET_Y,
-                                                        tween(300)
-                                                    )
+                                                    offsetY.animateTo(THROW_TARGET_Y, tween(300))
                                                 }
                                             }
                                             if (dir > 0f) onSwipeRight() else onSwipeLeft()
@@ -263,6 +260,7 @@ internal fun SwipeableFlashcard(
     }
 }
 
+
 @Composable
 private fun FlashcardFace(
     text: String,
@@ -275,15 +273,18 @@ private fun FlashcardFace(
 
     val gradient = if (isFront) {
         Brush.linearGradient(
-            listOf(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.surface),
+            listOf(
+                MaterialTheme.colorScheme.surface,
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            ),
             start = Offset(0f, 0f),
             end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
         )
     } else {
         Brush.linearGradient(
             listOf(
-                MaterialTheme.colorScheme.primaryContainer,
-                MaterialTheme.colorScheme.surfaceVariant
+                MaterialTheme.colorScheme.surface,
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
             ),
             start = Offset(0f, 0f),
             end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
@@ -313,16 +314,35 @@ private fun FlashcardFace(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(MaterialTheme.synapse.spacing.s24)
-                .padding(bottom = if (isFront) 36.adp else 0.adp),
+                .padding(bottom = 36.adp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.SpaceEvenly,
         ) {
+            Icon(
+                painter = painterResource(if (isFront) R.drawable.ic_help_circle else R.drawable.ic_sparkles),
+                contentDescription = null,
+                tint = primary.copy(alpha = 0.3f),
+                modifier = Modifier
+                    .size(120.adp)
+                    .weight(1f),
+            )
+
+            Text(
+                text = stringResource(if (isFront) R.string.quiz_question_label else R.string.quiz_answer_label),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+                color = primary.copy(alpha = 0.45f),
+                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
+            )
+
             Text(
                 text = text,
-                style = if (isFront) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.titleMedium,
-                fontWeight = if (isFront) FontWeight.Bold else FontWeight.Normal,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = if (isFront) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium,
+                fontWeight = if (isFront) FontWeight.Bold else FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
             )
         }
 
@@ -330,7 +350,7 @@ private fun FlashcardFace(
             TapToFlipHint(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = MaterialTheme.synapse.spacing.s24),
+                    .padding(bottom = MaterialTheme.synapse.spacing.s20),
             )
         }
     }
@@ -339,25 +359,31 @@ private fun FlashcardFace(
 @Composable
 private fun TapToFlipHint(modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.alpha(0.35f),
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.06f))
+            .padding(
+                horizontal = MaterialTheme.synapse.spacing.s12,
+                vertical = MaterialTheme.synapse.spacing.s6,
+            )
+            .alpha(0.75f),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_hand_tap),
             contentDescription = null,
-            modifier = Modifier.size(16.adp),
+            modifier = Modifier.size(13.adp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = stringResource(R.string.quiz_tap_to_flip).uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
+
 
 @Composable
 private fun FlashcardSwipeIndicators(
@@ -441,6 +467,7 @@ private fun SwipeIndicatorBubble(
         )
     }
 }
+
 
 @Preview(name = "Flashcard Front — Light", showBackground = true)
 @Preview(
