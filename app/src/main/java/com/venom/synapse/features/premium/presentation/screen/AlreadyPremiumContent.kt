@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,20 +25,18 @@ import com.venom.synapse.R
 import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.features.premium.presentation.components.AmbientOrb
 import com.venom.synapse.features.premium.presentation.components.AppIconDisplay
-import com.venom.synapse.ui.openSubscriptionManagement
 import com.venom.ui.components.common.adp
 
 @Composable
 fun AlreadyPremiumContent(
     onDismiss: () -> Unit,
+    openSubManage: () -> Unit,
+    onRestore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.synapse.gradients.page),
+            .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         AmbientOrb(
@@ -93,7 +90,7 @@ fun AlreadyPremiumContent(
                     .fillMaxWidth()
                     .clip(MaterialTheme.synapse.radius.lg)
                     .background(gradients.gold)
-                    .clickable { openSubscriptionManagement(context) }
+                    .clickable { openSubManage() }
                     .padding(vertical = MaterialTheme.synapse.spacing.s16),
                 contentAlignment = Alignment.Center,
             ) {
@@ -102,6 +99,24 @@ fun AlreadyPremiumContent(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White.copy(0.9f),
+                )
+            }
+
+            // Restore purchases button
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.synapse.radius.lg)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { onRestore() }
+                    .padding(vertical = MaterialTheme.synapse.spacing.s16),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.premium_restore_purchases),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 

@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,23 +45,32 @@ import com.venom.synapse.features.premium.presentation.components.SectionLabel
 import com.venom.synapse.features.premium.presentation.state.PremiumEvent
 import com.venom.synapse.features.premium.presentation.state.PremiumUiState
 import com.venom.synapse.features.premium.presentation.viewmodel.PremiumViewModel
+import com.venom.synapse.ui.openSubscriptionManagement
 import com.venom.ui.components.common.adp
+import kotlinx.coroutines.delay
 
 @Composable
 fun SynapsePremiumScreen(
     onDismiss        : () -> Unit,
     onPurchaseSuccess: (planId: String) -> Unit,
+    onNavigateToProfile: () -> Unit,
     modifier         : Modifier = Modifier,
     viewModel        : PremiumViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is PremiumEvent.PurchaseSuccess -> onPurchaseSuccess(event.planId)
                 is PremiumEvent.Dismissed       -> onDismiss()
+                is PremiumEvent.NavigateToProfile -> {
+                    snackbarController.success("Please sign in to continue")
+                    delay(1200)
+                    onNavigateToProfile()
+                }
                 is PremiumEvent.RequiresSignIn  -> snackbarController.error("Sign in required to purchase Premium.")
                 is PremiumEvent.PurchaseFailed  -> snackbarController.error(event.reason)
                 is PremiumEvent.ShowSnackbar    -> snackbarController.success(event.message)
@@ -69,14 +79,17 @@ fun SynapsePremiumScreen(
     }
 
     Scaffold(
-        snackbarHost        = { snackbarController.SnackbarHost() },
-        modifier            = modifier,
+        modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        snackbarHost = { snackbarController.SnackbarHost() },
+        containerColor       = Color.Transparent,
     ) { innerPadding ->
         when (val state = uiState) {
             is PremiumUiState.Loading      -> LoadingContent(Modifier.padding(innerPadding))
             is PremiumUiState.AlreadyPremium -> AlreadyPremiumContent(
                 onDismiss = onDismiss,
+                openSubManage = { openSubscriptionManagement(context) },
+                onRestore = viewModel::restorePurchases,
                 modifier  = Modifier.padding(innerPadding),
             )
             is PremiumUiState.Error        -> PremiumErrorContent(
@@ -105,8 +118,7 @@ private fun PremiumReadyContent(
 ) {
     Box(
         modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.synapse.gradients.page),
+            .fillMaxSize(),
     ) {
         AmbientOrb(
             color    = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
