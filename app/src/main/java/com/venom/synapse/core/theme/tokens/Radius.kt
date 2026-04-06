@@ -3,26 +3,41 @@ package com.venom.synapse.core.theme.tokens
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
 
 data class RadiusTokens(
-    val xs: Shape = RoundedCornerShape(4.dp),
-    val sm: Shape = RoundedCornerShape(8.dp),
-    val md: Shape = RoundedCornerShape(12.dp),
-    val lg: Shape = RoundedCornerShape(16.dp),
-    val xl: Shape = RoundedCornerShape(20.dp),
-    val xxl: Shape = RoundedCornerShape(24.dp),
-    val xxxl: Shape = RoundedCornerShape(28.dp),
-    val pill: Shape = RoundedCornerShape(50),
+    val xs: Shape,
+    val sm: Shape,
+    val md: Shape,
+    val lg: Shape,
+    val xl: Shape,
+    val xxl: Shape,
+    val xxxl: Shape,
+    val pill: Shape,
 )
 
-val defaultRadiusTokens = RadiusTokens()
+fun buildAdaptiveRadius(scale: Float): RadiusTokens {
+    fun dp(v: Float) = adaptDp(v, scale)
+    return RadiusTokens(
+        xs   = RoundedCornerShape(dp(4f)),
+        sm   = RoundedCornerShape(dp(8f)),
+        md   = RoundedCornerShape(dp(12f)),
+        lg   = RoundedCornerShape(dp(16f)),
+        xl   = RoundedCornerShape(dp(20f)),
+        xxl  = RoundedCornerShape(dp(24f)),
+        xxxl = RoundedCornerShape(dp(28f)),
+        pill = RoundedCornerShape(50),
+    )
+}
 
-/** Material 3 Shapes*/
-val SynapseShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(28.dp),
-)
+val defaultRadiusTokens = buildAdaptiveRadius(1f)
+
+fun buildAdaptiveMaterialShapes(scale: Float): Shapes {
+    fun dp(v: Float) = adaptDp(v, scale)
+    return Shapes(
+        extraSmall = RoundedCornerShape(dp(4f)),
+        small      = RoundedCornerShape(dp(8f)),
+        medium     = RoundedCornerShape(dp(16f)),
+        large      = RoundedCornerShape(dp(24f)),
+        extraLarge = RoundedCornerShape(dp(28f)),
+    )
+}

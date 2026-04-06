@@ -26,23 +26,59 @@ data class SpacingTokens(
     val s32: Dp = 32.dp,
     val s48: Dp = 48.dp,
     val s56: Dp = 56.dp,
-    val s72: Dp = 72.dp,
+    val s74: Dp = 74.dp,
     /** Universal horizontal screen margin — 20dp */
     val screen:       Dp = s20,
     /** Hero/goal card internal padding — 20dp */
     val cardLarge:    Dp = s20,
     /** Vertical gap between section blocks — 20dp */
     val sectionGap:   Dp = s20,
-    /** Vertical gap between list/card items — 12dp */
-    val listItemGap:  Dp = s12,
+    /** Vertical gap between list/card items — 16dp */
+    val listItemGap:  Dp = s16,
     /** Gap between icon and adjacent text — 8dp */
     val iconTextGap:  Dp = s8,
     /** FAB distance from screen bottom — 68dp */
-    val fabBottom:    Dp = s72,
+    val fabBottom:    Dp = s74,
     /** Standard bottom padding for screen*/
     val screenContentBottom: Dp = 172.dp,
     /** Standard top padding for screen*/
     val screenContentTop:    Dp = 128.dp,
 )
+
+fun buildAdaptiveSpacing(scale: Float): SpacingTokens {
+    fun dp(v: Float) = adaptDp(v, scale)
+    return SpacingTokens(
+        xs  = dp(4f),
+        sm  = dp(8f),
+        md  = dp(16f),
+        lg  = dp(24f),
+        xl  = dp(32f),
+        s2  = dp(2f),
+        s3  = dp(3f),
+        s4  = dp(4f),
+        s6  = dp(6f),
+        s8  = dp(8f),
+        s10 = dp(10f),
+        s12 = dp(12f),
+        s14 = dp(14f),
+        s16 = dp(16f),
+        s18 = dp(18f),
+        s20 = dp(20f),
+        s24 = dp(24f),
+        s28 = dp(28f),
+        s32 = dp(32f),
+        s48 = dp(48f),
+        s56 = dp(56f),
+        s74 = dp(74f),
+        screen              = dp(20f),
+        screenContentTop    = dp(128f),
+        screenContentBottom = dp(172f),
+        cardLarge           = dp(20f),
+        sectionGap          = dp(20f),
+        listItemGap         = dp(16f),
+        iconTextGap         = dp(8f),
+        fabBottom           = dp(74f),
+    )
+}
 
 val defaultSpacingTokens = SpacingTokens()
