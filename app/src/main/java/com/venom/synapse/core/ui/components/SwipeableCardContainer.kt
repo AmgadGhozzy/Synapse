@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.lerp
 import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
+import com.venom.ui.components.common.asp
 import kotlin.math.roundToInt
 
 @Composable
@@ -65,7 +66,7 @@ fun SwipeableCardContainer(
     val density = LocalDensity.current
     val haptic  = LocalHapticFeedback.current
 
-    val actionWidth    = 68.adp
+    val actionWidth    = 72.adp
     val panelPadding   = MaterialTheme.synapse.spacing.s4
     // Panel width = action slots + gaps between them + outer padding
     val revealWidthDp: Dp = if (verticalActions) {
@@ -245,7 +246,8 @@ fun ActionButton(
             Text(
                 text       = stringResource(action.labelRes).uppercase(),
                 style      = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 11.asp,
+                    fontWeight = FontWeight.Bold,
                 ),
                 color      = Color.White.copy(0.9f),
             )
