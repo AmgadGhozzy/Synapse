@@ -129,7 +129,6 @@ fun AddPdfScreen(
             )
         },
         snackbarHost        = { snackbarController.SnackbarHost() },
-        containerColor      = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
 

@@ -2,12 +2,8 @@ package com.venom.synapse.features.add_pdf.presentation.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -83,12 +79,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.BrandColors
-import com.venom.synapse.core.theme.tokens.ShadowTokens
 import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.synapse.core.ui.components.LoadingIndicator
 import com.venom.synapse.core.ui.components.PrimaryGradientButton
 import com.venom.synapse.core.ui.components.SecondaryButton
+import com.venom.synapse.core.ui.components.StatusIconHeader
 import com.venom.synapse.core.ui.components.WavyProgressIndicator
 import com.venom.synapse.core.ui.state.QuestionUiModel
 import com.venom.synapse.core.ui.utils.animatedDashedBorder
@@ -96,6 +91,7 @@ import com.venom.synapse.domain.model.QuestionType
 import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiState
 import com.venom.synapse.features.add_pdf.presentation.state.SourceTab
 import com.venom.ui.components.common.adp
+import com.venom.ui.components.common.localized
 
 
 data class LanguageOption(val code: String, val label: String, val flag: String)
@@ -135,7 +131,7 @@ fun AddPdfHeader(
             color    = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .size(44.adp)
-                .dropShadow(MaterialTheme.synapse.radius.md, ShadowTokens.ShadowPack.toShadow()),
+                .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()),
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -160,7 +156,7 @@ fun AddPdfHeader(
             )
         }
 
-        Surface(shape = MaterialTheme.synapse.radius.circle, color = MaterialTheme.colorScheme.primaryContainer) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
             Row(
                 modifier              = Modifier.padding(horizontal = 14.adp, vertical = 7.adp),
                 verticalAlignment     = Alignment.CenterVertically,
@@ -206,9 +202,9 @@ fun StepIndicator(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                            .size(30.adp)
-                            .clip(MaterialTheme.synapse.radius.sm)
-                            .background(MaterialTheme.colorScheme.primary),
+                        .size(30.adp)
+                        .clip(MaterialTheme.synapse.radius.sm)
+                        .background(MaterialTheme.colorScheme.primary),
                 ) {
                         Icon(
                             painter            = painterResource(R.drawable.ic_check),
@@ -351,7 +347,7 @@ fun SourceTabRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.md, ShadowTokens.ShadowStats.toShadow()),
+            .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()),
         color = MaterialTheme.colorScheme.surfaceVariant,
         shape = MaterialTheme.synapse.radius.md,
     ) {
@@ -367,7 +363,10 @@ fun SourceTabRow(
                         .weight(1f)
                         .then(
                             if (isSelected)
-                                Modifier.dropShadow(MaterialTheme.synapse.radius.md, ShadowTokens.ShadowPack.toShadow())
+                                Modifier.dropShadow(
+                                    MaterialTheme.synapse.radius.md,
+                                    MaterialTheme.synapse.shadows.subtle.toShadow()
+                                )
                             else Modifier
                         ),
                     color   = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
@@ -460,7 +459,11 @@ private fun DropZone(
             .fillMaxWidth()
             .clip(MaterialTheme.synapse.radius.lg)
             .background(bgColor)
-            .animatedDashedBorder(width = 2.adp, color = borderColor, shape = MaterialTheme.synapse.radius.lg)
+            .animatedDashedBorder(
+                width = 2.adp,
+                color = borderColor,
+                shape = MaterialTheme.synapse.radius.lg
+            )
             .then(
                 if (fileName == null && !isLoading) Modifier.clickable(onClick = onPickFile) else Modifier
             ),
@@ -522,7 +525,7 @@ private fun DropZoneEmptyState(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.adp))
-        Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.synapse.radius.circle) {
+        Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape) {
             Text(
                 text     = stringResource(R.string.drop_zone_hint),
                 modifier = Modifier.padding(horizontal = 14.adp, vertical = 6.adp),
@@ -709,7 +712,7 @@ fun WebTab(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.lg, ShadowTokens.ShadowStats.toShadow()),
+            .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow()),
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.synapse.radius.lg,
     ) {
@@ -863,8 +866,12 @@ fun TextTab(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.lg, ShadowTokens.ShadowStats.toShadow())
-            .border(1.adp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.synapse.radius.lg),
+            .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow())
+            .border(
+                1.adp,
+                MaterialTheme.colorScheme.outlineVariant,
+                MaterialTheme.synapse.radius.lg
+            ),
         shape = MaterialTheme.synapse.radius.lg,
         color = MaterialTheme.colorScheme.surface,
     ) {
@@ -1023,7 +1030,9 @@ fun QuestionCountCard(count: Int, onChange: (Int) -> Unit, modifier: Modifier = 
             onValueChange = { onChange(it.toInt()) },
             valueRange    = 5f..50f,
             steps         = 44,
-            modifier      = Modifier.fillMaxWidth().padding(top = 8.adp),
+            modifier      = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.adp),
             colors        = SliderDefaults.colors(
                 thumbColor         = MaterialTheme.colorScheme.primary,
                 activeTrackColor   = MaterialTheme.colorScheme.primary,
@@ -1082,7 +1091,9 @@ fun QuestionTypesCard(selected: Set<QuestionType>, onToggle: (QuestionType) -> U
 fun AiFocusNotesCard(notes: String, onNotesChange: (String) -> Unit, modifier: Modifier = Modifier) {
     SectionCard(modifier = modifier) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.adp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.adp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically,
         ) {
@@ -1181,9 +1192,12 @@ fun GeneratingStep(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.adp))
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.adp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.adp), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(text = stringResource(R.string.generating_progress_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = "${(animatedProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+            Text(text = "${(animatedProgress * 100).toInt().localized()} ${stringResource(R.string.percent_mark)}", style = MaterialTheme.typography
+                .bodySmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
         }
         WavyProgressIndicator(animatedProgress)
         Spacer(Modifier.height(16.adp))
@@ -1197,16 +1211,18 @@ fun GeneratingStep(
 fun GeneratingTaskRow(label: String, done: Boolean, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color    = if (done) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        color    = if (done) MaterialTheme.synapse.semantic.success.copy(0.6f) else MaterialTheme.colorScheme.surfaceVariant,
         shape    = MaterialTheme.synapse.radius.md,
     ) {
         Row(modifier = Modifier.padding(horizontal = 16.adp, vertical = 10.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.adp)) {
-            if (done) Icon(painter = painterResource(R.drawable.ic_check), contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(13.adp))
-            else LoadingIndicator(size = 16.adp)
+            if (done) Icon(painter = painterResource(R.drawable.ic_badge_check),
+                contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier =
+                    Modifier.size(18.adp))
+            else LoadingIndicator(size = 20.adp)
             Text(
                 text  = label,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal),
-                color = if (done) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (done) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -1250,8 +1266,13 @@ fun DoneStep(
 
             if (questionCount > 3) {
                 Surface(
-                    modifier = Modifier.fillMaxWidth().animatedDashedBorder(MaterialTheme
-                        .colorScheme.primary.copy(alpha = 0.8f), shape = MaterialTheme.synapse.radius.md),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animatedDashedBorder(
+                            MaterialTheme
+                                .colorScheme.primary.copy(alpha = 0.8f),
+                            shape = MaterialTheme.synapse.radius.md
+                        ),
                     shape    = MaterialTheme.synapse.radius.md,
                 ) {
                     Text(
@@ -1273,23 +1294,15 @@ fun DoneStep(
 
 @Composable
 fun DoneSuccessHeader(packName: String, questionCount: Int, language: String, modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "done_pulse")
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue  = 0.35f,
-        targetValue   = 0f,
-        animationSpec = infiniteRepeatable(tween(2_500), RepeatMode.Reverse)
-    )
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         AnimatedVisibility(visible = visible, enter = scaleIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn()) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.adp)) {
-                Box(modifier = Modifier.size(120.adp).clip(CircleShape).background(Brush.radialGradient(colors = listOf(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = pulseAlpha), Color.Transparent))))
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.adp).clip(CircleShape).background(Brush.linearGradient(colors = listOf(BrandColors.BrandSuccessLight, BrandColors.BrandSuccessDark)))) {
-                    Icon(painter = painterResource(R.drawable.ic_check), contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(40.adp))
-                }
-            }
+            StatusIconHeader(iconRes = R.drawable.ic_check,
+                iconCd = R.string.done_title,
+                accentColor = MaterialTheme.synapse.semantic.success
+            )
         }
         Spacer(Modifier.height(16.adp))
         Text(text = stringResource(R.string.done_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black), color = MaterialTheme.colorScheme.onBackground)
@@ -1330,7 +1343,9 @@ fun StatChip(value: String, label: String, color: Color, modifier: Modifier = Mo
 
 @Composable
 fun PreviewQuestionCard(typeLabel: String, emoji: String, questionText: String, index: Int, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier.fillMaxWidth().dropShadow(MaterialTheme.synapse.radius.md, ShadowTokens.ShadowPack.toShadow()), shape = MaterialTheme.synapse.radius.md, color = MaterialTheme.colorScheme.surface) {
+    Surface(modifier = modifier
+        .fillMaxWidth()
+        .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.synapse.radius.md, color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.padding(16.adp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.adp), modifier = Modifier.padding(bottom = 8.adp)) {
                 Text(text = emoji)
@@ -1361,7 +1376,10 @@ fun LanguageBottomSheet(
         tonalElevation   = 0.adp,
         containerColor   = MaterialTheme.colorScheme.surface,
     ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.adp).padding(bottom = 12.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.adp)) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.adp)
+            .padding(bottom = 12.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.adp)) {
             Icon(painter = painterResource(R.drawable.ic_globe), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.adp))
             Text(text = stringResource(R.string.language_sheet_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Surface(onClick = onDismiss, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(30.adp)) {
@@ -1389,21 +1407,25 @@ fun LanguageBottomSheet(
 
 @Composable
 private fun SectionCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier = modifier.fillMaxWidth().dropShadow(MaterialTheme.synapse.radius.lg, ShadowTokens.ShadowStats.toShadow()), shape = MaterialTheme.synapse.radius.lg, color = MaterialTheme.colorScheme.surface) {
+    Surface(modifier = modifier
+        .fillMaxWidth()
+        .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.synapse.radius.lg, color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.padding(20.adp), content = content)
     }
 }
 
 @Composable
 private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(text = text, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
+    Text(text = text, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
 }
 
 @Preview(name = "Header Light", showBackground = true)
 @Composable private fun AddPdfHeaderPreview() { SynapseTheme { AddPdfHeader(onBack = {}, modifier = Modifier.padding(20.adp)) } }
 
 @Preview(name = "StepIndicator Light", showBackground = true)
-@Composable private fun StepIndicatorPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { StepIndicator(currentIndex = 1, modifier = Modifier.fillMaxWidth().padding(20.adp)) } } }
+@Composable private fun StepIndicatorPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { StepIndicator(currentIndex = 1, modifier = Modifier
+    .fillMaxWidth()
+    .padding(20.adp)) } } }
 
 @Preview(name = "OcrBanner Locked", showBackground = true)
 @Composable private fun OcrBannerLockedPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { OcrBanner(enabled = false, isLocked = true, onToggle = {}, modifier = Modifier.padding(16.adp)) } } }
