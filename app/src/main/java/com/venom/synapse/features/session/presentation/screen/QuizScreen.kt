@@ -2,28 +2,26 @@ package com.venom.synapse.features.session.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -33,32 +31,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.tokens.Spacing
+import com.venom.synapse.core.theme.synapse
 import com.venom.synapse.core.ui.components.SnackbarHost
 import com.venom.synapse.core.ui.components.rememberSnackbarController
 import com.venom.synapse.core.ui.state.UiEffect
 import com.venom.synapse.domain.model.QuestionType
 import com.venom.synapse.domain.srs.AnswerPayload
-import com.venom.synapse.features.session.presentation.components.LeechAlertBanner
 import com.venom.synapse.features.session.presentation.components.McqPanel
 import com.venom.synapse.features.session.presentation.components.QuizActionSheet
 import com.venom.synapse.features.session.presentation.components.QuizErrorState
 import com.venom.synapse.features.session.presentation.components.QuizLoadingState
 import com.venom.synapse.features.session.presentation.components.QuizTopBar
-import com.venom.synapse.features.session.presentation.components.SessionSwipeableFlashcard
+import com.venom.synapse.features.session.presentation.components.SwipeableFlashcard
 import com.venom.synapse.features.session.presentation.components.TrueFalsePanel
 import com.venom.synapse.features.session.presentation.state.QuestionUiContent
 import com.venom.synapse.features.session.presentation.state.QuestionUiModel
 import com.venom.synapse.features.session.presentation.state.SessionUiState
 import com.venom.synapse.features.session.presentation.viewmodel.SessionViewModel
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SCREEN ENTRY POINT
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun QuizScreen(
@@ -69,6 +67,10 @@ fun QuizScreen(
 ) {
     val uiState            by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
+    val context            = LocalContext.current
+    val optionFormat       = stringResource(R.string.session_correct_option_label)
+    val trueLabel          = stringResource(R.string.quiz_true_label)
+    val falseLabel         = stringResource(R.string.quiz_false_label)
 
     LaunchedEffect(Unit) { viewModel.initSession() }
 
@@ -77,8 +79,8 @@ fun QuizScreen(
             when (effect) {
                 is UiEffect.NavigateBack -> onBack()
                 is UiEffect.Navigate     -> onNavigateToSummary()
-                is UiEffect.ShowToast    -> snackbarController.success(effect.message)
-                is UiEffect.ShowError    -> snackbarController.error(effect.message)
+                is UiEffect.ShowToast    -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.ShowError    -> snackbarController.error(effect.text.asString(context))
                 else                     -> Unit
             }
         }
@@ -88,51 +90,43 @@ fun QuizScreen(
         modifier            = modifier.fillMaxSize().systemBarsPadding(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost        = { snackbarController.SnackbarHost() },
-        containerColor      = MaterialTheme.colorScheme.background,
+        containerColor       = Color.Transparent,
     ) { innerPadding ->
         when {
             uiState.isLoading     -> QuizLoadingState(Modifier.padding(innerPadding))
             uiState.error != null -> QuizErrorState(
-                message  = uiState.error!!,
+                message  = uiState.error!!.asString(context),
                 onBack   = onBack,
                 modifier = Modifier.padding(innerPadding),
             )
             else -> QuizContent(
-                uiState    = uiState,
-                onBack     = { viewModel.cancelSession() },
-                onMcqAnswer = { qId, idx ->
-                    viewModel.submitAnswer(qId, AnswerPayload.McqAnswer(idx))
-                },
-                onTfAnswer = { qId, v ->
-                    viewModel.submitAnswer(qId, AnswerPayload.TfAnswer(v))
-                },
-                // Flashcard only: submits the self-rating and advances.
-                // Called by SRS buttons and by swipe gestures.
+                uiState              = uiState,
+                optionFormat         = optionFormat,
+                trueLabel            = trueLabel,
+                falseLabel           = falseLabel,
+                onBack               = { viewModel.cancelSession() },
+                onMcqAnswer          = { qId, idx -> viewModel.submitAnswer(qId, AnswerPayload.McqAnswer(idx)) },
+                onTfAnswer           = { qId, v -> viewModel.submitAnswer(qId, AnswerPayload.TfAnswer(v)) },
                 onFlashcardSrsAnswer = { qId, rating ->
                     viewModel.submitAnswer(qId, AnswerPayload.FlashcardSelfRate(rating))
                     viewModel.nextQuestion()
                 },
-                // MCQ/TF only: answer already submitted by onMcqAnswer/onTfAnswer.
-                // SRS button just advances — it must NOT submit again, because
-                // sending FlashcardSelfRate for an MCQ question makes checkAnswer()
-                // return false, which records an extra wrong answer every time and
-                // causes the engine to re-queue the question indefinitely.
-                onMcqTfSrsAdvance = { viewModel.nextQuestion() },
-                onDismissLeech    = { viewModel.dismissLeechAlert() },
-                onShowHint        = { /* TODO: open PremiumBottomSheet */ },
-                modifier          = Modifier.padding(innerPadding),
+                onMcqTfSrsAdvance    = { viewModel.nextQuestion() },
+                onDismissLeech       = { viewModel.dismissLeechAlert() },
+                onShowHint           = { /* TODO: open PremiumBottomSheet */ },
+                modifier             = Modifier.padding(innerPadding),
             )
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONTENT ORCHESTRATOR
-// ─────────────────────────────────────────────────────────────────────────────
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun QuizContent(
     uiState             : SessionUiState,
+    optionFormat        : String,
+    trueLabel           : String,
+    falseLabel          : String,
     onBack              : () -> Unit,
     onMcqAnswer         : (Long, Int) -> Unit,
     onTfAnswer          : (Long, Boolean) -> Unit,
@@ -145,13 +139,8 @@ internal fun QuizContent(
     val question    = uiState.currentQuestion ?: return
     val isFlashcard = question.type == QuestionType.FLASHCARD
 
-    // isFlipped: LOCAL state — tracks whether the flashcard has been tapped
-    // to reveal the back face. Decoupled from isAnswered so that tapping the
-    // card does NOT submit an answer; only the SRS button / swipe does.
     var isFlipped by remember(question.id) { mutableStateOf(false) }
 
-    // isAnswered: set by the ViewModel after a real submit. For flashcards,
-    // this only becomes true after the SRS rating button or swipe is used.
     val isAnswered = uiState.lastAnswerCorrect != null
 
     var showHint by remember(question.id) { mutableStateOf(false) }
@@ -160,32 +149,51 @@ internal fun QuizContent(
         derivedStateOf { !question.hint.isNullOrBlank() }
     }
 
-    val isLastQuestion by remember(uiState.questionIndex, uiState.totalQuestions) {
+    val isLastQuestion by remember {
         derivedStateOf { uiState.questionIndex + 1 >= uiState.totalQuestions }
     }
 
-    val correctLabel: String? by remember(uiState.lastAnswerCorrect, question.id) {
+    val correctLabel: String? by remember(
+        uiState.lastAnswerCorrect, question.id, optionFormat, trueLabel, falseLabel,
+    ) {
         derivedStateOf {
             if (uiState.lastAnswerCorrect == false) {
                 when (val c = question.content) {
-                    is QuestionUiContent.Mcq       -> "Option ${'A' + c.correctIndex}"
-                    is QuestionUiContent.TrueFalse -> if (c.correctAnswer) "True" else "False"
+                    is QuestionUiContent.Mcq       -> optionFormat.format('A' + c.correctIndex)
+                    is QuestionUiContent.TrueFalse -> if (c.correctAnswer) trueLabel else falseLabel
                     else                           -> null
                 }
             } else null
         }
     }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(
+        rememberTopAppBarState(),
+    )
+
     Scaffold(
-        modifier       = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
-        bottomBar      = {
+        modifier = modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        containerColor       = Color.Transparent,
+        topBar = {
+            QuizTopBar(
+                title          = uiState.packTitle,
+                questionIndex  = uiState.questionIndex + 1,
+                totalQuestions = uiState.totalQuestions,
+                progress       = uiState.progressPercent,
+                accuracy       = uiState.accuracy,
+                showAccuracy   = !isFlashcard && uiState.answeredCount > 0,
+                onClose        = onBack,
+                scrollBehavior = scrollBehavior,
+                modifier       = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.screen),
+            )
+        },
+        bottomBar = {
             QuizActionSheet(
                 isFlashcard       = isFlashcard,
-                // Sheet state for flashcards is driven by isFlipped so the SRS
-                // buttons appear as soon as the card is tapped, before any submit.
                 isFlipped         = isFlipped,
-                // isAnswered drives the MCQ/TF feedback card and PRE_ANSWER state.
                 isAnswered        = isAnswered,
                 isLastQuestion    = isLastQuestion,
                 hasHint           = hasHint,
@@ -193,12 +201,14 @@ internal fun QuizContent(
                 lastAnswerCorrect = uiState.lastAnswerCorrect,
                 lastExplanation   = uiState.lastExplanation,
                 correctLabel      = correctLabel,
-                showHint          = showHint,
+                showLeechAlert    = uiState.showLeechAlert,
+                onDismissLeech    = onDismissLeech,
                 onShowHint        = {
-                    showHint = !showHint
-                    if (showHint) onShowHint()
+                    val willShow = !showHint
+                    showHint = willShow
+                    if (willShow) onShowHint()
                 },
-                onFlip      = { isFlipped = true }, // local only — no submit
+                onFlip      = { isFlipped = true },
                 onSrsRating = { qId, rating ->
                     if (isFlashcard) onFlashcardSrsAnswer(qId, rating)
                     else             onMcqTfSrsAdvance()
@@ -209,51 +219,22 @@ internal fun QuizContent(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .padding(MaterialTheme.synapse.spacing.screen),
         ) {
-            QuizTopBar(
-                title          = uiState.packTitle,
-                questionIndex  = uiState.questionIndex + 1,
-                totalQuestions = uiState.totalQuestions,
-                progress       = uiState.progressPercent,
-                accuracy       = uiState.accuracy,
-                showAccuracy   = !isFlashcard && uiState.answeredCount > 0,
-                onClose        = onBack,
-                modifier       = Modifier.padding(
-                    horizontal = Spacing.Spacing20,
-                    vertical   = Spacing.Spacing12,
-                ),
-            )
-
-            AnimatedVisibility(
-                visible = uiState.showLeechAlert,
-                enter   = fadeIn() + slideInVertically { -it },
-                exit    = fadeOut() + slideOutVertically { -it },
-            ) {
-                LeechAlertBanner(
-                    onDismiss = onDismissLeech,
-                    modifier  = Modifier
-                        .padding(horizontal = Spacing.Spacing20)
-                        .padding(bottom = Spacing.Spacing8),
-                )
-            }
-
             AnimatedContent(
                 targetState    = question.id,
                 transitionSpec = {
                     (fadeIn(tween(200)) + slideInHorizontally(tween(220)) { it / 4 }) togetherWith
                             (fadeOut(tween(160)) + slideOutHorizontally(tween(180)) { -it / 4 })
                 },
-                label          = "question_transition",
-                modifier       = Modifier.weight(1f),
-            ) { _ ->
+                modifier = Modifier.weight(1f),
+            ) {
                 if (isFlashcard) {
                     FlashcardContentArea(
                         question     = question,
                         isFlipped    = isFlipped,
                         onFlip       = { isFlipped = true },
-                        // Swipe left = Hard (1 day), swipe right = Easy (7 days).
-                        // Each swipe submits the rating and advances the session.
                         onSwipeLeft  = { onFlashcardSrsAnswer(question.id, 1) },
                         onSwipeRight = { onFlashcardSrsAnswer(question.id, 4) },
                     )
@@ -271,10 +252,6 @@ internal fun QuizContent(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FLASHCARD CONTENT AREA
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun FlashcardContentArea(
     question    : QuestionUiModel,
@@ -289,19 +266,15 @@ private fun FlashcardContentArea(
         modifier         = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        SessionSwipeableFlashcard(
+        SwipeableFlashcard(
             content      = content,
-            isAnswered   = isFlipped,   // card face + swipe gate driven by isFlipped
+            isAnswered   = isFlipped,
             onFlip       = onFlip,
             onSwipeLeft  = onSwipeLeft,
             onSwipeRight = onSwipeRight,
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MCQ / T-F SCROLLABLE AREA
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ScrollableQuestionArea(
@@ -316,7 +289,6 @@ private fun ScrollableQuestionArea(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = Spacing.Spacing20),
     ) {
         when (val content = question.content) {
             is QuestionUiContent.Mcq -> McqPanel(
@@ -337,22 +309,18 @@ private fun ScrollableQuestionArea(
             )
             else -> Unit
         }
-        Spacer(Modifier.height(Spacing.Spacing16))
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PREVIEWS
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Preview(name = "Quiz MCQ — Light", showBackground = true)
-@Preview(name = "Quiz MCQ — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Quiz MCQ — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun QuizMcqPreview() {
     SynapseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             QuizContent(
                 uiState = previewSessionUiState, onBack = {},
+                optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
                 onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
                 onDismissLeech = {}, onShowHint = {},
@@ -361,70 +329,15 @@ private fun QuizMcqPreview() {
     }
 }
 
-@Preview(name = "Quiz MCQ Answered — Light", showBackground = true)
-@Preview(name = "Quiz MCQ Answered — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun QuizMcqAnsweredPreview() {
-    SynapseTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            QuizContent(
-                uiState = previewSessionUiState.copy(
-                    lastAnswerCorrect = true,
-                    lastExplanation   = "Caesar crossed the Rubicon in 49 BC.",
-                    isInputEnabled    = false,
-                ),
-                onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
-                onDismissLeech = {}, onShowHint = {},
-            )
-        }
-    }
-}
-
-@Preview(name = "Quiz MCQ Wrong — Light", showBackground = true)
-@Preview(name = "Quiz MCQ Wrong — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun QuizMcqWrongPreview() {
-    SynapseTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            QuizContent(
-                uiState = previewSessionUiState.copy(
-                    lastAnswerCorrect = false,
-                    lastExplanation   = "Caesar crossed in 49 BC, triggering the civil war.",
-                    isInputEnabled    = false,
-                ),
-                onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
-                onDismissLeech = {}, onShowHint = {},
-            )
-        }
-    }
-}
-
-@Preview(name = "Quiz TF — Light", showBackground = true)
-@Preview(name = "Quiz TF — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun QuizTfPreview() {
-    SynapseTheme {
-        Surface(color = MaterialTheme.colorScheme.background) {
-            QuizContent(
-                uiState = previewSessionUiState.copy(currentQuestion = previewTfQuestion),
-                onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
-                onDismissLeech = {}, onShowHint = {},
-            )
-        }
-    }
-}
-
 @Preview(name = "Quiz Flashcard — Light", showBackground = true)
-@Preview(name = "Quiz Flashcard — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Quiz Flashcard — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun QuizFlashcardPreview() {
     SynapseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             QuizContent(
                 uiState = previewSessionUiState.copy(currentQuestion = previewFlashcardQuestion),
+                optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
                 onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
                 onDismissLeech = {}, onShowHint = {},
@@ -434,13 +347,17 @@ private fun QuizFlashcardPreview() {
 }
 
 @Preview(name = "Quiz Leech — Light", showBackground = true)
-@Preview(name = "Quiz Leech — Dark",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Quiz Leech — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun QuizLeechPreview() {
     SynapseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             QuizContent(
-                uiState = previewSessionUiState.copy(showLeechAlert = true),
+                uiState = previewSessionUiState.copy(
+                    showLeechAlert    = true,
+                    lastAnswerCorrect = false,
+                ),
+                optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
                 onFlashcardSrsAnswer = { _, _ -> }, onMcqTfSrsAdvance = {},
                 onDismissLeech = {}, onShowHint = {},
@@ -448,8 +365,6 @@ private fun QuizLeechPreview() {
         }
     }
 }
-
-// ── Preview fixtures ──────────────────────────────────────────────────────────
 
 internal val previewMcqQuestion = QuestionUiModel(
     id           = 1L,
@@ -468,7 +383,7 @@ internal val previewTfQuestion = QuestionUiModel(
     type         = QuestionType.TRUE_FALSE,
     questionText = "Julius Caesar crossed the Rubicon River in 49 BC, triggering a civil war.",
     content      = QuestionUiContent.TrueFalse(correctAnswer = true),
-    hint         = null, // TF has no hint — HintButton hidden
+    hint         = null,
     explanation  = "He crossed the Rubicon on January 10, 49 BC with his legion.",
 )
 
