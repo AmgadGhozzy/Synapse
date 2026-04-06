@@ -2,6 +2,7 @@ package com.venom.synapse.core.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -11,7 +12,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import com.venom.synapse.core.theme.synapse
 import com.venom.ui.components.common.adp
 
 @Preview
@@ -29,7 +29,7 @@ fun WavyProgressIndicator(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clip(MaterialTheme.synapse.radius.circle),
+            .clip(CircleShape),
         color = color,
         trackColor = trackColor
     )

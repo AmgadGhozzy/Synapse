@@ -37,7 +37,7 @@ fun LoadingIndicator(
 
 @Composable
 fun LoadingContent(modifier: Modifier = Modifier) {
-    val scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.35f)
+    val scrimColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
     val interactionSource = remember { MutableInteractionSource() }
 
     Box(
