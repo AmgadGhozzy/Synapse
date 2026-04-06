@@ -20,6 +20,7 @@ data class DashboardUiState(
     val masteredCardsCount: Int = 0,
 
     val packs: List<PackDisplayItem> = emptyList(),
+    val allPackIds: List<Long> = emptyList(),
     val isPremium: Boolean = false,
     val isPackLimitReached: Boolean = false,
     val totalPackCount: Int = 0,

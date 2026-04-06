@@ -122,7 +122,7 @@ fun DailyGoalCard(
 
                 CircularProgressRing(
                     progress = progress,
-                    progressColor = Color.White.copy(alpha = 0.9f),
+                    progressColor = Color.White.copy(alpha = 0.7f),
                     trackColor = Color.White.copy(alpha = 0.15f),
                     strokeWidthDp = 10.adp,
                     fontSize = MaterialTheme.typography.headlineMedium.fontSize,
@@ -219,8 +219,9 @@ private fun GoalProgressBar(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.White,
-                            Color.White.copy(alpha = 0.3f)
+                            Color.White.copy(alpha = 0.6f),
+                            Color.White.copy(alpha = 0.7f),
+                            Color.White.copy(alpha = 0.6f)
                         )
                     )
                 ),

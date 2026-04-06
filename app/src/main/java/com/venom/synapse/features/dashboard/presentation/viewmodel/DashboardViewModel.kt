@@ -12,6 +12,7 @@ import com.venom.synapse.core.ui.state.UiEffect
 import com.venom.synapse.core.ui.state.UiText
 import com.venom.synapse.data.repo.AppConfigProvider
 import com.venom.synapse.data.repo.EntitlementManager
+import com.venom.synapse.data.repo.QuizSessionManager
 import com.venom.synapse.domain.repo.IPackRepository
 import com.venom.synapse.domain.repo.IProgressRepository
 import com.venom.synapse.domain.repo.IQuestionRepository
@@ -43,6 +44,7 @@ class DashboardViewModel @Inject constructor(
     private val entitlementManager: EntitlementManager,
     private val appConfigProvider : AppConfigProvider,
     private val dataStore         : DataStore<Preferences>,
+    private val quizSessionManager: QuizSessionManager,
     private val ioDispatcher      : CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -55,12 +57,15 @@ class DashboardViewModel @Inject constructor(
     init { loadDashboard() }
 
     fun onStartStudying() {
-        val first = _uiState.value.packs.firstOrNull() ?: return
-        if (first.cardsToReview == 0) {
+        val state = _uiState.value
+        if (state.totalDue == 0) {
             _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.dashboard_no_cards_to_review)))
             return
         }
-        _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Quiz.createRoute(first.id)))
+        // Store the daily-goal cap so SessionViewModel can limit the queue.
+        // packId = 0L signals "all packs" to SessionViewModel.
+        quizSessionManager.maxCards = state.dailyGoal
+        _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Quiz.createRoute(0L)))
     }
 
     fun onPackTapped(packId: Long) {
@@ -179,6 +184,7 @@ class DashboardViewModel @Inject constructor(
                                     totalCardsCount     = totalCardsCount,
                                     masteredCardsCount  = masteredCardsCount,
                                     packs               = displayedPacks,
+                                    allPackIds          = allDisplayItems.map { it.id },
                                     isPremium           = isPremium,
                                     isPackLimitReached  = isPackLimitReached,
                                     totalPackCount      = totalPackCount,
