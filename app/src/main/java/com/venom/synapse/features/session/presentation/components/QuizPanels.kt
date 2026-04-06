@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
 import com.venom.synapse.core.theme.synapse
@@ -91,7 +92,7 @@ internal fun McqPanel(
                 modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
             )
         }
-
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         content.options.forEachIndexed { index, option ->
             val letter = ('A' + index).toString()
             val isCorrect = index == content.correctIndex
@@ -184,6 +185,7 @@ private fun McqOptionRow(
     Row(
         modifier = rowModifier
             .fillMaxWidth()
+            .padding(horizontal = MaterialTheme.synapse.spacing.s6)
             .clip(shape)
             .background(containerColor)
             .clickable(enabled = enabled, onClick = onClick)
@@ -198,7 +200,7 @@ private fun McqOptionRow(
         val semantic = MaterialTheme.synapse.semantic
         Box(
             modifier = Modifier
-                .size(36.adp)
+                .size(38.adp)
                 .clip(MaterialTheme.shapes.small)
                 .background(badgeColor),
             contentAlignment = Alignment.Center,
@@ -207,21 +209,21 @@ private fun McqOptionRow(
                 isCorrect -> Text(
                     text = "✓",
                     style = typo.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = semantic.success,
                 )
 
                 isWrong -> Text(
                     text = "✗",
                     style = typo.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = semantic.error,
                 )
 
                 else -> Text(
                     text = letter,
                     style = typo.bodyMedium,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     color = badgeTextColor,
                 )
             }
@@ -231,7 +233,7 @@ private fun McqOptionRow(
             text = text,
             style = typo.bodyLarge,
             color = optionTextColor,
-            fontWeight = if (isCorrect || isWrong) FontWeight.SemiBold else FontWeight.Normal,
+            fontWeight = if (isCorrect || isWrong) FontWeight.ExtraBold else FontWeight.Normal,
             modifier = Modifier.weight(1f),
         )
 
@@ -294,7 +296,7 @@ internal fun TrueFalsePanel(
                 modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
             )
         }
-
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
@@ -381,7 +383,7 @@ private fun TfButton(
         modifier = btnModifier
             .clip(shape)
             .background(containerColor)
-            .border(if (isAnswered && isThisCorrect) 2.adp else 1.5.adp, borderColor, shape)
+            .border(if (isAnswered && isThisCorrect) 1.adp else Dp.Hairline, borderColor, shape)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 28.adp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -403,21 +405,6 @@ private fun TfButton(
 }
 
 @Composable
-internal fun FlashcardPanel(
-    content: QuestionUiContent.Flashcard,
-    isAnswered: Boolean,
-    onFlip: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    SwipeableFlashcard(
-        content = content,
-        isAnswered = isAnswered,
-        onFlip = onFlip,
-        modifier = modifier,
-    )
-}
-
-@Composable
 internal fun QuestionCard(
     label: String,
     text: String,
@@ -432,7 +419,7 @@ internal fun QuestionCard(
             .fillMaxWidth()
             .dropShadow(
                 shape = shape,
-                shadow = MaterialTheme.synapse.shadows.medium.toShadow()
+                shadow = MaterialTheme.synapse.shadows.subtle.toShadow()
             )
     ) {
         Box(
@@ -509,7 +496,7 @@ private fun FlashcardPanelPreview() {
                     .padding(MaterialTheme.synapse.spacing.s20),
                 contentAlignment = Alignment.Center,
             ) {
-                FlashcardPanel(
+                SwipeableFlashcard(
                     content = previewFlashcardQuestion.content as QuestionUiContent.Flashcard,
                     isAnswered = false,
                     onFlip = {},
