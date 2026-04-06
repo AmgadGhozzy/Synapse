@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -55,7 +56,6 @@ enum class LibraryFilter(
 // ── Add-Pack Cell ─────────────────────────────────────────────────────────────
 @Composable
 fun AddPackCell(
-    isWide: Boolean,
     isLocked: Boolean,
     packCount: Int,
     onClick: () -> Unit,
@@ -67,10 +67,9 @@ fun AddPackCell(
     val bgColor = accentColor.copy(alpha = 0.06f)
     val borderColor = accentColor.copy(alpha = 0.35f)
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(if (isWide) 92.adp else 148.adp)
             .clip(MaterialTheme.synapse.radius.xl)
             .background(bgColor)
             .animatedDashedBorder(color = borderColor, shape = MaterialTheme.synapse.radius.xl)
@@ -79,96 +78,93 @@ fun AddPackCell(
                 indication = null,
                 onClick = onClick,
             ),
-        contentAlignment = Alignment.Center,
     ) {
-        if (isWide) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
+        val isWide = maxWidth > 280.adp
+
+        val titleRes = when {
+            isLocked -> R.string.add_pack_cell_locked_title
+            isWide   -> R.string.library_add_pack_title
+            else     -> R.string.library_add_pack_short_title
+        }
+        val subtitleRes = if (isLocked) R.string.add_pack_cell_locked_subtitle
+        else R.string.library_add_pack_subtitle
+
+        val cellHeight = if (isWide) 92.adp else 148.adp
+        val contentPadding = if (isWide)
+            PaddingValues(horizontal = MaterialTheme.synapse.spacing.s16, vertical = MaterialTheme.synapse.spacing.s12)
+        else
+            PaddingValues(MaterialTheme.synapse.spacing.s16)
+
+        // ── Icon ──────────────────────────────────────────────────────────────
+        @Composable
+        fun PackIcon() {
+            Box(
+                modifier = Modifier
+                    .size(36.adp)
+                    .clip(MaterialTheme.synapse.radius.md)
+                    .background(accentColor.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center,
             ) {
-                AddPackIcon(accentColor = accentColor, isLocked = isLocked)
-                AddPackCellText(
-                    isLocked = isLocked,
-                    packCount = packCount,
-                    accentColor = accentColor,
-                    isWide = true,
-                )
-            }
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
-            ) {
-                AddPackIcon(accentColor = accentColor, isLocked = isLocked)
-                AddPackCellText(
-                    isLocked = isLocked,
-                    packCount = packCount,
-                    accentColor = accentColor,
-                    isWide = false,
+                Icon(
+                    painter = painterResource(
+                        if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus
+                    ),
+                    contentDescription = null,
+                    tint = accentColor,
+                    modifier = Modifier.size(18.adp),
                 )
             }
         }
-    }
-}
 
-@Composable
-fun AddPackCellText(
-    isLocked: Boolean,
-    packCount: Int,
-    accentColor: Color,
-    isWide: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val titleRes = if (isLocked) R.string.add_pack_cell_locked_title
-    else if (isWide) R.string.library_add_pack_title
-    else R.string.library_add_pack_short_title
+        // ── Label ─────────────────────────────────────────────────────────────
+        @Composable
+        fun PackLabel() {
+            Column(
+                horizontalAlignment = if (isWide) Alignment.Start else Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(titleRes),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = accentColor,
+                )
+                Spacer(Modifier.height(2.adp))
+                Text(
+                    text = if (isLocked) stringResource(subtitleRes, packCount)
+                    else stringResource(subtitleRes),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
-    val subtitleRes = if (isLocked) R.string.add_pack_cell_locked_subtitle
-    else R.string.library_add_pack_subtitle
-
-    Column(
-        modifier = modifier.padding(MaterialTheme.synapse.spacing.s6),
-        horizontalAlignment = if (isWide) Alignment.Start else Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(titleRes),
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = accentColor,
-        )
-        Text(
-            text = if (isLocked) {
-                stringResource(subtitleRes, packCount)
-            } else {
-                stringResource(subtitleRes)
-            },
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-fun AddPackIcon(
-    accentColor: Color,
-    isLocked: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .size(36.adp)
-            .clip(MaterialTheme.synapse.radius.md)
-            .background(accentColor.copy(alpha = 0.14f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(
-                if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus
-            ),
-            contentDescription = null,
-            tint = accentColor,
-            modifier = Modifier.size(18.adp),
-        )
+        // ── Layout ────────────────────────────────────────────────────────────
+        if (isWide) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(cellHeight)
+                    .padding(contentPadding),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
+            ) {
+                PackIcon()
+                PackLabel()
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(cellHeight)
+                    .padding(contentPadding),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                PackIcon()
+                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
+                PackLabel()
+            }
+        }
     }
 }
 
@@ -186,16 +182,16 @@ fun LibrarySearchBar(
         placeholder = {
             Text(
                 text = stringResource(R.string.library_search_placeholder),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         leadingIcon = {
             Icon(
-                painter = painterResource(R.drawable.ic_search),
+                painter = painterResource(R.drawable.icon_search),
                 contentDescription = stringResource(R.string.library_search_description),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(15.adp),
+                modifier = Modifier.size(26.adp),
             )
         },
         trailingIcon = if (query.isNotEmpty()) {
@@ -205,7 +201,7 @@ fun LibrarySearchBar(
                     contentDescription = stringResource(R.string.library_search_clear),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
-                        .size(15.adp)
+                        .size(18.adp)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -214,8 +210,8 @@ fun LibrarySearchBar(
             }
         } else null,
         singleLine = true,
-        shape = MaterialTheme.synapse.radius.lg,
-        textStyle = MaterialTheme.typography.bodySmall.copy(
+        shape = MaterialTheme.shapes.large,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
             color = MaterialTheme.colorScheme.onSurface,
         ),
         colors = OutlinedTextFieldDefaults.colors(
@@ -389,9 +385,9 @@ private fun AddPackCellNormalPreview() {
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
             modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen)
         ) {
-            AddPackCell(isWide = true, isLocked = false, packCount = 3, onClick = {})
+            AddPackCell(isLocked = false, packCount = 3, onClick = {})
             AddPackCell(
-                isWide = false, isLocked = false, packCount = 3, onClick = {},
+                isLocked = false, packCount = 3, onClick = {},
                 modifier = Modifier.fillMaxWidth(0.5f)
             )
         }
@@ -407,9 +403,9 @@ private fun AddPackCellLockedPreview() {
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
             modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen)
         ) {
-            AddPackCell(isWide = true, isLocked = true, packCount = 5, onClick = {})
+            AddPackCell(isLocked = true, packCount = 5, onClick = {})
             AddPackCell(
-                isWide = false, isLocked = true, packCount = 5, onClick = {},
+                isLocked = true, packCount = 5, onClick = {},
                 modifier = Modifier.fillMaxWidth(0.5f)
             )
         }

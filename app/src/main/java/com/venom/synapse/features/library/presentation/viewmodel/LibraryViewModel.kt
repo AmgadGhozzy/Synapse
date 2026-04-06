@@ -102,8 +102,14 @@ class LibraryViewModel @Inject constructor(
     fun onCategoryChanged(category: String)    { _activeCategory.value = category }
     fun onSortChanged(sort: LibrarySortOption) { _sortBy.value         = sort     }
 
-    fun onPackTapped(packId: Long) =
+    fun onPackTapped(packId: Long) {
+        val pack = uiState.value.packs.find { it.id == packId }
+        if (pack != null && pack.cardsToReview == 0) {
+            _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.dashboard_pack_all_caught_up)))
+            return
+        }
         _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Quiz.createRoute(packId)))
+    }
 
     /**
      * Tapping the AddPackCell.

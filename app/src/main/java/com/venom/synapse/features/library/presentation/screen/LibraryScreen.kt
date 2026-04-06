@@ -4,11 +4,15 @@ import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -19,8 +23,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.venom.synapse.core.theme.SynapseTheme
@@ -51,6 +57,7 @@ fun LibraryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
+    val listState = rememberLazyGridState()
     val context = LocalContext.current
     // TODO: implement remediation screen
     LaunchedEffect(Unit) {
@@ -65,13 +72,14 @@ fun LibraryScreen(
     }
 
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { snackbarController.SnackbarHost() },
+        containerColor       = Color.Transparent,
     ) { innerPadding ->
         LibraryContent(
             uiState = uiState,
+            listState = listState,
             onSearchChanged = viewModel::onSearchQueryChanged,
             onSortChanged = viewModel::onSortChanged,
             onPackTapped = viewModel::onPackTapped,
@@ -88,6 +96,7 @@ fun LibraryScreen(
 @Composable
 private fun LibraryContent(
     uiState: LibraryUiState,
+    listState: LazyGridState,
     onSearchChanged: (String) -> Unit,
     onSortChanged: (LibrarySortOption) -> Unit,
     onPackTapped: (Long) -> Unit,
@@ -123,24 +132,27 @@ private fun LibraryContent(
 
     fun staggerDelay(index: Int) = index.coerceAtMost(5) * 60
 
+    val spacing      = MaterialTheme.synapse.spacing
+
     LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = modifier,
+        columns = GridCells.Adaptive(minSize = 180.dp),
+        state = listState,
         contentPadding = PaddingValues(
-            start = MaterialTheme.synapse.spacing.screen,
-            end = MaterialTheme.synapse.spacing.screen,
-            top = MaterialTheme.synapse.spacing.screenContentTop,
-            bottom = MaterialTheme.synapse.spacing.screenContentBottom,
+            start = spacing.screen,
+            end = spacing.screen,
+            top = spacing.screenContentTop,
+            bottom = spacing.screenContentBottom,
         ),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
+        verticalArrangement = Arrangement.spacedBy(spacing.s12),
+        horizontalArrangement = Arrangement.spacedBy(spacing.s12),
+        modifier = modifier.fillMaxSize(),
     ) {
 
         item(span = { GridItemSpan(maxLineSpan) }) {
             LibrarySearchBar(
                 query = uiState.searchQuery,
                 onChanged = onSearchChanged,
-                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
+                modifier = Modifier.padding(bottom = spacing.s12),
             )
         }
 
@@ -151,7 +163,7 @@ private fun LibraryContent(
                     activeFilter = tab
                     onSortChanged(tab.sort)
                 },
-                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s8),
+                modifier = Modifier.padding(bottom = spacing.s8),
             )
         }
 
@@ -160,7 +172,7 @@ private fun LibraryContent(
                 ErrorBanner(
                     message = uiState.error.resolve(),
                     onDismiss = { isErrorDismissed = true },
-                    modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s8),
+                    modifier = Modifier.padding(bottom = spacing.s8),
                 )
             }
         }
@@ -170,7 +182,7 @@ private fun LibraryContent(
                 packCount = displayedPacks.size,
                 totalDue = if (activeFilter == LibraryFilter.DUE) displayedPacks.sumOf { it.cardsToReview } else 0,
                 showDueSum = activeFilter == LibraryFilter.DUE && displayedPacks.isNotEmpty(),
-                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s8),
+                modifier = Modifier.padding(bottom = spacing.s8),
             )
         }
 
@@ -197,13 +209,12 @@ private fun LibraryContent(
                 onSwipeOpen = { openSwipedPackId = pack.id },
                 onSwipeClose = { if (openSwipedPackId == pack.id) openSwipedPackId = null },
                 enableSwipeActions = true,
-                modifier = Modifier.animateItem(),
+                modifier = Modifier.fillMaxWidth().animateItem(),
             )
         }
 
         item(span = { GridItemSpan(if (displayedPacks.size % 2 == 0) maxLineSpan else 1) }) {
             AddPackCell(
-                isWide = displayedPacks.size % 2 == 0,
                 isLocked = uiState.isPackLimitReached,
                 packCount = uiState.totalPackCount,
                 onClick = onImportPdf,
@@ -226,6 +237,7 @@ private fun LibraryScreenPreview() {
                 availableCategories = listOf("All", "Science", "History", "Law"),
                 isLoading = false,
             ),
+            listState = rememberLazyGridState(),
             onSearchChanged = {},
             onSortChanged = {},
             onPackTapped = {},
