@@ -70,7 +70,7 @@ fun ProfileAvatarSection(
                 } else {
                     Text(
                         text = uiState.avatarInitial.toString(),
-                        style = MaterialTheme.typography.displayMedium,
+                        style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White.copy(0.9f),
                     )
@@ -113,8 +113,8 @@ fun ProfileAvatarSection(
         ) {
             Text(
                 text = stringResource(uiState.planLabelRes),
-                style = MaterialTheme.typography.labelSmall,
-                color = cs.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (uiState.isPremium) semantic.gold else cs.onSurfaceVariant,
             )
         }
     }

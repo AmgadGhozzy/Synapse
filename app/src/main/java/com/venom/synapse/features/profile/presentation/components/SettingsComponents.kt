@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,9 +22,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -43,7 +46,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -54,12 +59,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.venom.synapse.R
 import com.venom.synapse.core.theme.SynapseTheme
+import com.venom.synapse.core.theme.synapse
+import com.venom.synapse.core.theme.tokens.toShadow
 import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section wrapper — keeps existing API
-// ─────────────────────────────────────────────────────────────────────────────
+import com.venom.ui.components.common.localized
 
 @Composable
 fun ProfileSettingsSection(
@@ -70,25 +73,24 @@ fun ProfileSettingsSection(
     Column(modifier = modifier) {
         Text(
             text       = title.uppercase(),
-            style      = MaterialTheme.typography.labelSmall,
+            style      = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             color      = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier   = Modifier.padding(start = 4.adp, bottom = 8.adp),
         )
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape    = RoundedCornerShape(24.adp),
-            color    = MaterialTheme.colorScheme.surface,
-            border   = BorderStroke(1.adp, MaterialTheme.colorScheme.outlineVariant),
+        Card(
+            modifier  = Modifier.fillMaxWidth()
+                .dropShadow(
+                    shape = MaterialTheme.shapes.large,
+                    shadow = MaterialTheme.synapse.shadows.strong.toShadow(MaterialTheme.colorScheme.surface)
+                ),
+            shape     = MaterialTheme.shapes.large,
+            colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
             Column { content() }
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Standard row with icon + label/sub + trailing slot
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun ProfileSettingsRow(
@@ -132,10 +134,6 @@ fun ProfileSettingsRow(
         if (hasDivider) SettingsDivider()
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stepper row — +/− buttons matching React design
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun StepperRow(
@@ -185,7 +183,7 @@ fun StepperRow(
                 horizontalArrangement = Arrangement.spacedBy(8.adp),
             ) {
                 StepperButton(
-                    symbol  = "−",
+                    icon    = Icons.Rounded.Remove,
                     enabled = value > min,
                     onClick = onDecrement,
                 )
@@ -205,23 +203,24 @@ fun StepperRow(
                         horizontalArrangement  = Arrangement.Center,
                     ) {
                         Text(
-                            text       = "$count",
-                            fontSize   = 14.asp,
-                            fontWeight = FontWeight.Bold,
+                            text       = count.localized(),
+                            style      = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
                             color      = cs.onSurface,
                             textAlign  = TextAlign.Center,
                         )
                         Spacer(Modifier.width(2.adp))
                         Text(
                             text      = unit,
-                            fontSize  = 10.asp,
+                            style     = MaterialTheme.typography.labelSmall,
                             color     = cs.onSurfaceVariant,
                         )
                     }
                 }
 
                 StepperButton(
-                    symbol  = "+",
+                    icon    = Icons.Rounded.Add,
                     enabled = value < max,
                     onClick = onIncrement,
                 )
@@ -233,7 +232,7 @@ fun StepperRow(
 
 @Composable
 private fun StepperButton(
-    symbol: String,
+    icon: ImageVector,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
@@ -247,19 +246,14 @@ private fun StepperButton(
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text       = symbol,
-            fontSize   = 16.asp,
-            color      = cs.primary,
-            fontWeight = FontWeight.Bold,
-            lineHeight = 16.asp,
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = cs.primary,
+            modifier = Modifier.align(Alignment.Center).size(16.adp)
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Time-display row — shows formatted time + opens picker on tap
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun TimeDisplayRow(
@@ -314,17 +308,14 @@ fun TimeDisplayRow(
         ) {
             Text(
                 text       = timeLabel,
-                fontSize   = 13.asp,
-                fontWeight = FontWeight.SemiBold,
+                style      = MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                ),
                 color      = cs.primary,
             )
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Material 3 Time Picker Dialog
-// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -351,6 +342,73 @@ fun ReminderTimePickerDialog(
         confirmButton = {
             TextButton(onClick = { onConfirm(state.hour, state.minute) }) {
                 Text(stringResource(R.string.settings_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_cancel))
+            }
+        },
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clear Data Confirmation Dialog
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun ClearDataConfirmDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val error   = MaterialTheme.colorScheme.error
+    val onError = MaterialTheme.colorScheme.onError
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier         = Modifier
+                    .size(48.adp)
+                    .clip(RoundedCornerShape(14.adp))
+                    .background(error.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter            = painterResource(R.drawable.ic_trash_2),
+                    contentDescription = null,
+                    tint               = error,
+                    modifier           = Modifier.size(22.adp),
+                )
+            }
+        },
+        title = {
+            Text(
+                text       = stringResource(R.string.settings_clear_data_dialog_title),
+                style      = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color      = error,
+            )
+        },
+        text = {
+            Text(
+                text  = stringResource(R.string.settings_clear_data_dialog_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors  = ButtonDefaults.buttonColors(
+                    containerColor = error,
+                    contentColor   = onError,
+                ),
+            ) {
+                Text(
+                    text       = stringResource(R.string.settings_clear_data_dialog_confirm),
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
         },
         dismissButton = {
@@ -528,10 +586,6 @@ fun DestructiveSettingsRow(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared private helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 private fun SettingsIconBox(iconRes: Int, iconTint: Color, iconBg: Color) {
     Box(
@@ -582,10 +636,10 @@ fun SynapseSwitch(
         },
         colors = SwitchDefaults.colors(
             checkedTrackColor   = MaterialTheme.colorScheme.secondary,
-            checkedThumbColor   = Color.White,
+            checkedThumbColor   = Color.White.copy(0.9f),
             checkedIconColor    = MaterialTheme.colorScheme.secondary,
             uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-            uncheckedThumbColor = Color.White,
+            uncheckedThumbColor = Color.White.copy(0.9f),
             uncheckedIconColor  = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     )
@@ -628,16 +682,13 @@ fun ProfileSignOutRow(
         Spacer(Modifier.width(8.adp))
         Text(
             text       = stringResource(R.string.profile_sign_out),
-            fontSize   = 14.asp,
-            fontWeight = FontWeight.SemiBold,
+            style      = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+            ),
             color      = error,
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Previews
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Preview(name = "StepperRow · Light", showBackground = true)
 @Preview(name = "StepperRow · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
