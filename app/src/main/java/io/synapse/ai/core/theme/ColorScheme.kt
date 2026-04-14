@@ -1,8 +1,8 @@
-package com.venom.synapse.core.theme
+package io.synapse.ai.core.theme
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import com.venom.synapse.core.theme.tokens.BrandColors
+import io.synapse.ai.core.theme.tokens.BrandColors
 
 /**
  * ══════════════════════════════════════════════════════════════════════

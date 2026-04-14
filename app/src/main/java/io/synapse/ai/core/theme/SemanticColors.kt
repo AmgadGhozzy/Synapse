@@ -1,9 +1,9 @@
-package com.venom.synapse.core.theme
+package io.synapse.ai.core.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import com.venom.synapse.core.theme.tokens.BrandColors
+import io.synapse.ai.core.theme.tokens.BrandColors
 
 @Immutable
 data class SemanticColors(

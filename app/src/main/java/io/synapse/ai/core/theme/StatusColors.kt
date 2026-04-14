@@ -1,4 +1,4 @@
-package com.venom.synapse.core.theme
+package io.synapse.ai.core.theme
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
