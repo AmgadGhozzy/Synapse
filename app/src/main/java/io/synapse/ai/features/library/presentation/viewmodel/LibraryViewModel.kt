@@ -1,23 +1,23 @@
-package com.venom.synapse.features.library.presentation.viewmodel
+package io.synapse.ai.features.library.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.components.PackDisplayItemBuilder
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.core.ui.state.UiText
-import com.venom.synapse.data.repo.AppConfigProvider
-import com.venom.synapse.data.repo.EntitlementManager
-import com.venom.synapse.domain.model.PackModel
-import com.venom.synapse.domain.repo.IAuthRepository
-import com.venom.synapse.domain.repo.IPackRepository
-import com.venom.synapse.domain.repo.IProgressRepository
-import com.venom.synapse.domain.repo.IQuestionRepository
-import com.venom.synapse.features.library.presentation.state.LibrarySortOption
-import com.venom.synapse.features.library.presentation.state.LibraryUiState
-import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.components.PackDisplayItemBuilder
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.AppConfigProvider
+import io.synapse.ai.data.repo.EntitlementManager
+import io.synapse.ai.domain.model.PackModel
+import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.domain.repo.IPackRepository
+import io.synapse.ai.domain.repo.IProgressRepository
+import io.synapse.ai.domain.repo.IQuestionRepository
+import io.synapse.ai.features.library.presentation.state.LibrarySortOption
+import io.synapse.ai.features.library.presentation.state.LibraryUiState
+import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -120,7 +120,7 @@ class LibraryViewModel @Inject constructor(
         if (uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Premium.route))
         } else {
-            _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.AddPdf.route))
+            _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.AddPdf.createRoute()))
         }
     }
 

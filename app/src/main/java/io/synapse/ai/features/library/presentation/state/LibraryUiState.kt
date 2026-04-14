@@ -1,8 +1,8 @@
-package com.venom.synapse.features.library.presentation.state
+package io.synapse.ai.features.library.presentation.state
 
 import androidx.compose.runtime.Immutable
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.core.ui.state.UiText
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.UiText
 
 enum class LibrarySortOption {
     RECENT,

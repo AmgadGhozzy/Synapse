@@ -1,4 +1,4 @@
-package com.venom.synapse.features.library.presentation.components
+package io.synapse.ai.features.library.presentation.components
 
 import android.content.res.Configuration
 import androidx.annotation.StringRes
@@ -35,12 +35,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.utils.animatedDashedBorder
-import com.venom.synapse.features.library.presentation.state.LibrarySortOption
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.ui.utils.animatedDashedBorder
+import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 
 // ── Filter tab definition (UI-layer only) ─────────────────────────────────────
 enum class LibraryFilter(
@@ -111,7 +111,7 @@ fun AddPackCell(
                     ),
                     contentDescription = null,
                     tint = accentColor,
-                    modifier = Modifier.size(18.adp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
             }
         }
@@ -191,7 +191,7 @@ fun LibrarySearchBar(
                 painter = painterResource(R.drawable.icon_search),
                 contentDescription = stringResource(R.string.library_search_description),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(26.adp),
+                modifier = Modifier.padding(start =  6.adp).size(MaterialTheme.synapse.spacing.icon_xl),
             )
         },
         trailingIcon = if (query.isNotEmpty()) {
@@ -201,7 +201,7 @@ fun LibrarySearchBar(
                     contentDescription = stringResource(R.string.library_search_clear),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
-                        .size(18.adp)
+                        .size(MaterialTheme.synapse.spacing.icon_sm)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,

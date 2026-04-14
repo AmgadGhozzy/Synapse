@@ -1,4 +1,4 @@
-package com.venom.synapse.features.library.presentation.screen
+package io.synapse.ai.features.library.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
@@ -29,25 +29,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.components.DeletePackDialog
-import com.venom.synapse.core.ui.components.ErrorBanner
-import com.venom.synapse.core.ui.components.GridPackCard
-import com.venom.synapse.core.ui.components.SnackbarHost
-import com.venom.synapse.core.ui.components.buildPackCardActions
-import com.venom.synapse.core.ui.components.rememberSnackbarController
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.features.library.presentation.components.AddPackCell
-import com.venom.synapse.features.library.presentation.components.FilterTabRow
-import com.venom.synapse.features.library.presentation.components.LibraryFilter
-import com.venom.synapse.features.library.presentation.components.LibrarySearchBar
-import com.venom.synapse.features.library.presentation.components.PackCountRow
-import com.venom.synapse.features.library.presentation.components.PackEmptyState
-import com.venom.synapse.features.library.presentation.state.LibrarySortOption
-import com.venom.synapse.features.library.presentation.state.LibraryUiState
-import com.venom.synapse.features.library.presentation.viewmodel.LibraryViewModel
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.ui.components.DeletePackDialog
+import io.synapse.ai.core.ui.components.ErrorBanner
+import io.synapse.ai.core.ui.components.GridPackCard
+import io.synapse.ai.core.ui.components.SnackbarHost
+import io.synapse.ai.core.ui.components.buildPackCardActions
+import io.synapse.ai.core.ui.components.rememberSnackbarController
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.features.library.presentation.components.AddPackCell
+import io.synapse.ai.features.library.presentation.components.FilterTabRow
+import io.synapse.ai.features.library.presentation.components.LibraryFilter
+import io.synapse.ai.features.library.presentation.components.LibrarySearchBar
+import io.synapse.ai.features.library.presentation.components.PackCountRow
+import io.synapse.ai.features.library.presentation.components.PackEmptyState
+import io.synapse.ai.features.library.presentation.state.LibrarySortOption
+import io.synapse.ai.features.library.presentation.state.LibraryUiState
+import io.synapse.ai.features.library.presentation.viewmodel.LibraryViewModel
 
 @Composable
 fun LibraryScreen(
