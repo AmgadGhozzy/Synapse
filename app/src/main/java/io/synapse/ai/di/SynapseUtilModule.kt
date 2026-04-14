@@ -1,4 +1,4 @@
-package com.venom.synapse.di
+package io.synapse.ai.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -6,14 +6,16 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.work.WorkManager
-import com.venom.synapse.data.repo.EntitlementCache
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.synapse.ai.data.repo.EntitlementCache
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import okhttp3.OkHttpClient
 import javax.inject.Named
 import javax.inject.Singleton
 
@@ -40,6 +42,15 @@ object SynapseUtilModule {
         produceFile = { context.preferencesDataStoreFile("entitlement") },
     )
 
+    @Provides
+    @Singleton
+    @Named("app_settings")
+    fun provideAppSettingsDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        produceFile = { context.preferencesDataStoreFile("app_settings") },
+    )
+
     // ── EntitlementCache ──────────────────────────────────────────
     @Provides
     @Singleton
@@ -62,4 +73,14 @@ object SynapseUtilModule {
     @Provides
     @Singleton
     fun provideNowProvider(): () -> Long = { System.currentTimeMillis() }
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface NetworkEntryPoint {
+    @Named("RegularOkHttpClient")
+    fun getRegularClient(): OkHttpClient
+
+    @Named("AiOkHttpClient")
+    fun getAiClient(): OkHttpClient
 }
