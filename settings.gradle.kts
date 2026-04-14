@@ -6,9 +6,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.10.0"
-}
 
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
@@ -19,8 +16,8 @@ dependencyResolutionManagement {
     }
 }
 
-includeBuild("C:\\Users\\HP\\AndroidStudioProjects\\LingoLens") {
-    dependencySubstitution {
+//includeBuild("C:\\Users\\HP\\AndroidStudioProjects\\LingoLens") {
+//    dependencySubstitution {
 //        substitute(module("com.venom:features:translation")).using(project(":features:translation"))
 //        substitute(module("com.venom:features:phrase")).using(project(":features:phrase"))
 //        substitute(module("com.venom:features:dialog")).using(project(":features:dialog"))
@@ -31,15 +28,15 @@ includeBuild("C:\\Users\\HP\\AndroidStudioProjects\\LingoLens") {
 //        substitute(module("com.venom:features:wordcraftai")).using(project(":features:wordcraftai"))
 //        substitute(module("com.venom:features:ocr")).using(project(":features:ocr"))
 //        substitute(module("com.venom:features:settings")).using(project(":features:settings"))
-        substitute(module("com.venom:core:ui")).using(project(":core:ui"))
-        substitute(module("com.venom:core:data")).using(project(":core:data"))
-        substitute(module("com.venom:core:di")).using(project(":core:di"))
-        substitute(module("com.venom:core:resources")).using(project(":core:resources"))
-        substitute(module("com.venom:core:utils")).using(project(":core:utils"))
-        substitute(module("com.venom:core:domain")).using(project(":core:domain"))
-        substitute(module("com.venom:core:analytics")).using(project(":core:analytics"))
-    }
-}
+//        substitute(module("com.venom:core:ui")).using(project(":core:ui"))
+//        substitute(module("com.venom:core:data")).using(project(":core:data"))
+//        substitute(module("com.venom:core:di")).using(project(":core:di"))
+//        substitute(module("com.venom:core:resources")).using(project(":core:resources"))
+//        substitute(module("com.venom:core:utils")).using(project(":core:utils"))
+//        substitute(module("com.venom:core:domain")).using(project(":core:domain"))
+//        substitute(module("com.venom:core:analytics")).using(project(":core:analytics"))
+//    }
+//}
 
 rootProject.name = "Synapse"
 include(":app")
