@@ -5,16 +5,10 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Hardware feature -->
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-
     <application
-        android:name=".Application"
+        android:name="io.synapse.ai.Application"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -22,11 +16,11 @@
         android:extractNativeLibs="false"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
-        android:theme="@style/Theme.LingoLens"
+        android:theme="@style/Theme.Synapse"
         tools:targetApi="31">
         <!-- Splash Activity as Launcher -->
         <activity
-            android:name=".SplashActivity"
+            android:name="io.synapse.ai.SplashActivity"
             android:exported="true"
             android:theme="@style/Theme.Synapse.Splash"
             android:windowSoftInputMode="adjustResize">
@@ -38,37 +32,39 @@
 
         <!-- Main Activity -->
         <activity
-            android:name=".MainActivity"
+            android:name="io.synapse.ai.MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.LingoLens"
+            android:theme="@style/Theme.Synapse"
             android:windowSoftInputMode="adjustResize" />
 
-        <!-- FileProvider for Secure File Sharing -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+        <!-- ════════════════════════════════════════════════════════════ -->
+        <!-- FIREBASE PRIVACY COMPLIANCE: Disable all auto-collection    -->
+        <!-- These MUST be present to prevent SDK leakage before consent  -->
+        <!-- ════════════════════════════════════════════════════════════ -->
 
-        <!-- AdMob -->
+        <!-- Disable Firebase Analytics auto-collection -->
         <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
-        <meta-data
-            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:name="firebase_analytics_collection_deactivated"
             android:value="true" />
 
-        <!-- FCM  -->
+        <!-- Disable Crashlytics auto-collection -->
+        <meta-data
+            android:name="firebase_crashlytics_collection_enabled"
+            android:value="false" />
+
+        <!-- Disable FCM auto-init (prevents automatic token generation) -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
+
+        <!-- FCM default notification icon -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_launcher" />
 
+        <!-- FCM Messaging Service -->
         <service
-            android:name="com.venom.analytics.MyFirebaseMessagingService"
+            android:name=".core.analytics.service.SynapseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
