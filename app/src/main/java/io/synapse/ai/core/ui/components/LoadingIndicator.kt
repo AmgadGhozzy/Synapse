@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,8 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 
 @Preview
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)

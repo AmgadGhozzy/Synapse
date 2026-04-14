@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.animateContentSize
@@ -24,10 +24,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
 
 /**
  * Error banner with an accessible dismiss action.
@@ -67,13 +66,13 @@ fun ErrorBanner(
 
             IconButton(
                 onClick = onDismiss,
-                modifier = Modifier.size(20.adp),
+                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_x),
                     contentDescription = stringResource(R.string.banner_dismiss),
                     tint = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.size(14.adp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
             }
         }

@@ -1,11 +1,11 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
-import com.venom.synapse.core.ui.state.LastStudiedLabel
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.domain.model.PackModel
-import com.venom.synapse.domain.model.QuestionProgressModel
-import com.venom.synapse.domain.repo.IProgressRepository
-import com.venom.synapse.domain.repo.IQuestionRepository
+import io.synapse.ai.core.ui.state.LastStudiedLabel
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.domain.model.PackModel
+import io.synapse.ai.domain.model.QuestionProgressModel
+import io.synapse.ai.domain.repo.IProgressRepository
+import io.synapse.ai.domain.repo.IQuestionRepository
 
 object PackDisplayItemBuilder {
     suspend fun build(

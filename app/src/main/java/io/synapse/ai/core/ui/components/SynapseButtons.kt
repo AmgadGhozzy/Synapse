@@ -1,6 +1,12 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import android.content.res.Configuration
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,19 +27,21 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 
 /**
  * Full-width gradient CTA button.
@@ -70,7 +78,7 @@ fun PrimaryGradientButton(
         modifier = modifier
             .fillMaxWidth()
             .height(56.adp)
-            .clip(MaterialTheme.synapse.radius.lg)
+            .clip(MaterialTheme.shapes.large)
             .background(gradient)
             .then(
                 if (enabled) Modifier.clickable(onClick = onClick) else Modifier
@@ -91,7 +99,7 @@ fun PrimaryGradientButton(
                         imageVector         = icon,
                         contentDescription  = null,
                         tint                = contentColor,
-                        modifier            = Modifier.size(18.adp),
+                        modifier            = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                     )
                 }
                 iconRes != null -> {
@@ -99,11 +107,74 @@ fun PrimaryGradientButton(
                         painter            = painterResource(iconRes),
                         contentDescription = null,
                         tint               = contentColor,
-                        modifier           = Modifier.size(18.adp),
+                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+fun GuidedPrimaryButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    iconRes: Int? = null,
+    showPulse: Boolean = true,
+) {
+    if (!showPulse) {
+        PrimaryGradientButton(
+            text     = text,
+            icon     = icon,
+            iconRes  = iconRes,
+            enabled  = enabled,
+            onClick  = onClick,
+            modifier = modifier,
+        )
+        return
+    }
+
+    val pulse = rememberInfiniteTransition(label = "guided_primary_button")
+    val haloScale by pulse.animateFloat(
+        initialValue  = 1f,
+        targetValue   = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+    )
+    val haloAlpha by pulse.animateFloat(
+        initialValue  = 0.22f,
+        targetValue   = 0.02f,
+        animationSpec = infiniteRepeatable(
+            animation  = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+    )
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    scaleX = haloScale
+                    scaleY = haloScale
+                    alpha  = haloAlpha
+                }
+                .clip(MaterialTheme.shapes.large)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
+        )
+
+        PrimaryGradientButton(
+            text     = text,
+            icon     = icon,
+            iconRes  = iconRes,
+            enabled  = enabled,
+            onClick  = onClick,
+        )
     }
 }
 
@@ -121,7 +192,7 @@ fun SecondaryButton(
         modifier = modifier
             .fillMaxWidth()
             .height(56.adp),
-        shape   = MaterialTheme.synapse.radius.lg,
+        shape   = MaterialTheme.shapes.large,
         border  = BorderStroke(
             width = MaterialTheme.synapse.spacing.s2 / 2,
             color = MaterialTheme.colorScheme.outline,
@@ -166,7 +237,7 @@ fun ProBadge(modifier: Modifier = Modifier) {
                 painter            = painterResource(R.drawable.ic_crown),
                 contentDescription = null,
                 tint               = gold,
-                modifier           = Modifier.size(14.adp),
+                modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
             )
             Text(
                 text  = stringResource(R.string.pro_badge_label),

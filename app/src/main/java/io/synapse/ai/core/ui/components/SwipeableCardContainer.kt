@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -47,9 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.util.lerp
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.asp
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
 import kotlin.math.roundToInt
 
 @Composable
@@ -240,7 +240,7 @@ fun ActionButton(
                 painter            = painterResource(action.iconRes),
                 contentDescription = stringResource(action.labelRes),
                 tint               = Color.White.copy(0.9f),
-                modifier           = Modifier.size(18.adp),
+                modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
             )
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
             Text(
