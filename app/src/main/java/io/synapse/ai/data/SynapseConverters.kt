@@ -1,9 +1,9 @@
-package com.venom.synapse.data
+package io.synapse.ai.data
 
 import androidx.room.TypeConverter
-import com.venom.synapse.domain.model.QuestionType
-import com.venom.synapse.domain.model.SessionMode
-import com.venom.synapse.domain.model.SourceType
+import io.synapse.ai.domain.model.QuestionType
+import io.synapse.ai.domain.model.SessionMode
+import io.synapse.ai.domain.model.SourceType
 
 class SynapseConverters {
 
