@@ -1,4 +1,4 @@
-package com.venom.synapse.features.add_pdf.presentation.components
+package io.synapse.ai.features.add_pdf.presentation.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -6,15 +6,15 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -72,26 +72,27 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.synapse.core.ui.components.LoadingIndicator
-import com.venom.synapse.core.ui.components.PrimaryGradientButton
-import com.venom.synapse.core.ui.components.SecondaryButton
-import com.venom.synapse.core.ui.components.StatusIconHeader
-import com.venom.synapse.core.ui.components.WavyProgressIndicator
-import com.venom.synapse.core.ui.state.QuestionUiModel
-import com.venom.synapse.core.ui.utils.animatedDashedBorder
-import com.venom.synapse.domain.model.QuestionType
-import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiState
-import com.venom.synapse.features.add_pdf.presentation.state.SourceTab
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.localized
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.LoadingIndicator
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
+import io.synapse.ai.core.ui.components.SecondaryButton
+import io.synapse.ai.core.ui.components.StatusIconHeader
+import io.synapse.ai.core.ui.components.WavyProgressIndicator
+import io.synapse.ai.core.ui.state.QuestionUiModel
+import io.synapse.ai.core.ui.utils.animatedDashedBorder
+import io.synapse.ai.core.ui.utils.localized
+import io.synapse.ai.domain.model.QuestionType
+import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiState
+import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
 
 
 data class LanguageOption(val code: String, val label: String, val flag: String)
@@ -138,7 +139,7 @@ fun AddPdfHeader(
                     Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = stringResource(R.string.cd_back),
                     tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(20.adp),
+                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
                 )
             }
         }
@@ -294,7 +295,8 @@ fun UploadStep(
             when (uiState.sourceTab) {
                 SourceTab.FILE -> uiState.fileName != null && !uiState.isLoading
                 SourceTab.TEXT -> uiState.pasteText.length >= 10
-                SourceTab.WEB  -> uiState.isPro && uiState.webUrl.isNotBlank()
+                SourceTab.WEB   -> uiState.isPro && uiState.webUrl.isNotBlank()
+                SourceTab.YOUTUBE -> uiState.isPro && uiState.webUrl.isNotBlank()
             }
         }
     }
@@ -312,16 +314,21 @@ fun UploadStep(
                     isLoading     = uiState.isLoading,
                     ocrEnabled    = uiState.ocrEnabled,
                     isOcrLocked   = uiState.isOcrFeatureLocked,
+                    maxPages      = uiState.maxPages,
+                    maxFileSize   = uiState.maxFileSizeMb,
                     onPickFile    = onPickFile,
                     onClearFile   = onClearFile,
                     onOcrToggle   = onOcrToggle,
                 )
-                SourceTab.WEB -> WebTab(
-                    webUrl        = uiState.webUrl,
-                    isPro         = uiState.isPro,
-                    onUrlChange   = onWebUrlChange,
-                    onLockedClick = onWebTabLockedClick,
-                )
+                SourceTab.YOUTUBE, SourceTab.WEB -> {
+                    WebTab(
+                        webUrl        = uiState.webUrl,
+                        sourceTab     = uiState.sourceTab,
+                        isPro         = uiState.isPro,
+                        onUrlChange   = onWebUrlChange,
+                        onLockedClick = onWebTabLockedClick,
+                    )
+                }
                 SourceTab.TEXT -> TextTab(
                     text         = uiState.pasteText,
                     onTextChange = onPasteTextChange,
@@ -409,27 +416,31 @@ fun FileTab(
     isLoading  : Boolean,
     ocrEnabled : Boolean,
     isOcrLocked: Boolean,
+    maxPages   : Int,
+    maxFileSize: Int,
     onPickFile : () -> Unit,
     onClearFile: () -> Unit,
     onOcrToggle: () -> Unit,
     modifier   : Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.adp)) {
-        AnimatedVisibility(
-            visible = !isLoading,
-            enter   = expandVertically() + fadeIn(),
-            exit    = shrinkVertically() + fadeOut(),
-        ) {
-            OcrBanner(
-                enabled    = ocrEnabled,
-                isLocked   = isOcrLocked,
-                onToggle   = onOcrToggle,
-            )
-        }
+//        AnimatedVisibility(
+//            visible = !isLoading,
+//            enter   = expandVertically() + fadeIn(),
+//            exit    = shrinkVertically() + fadeOut(),
+//        ) {
+//            OcrBanner(
+//                enabled    = ocrEnabled,
+//                isLocked   = isOcrLocked,
+//                onToggle   = onOcrToggle,
+//            )
+//        }
 
         DropZone(
             fileName    = fileName,
             isLoading   = isLoading,
+            maxPages    = maxPages,
+            maxFileSize = maxFileSize,
             onPickFile  = onPickFile,
             onClearFile = onClearFile,
         )
@@ -441,6 +452,8 @@ fun FileTab(
 private fun DropZone(
     fileName   : String?,
     isLoading  : Boolean,
+    maxPages   : Int,
+    maxFileSize: Int,
     onPickFile : () -> Unit,
     onClearFile: () -> Unit,
     modifier   : Modifier = Modifier,
@@ -457,12 +470,12 @@ private fun DropZone(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.synapse.radius.lg)
+            .clip(MaterialTheme.shapes.large)
             .background(bgColor)
             .animatedDashedBorder(
                 width = 2.adp,
                 color = borderColor,
-                shape = MaterialTheme.synapse.radius.lg
+                shape = MaterialTheme.shapes.large
             )
             .then(
                 if (fileName == null && !isLoading) Modifier.clickable(onClick = onPickFile) else Modifier
@@ -477,7 +490,7 @@ private fun DropZone(
             transitionSpec = { fadeIn() togetherWith fadeOut() }
         ) { state ->
             when (state) {
-                DropZoneState.EMPTY     -> DropZoneEmptyState()
+                DropZoneState.EMPTY     -> DropZoneEmptyState(maxPages = maxPages, maxFileSize = maxFileSize)
                 DropZoneState.LOADING   -> DropZoneLoading()
                 DropZoneState.CONFIRMED -> DropZoneFileConfirmed(
                     fileName = fileName ?: "",
@@ -491,7 +504,11 @@ private fun DropZone(
 private enum class DropZoneState { EMPTY, LOADING, CONFIRMED }
 
 @Composable
-private fun DropZoneEmptyState(modifier: Modifier = Modifier) {
+private fun DropZoneEmptyState(
+    maxPages   : Int,
+    maxFileSize: Int,
+    modifier   : Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -527,7 +544,7 @@ private fun DropZoneEmptyState(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(4.adp))
         Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape) {
             Text(
-                text     = stringResource(R.string.drop_zone_hint),
+                text     = stringResource(R.string.drop_zone_hint, maxFileSize, maxPages),
                 modifier = Modifier.padding(horizontal = 14.adp, vertical = 6.adp),
                 style    = MaterialTheme.typography.labelSmall,
                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -704,6 +721,7 @@ fun OcrBanner(
 @Composable
 fun WebTab(
     webUrl       : String,
+    sourceTab    : SourceTab,
     isPro        : Boolean,
     onUrlChange  : (String) -> Unit,
     onLockedClick: () -> Unit,
@@ -712,9 +730,9 @@ fun WebTab(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow()),
+            .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow()),
         color = MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.synapse.radius.lg,
+        shape = MaterialTheme.shapes.large,
     ) {
         Column(
             modifier            = Modifier.padding(20.adp),
@@ -755,9 +773,10 @@ fun WebTab(
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value         = webUrl,
-                    onValueChange = { if (isPro) onUrlChange(it) },          // ← direct binding, no lambda wrapping
+                    onValueChange = { if (isPro) onUrlChange(it) },
                     enabled       = isPro,
                     modifier      = Modifier.fillMaxWidth(),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Uri),
                 placeholder   = {
                     Text(
                         text  = stringResource(R.string.web_tab_placeholder),
@@ -772,8 +791,8 @@ fun WebTab(
                         modifier           = Modifier.size(16.adp),
                     )
                 },
-                trailingIcon = if (webUrl.isNotBlank()) {
-                    {
+                trailingIcon = {
+                    if (webUrl.isNotBlank()) {
                         IconButton(onClick = { onUrlChange("") }) {
                             Icon(
                                 painter            = painterResource(R.drawable.ic_x),
@@ -782,8 +801,22 @@ fun WebTab(
                                 modifier           = Modifier.size(14.adp),
                             )
                         }
+                    } else {
+                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+                        if (clipboardManager.hasText()) {
+                            IconButton(onClick = {
+                                clipboardManager.getText()?.text?.let { if (isPro) onUrlChange(it) }
+                            }) {
+                                Icon(
+                                    painter            = painterResource(R.drawable.icon_paste),
+                                    contentDescription = "Paste",
+                                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier           = Modifier.size(16.adp),
+                                )
+                            }
+                        }
                     }
-                } else null,
+                },
                 singleLine = true,
                 shape      = MaterialTheme.synapse.radius.md,
                 colors     = OutlinedTextFieldDefaults.colors(
@@ -797,7 +830,7 @@ fun WebTab(
                     modifier = Modifier
                         .matchParentSize()
                         .clickable(
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                            interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = onLockedClick
                         )
@@ -811,14 +844,16 @@ fun WebTab(
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
                 WebFormatChip(
-                    iconRes = R.drawable.ic_youtube,
-                    label   = stringResource(R.string.web_format_youtube),
-                    tint    = MaterialTheme.colorScheme.error,
+                    iconRes    = R.drawable.ic_youtube,
+                    label      = stringResource(R.string.web_format_youtube),
+                    tint       = MaterialTheme.colorScheme.error,
+                    isSelected = sourceTab == SourceTab.YOUTUBE,
                 )
                 WebFormatChip(
-                    iconRes = R.drawable.ic_globe,
-                    label   = stringResource(R.string.web_format_article),
-                    tint    = MaterialTheme.colorScheme.primary,
+                    iconRes    = R.drawable.ic_globe,
+                    label      = stringResource(R.string.web_format_article),
+                    tint       = MaterialTheme.colorScheme.primary,
+                    isSelected = sourceTab == SourceTab.WEB,
                 )
             }
         }
@@ -827,15 +862,17 @@ fun WebTab(
 
 @Composable
 private fun WebFormatChip(
-    iconRes: Int,
-    label  : String,
-    tint   : Color,
-    modifier: Modifier = Modifier,
+    iconRes   : Int,
+    label     : String,
+    tint      : Color,
+    isSelected: Boolean = false,
+    modifier  : Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
-        color    = tint.copy(alpha = 0.10f),
+        color    = if (isSelected) tint.copy(alpha = 0.15f) else tint.copy(alpha = 0.05f),
         shape    = CircleShape,
+        border   = if (isSelected) BorderStroke(1.adp, tint.copy(alpha = 0.5f)) else null,
     ) {
         Row(
             modifier              = Modifier.padding(horizontal = 10.adp, vertical = 5.adp),
@@ -866,13 +903,13 @@ fun TextTab(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow())
+            .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow())
             .border(
                 1.adp,
                 MaterialTheme.colorScheme.outlineVariant,
-                MaterialTheme.synapse.radius.lg
+                MaterialTheme.shapes.large
             ),
-        shape = MaterialTheme.synapse.radius.lg,
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
     ) {
         Column(
@@ -940,7 +977,6 @@ fun TextTab(
         }
     }
 }
-
 @Composable
 fun ConfigureStep(
     uiState              : AddPdfUiState,
@@ -948,6 +984,7 @@ fun ConfigureStep(
     onTypeToggle         : (QuestionType) -> Unit,
     onFocusNotesChange   : (String) -> Unit,
     onLanguageClick      : () -> Unit,
+    onThinkingToggle     : () -> Unit,
     onGenerate           : () -> Unit,
     modifier             : Modifier = Modifier,
 ) {
@@ -956,19 +993,41 @@ fun ConfigureStep(
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.adp)) {
+
+        // Pill showing which source was confirmed in Step 1.
         SourceConfirmedPill(
             text = when (uiState.sourceTab) {
-                SourceTab.FILE -> stringResource(R.string.configure_source_file, uiState.fileName ?: "File")
-                SourceTab.TEXT -> stringResource(R.string.configure_source_text, uiState.pasteText.length)
-                SourceTab.WEB  -> stringResource(R.string.configure_source_web)
+                SourceTab.FILE ->
+                    stringResource(R.string.configure_source_file, uiState.fileName ?: "File")
+                SourceTab.TEXT ->
+                    stringResource(R.string.configure_source_text, uiState.pasteText.length)
+                SourceTab.WEB, SourceTab.YOUTUBE ->
+                    stringResource(R.string.configure_source_web)
             }
         )
 
+        ThinkingBanner(
+            enabled  = uiState.thinkingEnabled,
+            isLocked = uiState.isThinkingLocked,
+            onToggle = onThinkingToggle,
+        )
+
+        // Question count slider.
         QuestionCountCard(count = uiState.questionCount, onChange = onQuestionCountChange)
+
+        // Question type filter chips.
         QuestionTypesCard(selected = uiState.selectedTypes, onToggle = onTypeToggle)
+
+        // Optional AI focus notes field.
         AiFocusNotesCard(notes = uiState.focusNotes, onNotesChange = onFocusNotesChange)
+
+        // Language picker.
         LanguagePickerCard(selectedLanguage = selectedLang, onClick = onLanguageClick)
 
+        // Deep Thinking toggle — replaces the old OCR banner placement here.
+        // Lock state comes from AppConfigProvider.isThinkingLocked (set in ViewModel init).
+
+        // Primary CTA — starts generation.
         PrimaryGradientButton(
             text    = stringResource(R.string.configure_generate),
             iconRes = R.drawable.ic_sparkles,
@@ -1217,7 +1276,7 @@ fun GeneratingTaskRow(label: String, done: Boolean, modifier: Modifier = Modifie
         Row(modifier = Modifier.padding(horizontal = 16.adp, vertical = 10.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.adp)) {
             if (done) Icon(painter = painterResource(R.drawable.ic_badge_check),
                 contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier =
-                    Modifier.size(18.adp))
+                    Modifier.size(MaterialTheme.synapse.spacing.icon_xs))
             else LoadingIndicator(size = 20.adp)
             Text(
                 text  = label,
@@ -1257,7 +1316,6 @@ fun DoneStep(
                         QuestionType.MCQ       -> "🧠"
                         QuestionType.TRUE_FALSE -> "✅"
                         QuestionType.FLASHCARD  -> "📚"
-                        else                    -> "❓"
                     },
                     questionText = q.questionText,
                     index        = i,
@@ -1409,7 +1467,7 @@ fun LanguageBottomSheet(
 private fun SectionCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(modifier = modifier
         .fillMaxWidth()
-        .dropShadow(MaterialTheme.synapse.radius.lg, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.synapse.radius.lg, color = MaterialTheme.colorScheme.surface) {
+        .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
         Column(modifier = Modifier.padding(20.adp), content = content)
     }
 }
@@ -1437,7 +1495,7 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 @Composable private fun OcrBannerProOffPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { OcrBanner(enabled = false, isLocked = false,  onToggle = {}, modifier = Modifier.padding(16.adp)) } } }
 
 @Preview(name = "WebTab", showBackground = true)
-@Composable private fun WebTabPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { WebTab(webUrl = "", isPro = true, onLockedClick = {}, onUrlChange = {}, modifier = Modifier.padding(16.adp)) } } }
+@Composable private fun WebTabPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { WebTab(webUrl = "", sourceTab = SourceTab.WEB, isPro = true, onLockedClick = {}, onUrlChange = {}, modifier = Modifier.padding(16.adp)) } } }
 
 @Preview(name = "GeneratingStep Light", showBackground = true)
 @Composable private fun GeneratingStepPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { GeneratingStep(progress = 0.65f, questionCount = 20, language = "English", focusNotesActive = true, modifier = Modifier.padding(20.adp)) } } }
