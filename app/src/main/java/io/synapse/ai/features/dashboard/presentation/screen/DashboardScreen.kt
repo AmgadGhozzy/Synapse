@@ -1,4 +1,4 @@
-package com.venom.synapse.features.dashboard.presentation.screen
+package io.synapse.ai.features.dashboard.presentation.screen
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
@@ -38,24 +38,24 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.components.DeletePackDialog
-import com.venom.synapse.core.ui.components.GridPackCard
-import com.venom.synapse.core.ui.components.SnackbarHost
-import com.venom.synapse.core.ui.components.buildPackCardActions
-import com.venom.synapse.core.ui.components.rememberSnackbarController
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.features.dashboard.presentation.components.DailyGoalCard
-import com.venom.synapse.features.dashboard.presentation.components.DashboardFab
-import com.venom.synapse.features.dashboard.presentation.components.EmptyPacksState
-import com.venom.synapse.features.dashboard.presentation.components.SectionHeader
-import com.venom.synapse.features.dashboard.presentation.components.StatsRow
-import com.venom.synapse.features.dashboard.presentation.state.DashboardUiState
-import com.venom.synapse.features.dashboard.presentation.viewmodel.DashboardViewModel
-import com.venom.synapse.ui.viewmodel.RootViewModel
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.ui.components.DeletePackDialog
+import io.synapse.ai.core.ui.components.GridPackCard
+import io.synapse.ai.core.ui.components.SnackbarHost
+import io.synapse.ai.core.ui.components.buildPackCardActions
+import io.synapse.ai.core.ui.components.rememberSnackbarController
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.features.dashboard.presentation.components.DailyGoalCard
+import io.synapse.ai.features.dashboard.presentation.components.DashboardFab
+import io.synapse.ai.features.dashboard.presentation.components.EmptyPacksState
+import io.synapse.ai.features.dashboard.presentation.components.SectionHeader
+import io.synapse.ai.features.dashboard.presentation.components.StatsRow
+import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
+import io.synapse.ai.features.dashboard.presentation.viewmodel.DashboardViewModel
+import io.synapse.ai.ui.viewmodel.RootViewModel
 import kotlinx.coroutines.delay
 
 private val WIDE_LAYOUT_BREAKPOINT = 600.dp
@@ -206,7 +206,10 @@ private fun PortraitLayout(
     modifier         : Modifier = Modifier,
 ) {
     val spacing      = MaterialTheme.synapse.spacing
-    val sectionTitle = stringResource(R.string.section_jump_back_in)
+    val sectionTitle = stringResource(
+        if (uiState.totalPackCount > 0) R.string.section_jump_back_in
+        else R.string.dashboard_empty_section_title,
+    )
 
     LazyVerticalGrid(
         columns              = GridCells.Adaptive(minSize = 180.dp),
@@ -247,8 +250,9 @@ private fun PortraitLayout(
         // ── Section header ────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             SectionHeader(
-                title    = sectionTitle,
-                onSeeAll = onSeeAllPacks,
+                title      = sectionTitle,
+                onSeeAll   = onSeeAllPacks,
+                showSeeAll = uiState.totalPackCount > 0,
             )
         }
 
@@ -356,8 +360,12 @@ private fun SummaryPanel(
             timeMinutes      = uiState.timeStudiedMinutes,
         )
         SectionHeader(
-            title    = stringResource(R.string.section_jump_back_in),
-            onSeeAll = onSeeAllPacks,
+            title      = stringResource(
+                if (uiState.totalPackCount > 0) R.string.section_jump_back_in
+                else R.string.dashboard_empty_section_title,
+            ),
+            onSeeAll   = onSeeAllPacks,
+            showSeeAll = uiState.totalPackCount > 0,
         )
     }
 }

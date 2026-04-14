@@ -1,7 +1,8 @@
-package com.venom.synapse.features.dashboard.presentation.components
+package io.synapse.ai.features.dashboard.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,12 +38,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.localized
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
+import io.synapse.ai.core.ui.utils.localized
 
 @Immutable
 private data class StatChipData(
@@ -168,7 +170,7 @@ private fun StatChip(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(26.adp)
+                            .size(MaterialTheme.synapse.spacing.icon_xl)
                             .clip(MaterialTheme.shapes.small)
                             .background(accentColor.copy(alpha = 0.14f)),
                         contentAlignment = Alignment.Center,
@@ -177,7 +179,7 @@ private fun StatChip(
                             painter           = painterResource(iconRes),
                             contentDescription = null,
                             tint              = accentColor,
-                            modifier          = Modifier.size(13.adp),
+                            modifier          = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                         )
                     }
                     Text(
@@ -193,8 +195,7 @@ private fun StatChip(
                 // Value
                 Text(
                     text       = value,
-                    style      = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
+                    style      = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                     color      = MaterialTheme.colorScheme.onSurface,
                     maxLines   = 1,
                 )
@@ -217,9 +218,10 @@ private fun StatChip(
 
 @Composable
 fun SectionHeader(
-    title   : String,
-    onSeeAll: () -> Unit,
-    modifier: Modifier = Modifier,
+    title      : String,
+    onSeeAll   : () -> Unit,
+    modifier   : Modifier = Modifier,
+    showSeeAll : Boolean = true,
 ) {
     val spacing = MaterialTheme.synapse.spacing
 
@@ -235,25 +237,25 @@ fun SectionHeader(
     ) {
         Text(
             text       = title,
-            style      = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onBackground,
+            style      = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+            color      = MaterialTheme.colorScheme.onBackground
         )
 
-        TextButton(onClick = onSeeAll) {
-            Text(
-                text       = stringResource(R.string.action_see_all).uppercase(),
-                style      = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color      = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.width(2.dp))
-            Icon(
-                imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                contentDescription = null,
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(12.adp),
-            )
+        if (showSeeAll) {
+            TextButton(onClick = onSeeAll) {
+                Text(
+                    text       = stringResource(R.string.action_see_all).uppercase(),
+                    style      = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color      = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(2.dp))
+                Icon(
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
+                )
+            }
         }
     }
 }
@@ -270,44 +272,60 @@ fun EmptyPacksState(
     val tokens = MaterialTheme.synapse
 
     Surface(
-        onClick  = onAddPack,
         modifier = modifier
             .fillMaxWidth()
-            .height(148.adp),
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
+                shape = MaterialTheme.shapes.large,
+            ),
         shape    = MaterialTheme.shapes.large,
         color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        border   = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
-        ),
     ) {
         Column(
-            modifier              = Modifier.fillMaxSize(),
-            horizontalAlignment   = Alignment.CenterHorizontally,
-            verticalArrangement   = Arrangement.Center,
+            modifier            = Modifier
+                .fillMaxWidth()
+                .padding(tokens.spacing.s20),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(tokens.spacing.s14),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.adp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.08f),
-                    ),
-                contentAlignment = Alignment.Center,
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s12),
             ) {
-                Icon(
-                    painter           = painterResource(R.drawable.ic_file_plus),
-                    contentDescription = null,
-                    tint              = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
-                    modifier          = Modifier.size(22.adp),
+                Box(
+                    modifier = Modifier
+                        .size(48.adp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter            = painterResource(R.drawable.ic_file_plus),
+                        contentDescription = null,
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
+                    )
+                }
+
+                Text(
+                    text       = stringResource(R.string.dashboard_empty_title),
+                    style      = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color      = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            Spacer(Modifier.height(tokens.spacing.s12))
+
             Text(
-                text       = stringResource(R.string.empty_packs_hint),
-                style      = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color      = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                text  = stringResource(R.string.dashboard_empty_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            PrimaryGradientButton(
+                text    = stringResource(R.string.dashboard_empty_cta),
+                iconRes = R.drawable.ic_file_plus,
+                enabled = true,
+                onClick = onAddPack,
             )
         }
     }

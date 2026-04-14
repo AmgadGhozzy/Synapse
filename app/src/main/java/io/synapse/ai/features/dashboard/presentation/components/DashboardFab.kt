@@ -1,4 +1,4 @@
-package com.venom.synapse.features.dashboard.presentation.components
+package io.synapse.ai.features.dashboard.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
@@ -29,11 +29,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -115,7 +115,7 @@ fun DashboardFab(
                             if (isLocked) R.string.fab_upgrade_description
                             else          R.string.fab_new_pack_description,
                         ),
-                        modifier           = Modifier.size(24.adp),
+                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
                     )
                 },
                 onClick        = onClick,
