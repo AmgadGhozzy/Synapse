@@ -1,7 +1,7 @@
-package com.venom.synapse.navigation
+package io.synapse.ai.navigation
 
-import com.venom.synapse.R
-import com.venom.ui.navigation.NavigationItem
+import io.synapse.ai.R
+import io.synapse.ai.navigation.core.NavigationItem
 
 enum class SynapseNavigationItems(
     override val route: String,
@@ -19,8 +19,8 @@ enum class SynapseNavigationItems(
     ),
     LIBRARY(
         route    = SynapseScreen.Library.route,
-        icon     = R.drawable.ic_book_open,
-        iconActive = R.drawable.ic_book_open_fill,
+        icon     = R.drawable.ic_books,
+        iconActive = R.drawable.ic_books_fill,
         titleRes = R.string.synapse_nav_library,
     ),
     STATS(
