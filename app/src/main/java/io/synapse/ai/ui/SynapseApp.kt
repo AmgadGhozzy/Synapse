@@ -1,4 +1,4 @@
-package com.venom.synapse.ui
+package io.synapse.ai.ui
 
 import android.content.Context
 import android.content.Intent
@@ -20,41 +20,46 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.venom.synapse.core.ui.components.SynapseTopBar
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.features.profile.presentation.viewmodel.ProfileViewModel
-import com.venom.synapse.navigation.AppState
-import com.venom.synapse.navigation.BarConfig
-import com.venom.synapse.navigation.SynapseNavGraph
-import com.venom.synapse.navigation.SynapseNavigationItems
-import com.venom.synapse.navigation.SynapseScreen
-import com.venom.synapse.navigation.rememberSynapseAppState
-import com.venom.synapse.ui.viewmodel.RootViewModel
-import com.venom.ui.components.common.adp
-import com.venom.ui.navigation.BottomBar
-import com.venom.ui.navigation.MotionTokens
+import io.synapse.ai.core.framework.audio.SoundManager
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.ui.audio.LocalSoundManager
+import io.synapse.ai.core.ui.components.SynapseTopBar
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
+import io.synapse.ai.navigation.AppState
+import io.synapse.ai.navigation.BarConfig
+import io.synapse.ai.navigation.SynapseNavGraph
+import io.synapse.ai.navigation.SynapseNavigationItems
+import io.synapse.ai.navigation.SynapseScreen
+import io.synapse.ai.navigation.core.BottomBar
+import io.synapse.ai.navigation.core.MotionTokens
+import io.synapse.ai.navigation.rememberSynapseAppState
+import io.synapse.ai.ui.viewmodel.RootViewModel
+import io.synapse.ai.ui.viewmodel.SubtitleOverrideState
 
 // ── Root composable ───────────────────────────────────────────────────────────
 
 @Composable
 fun SynapseApp(
+    soundManager: SoundManager,
     appState: AppState = rememberSynapseAppState(),
     rootViewModel: RootViewModel,
     profileViewModel: ProfileViewModel,
 ) {
     val onboardingDone by rootViewModel.onboardingDone.collectAsStateWithLifecycle()
-    val subtitleOverride by rootViewModel.subtitleResOverride.collectAsStateWithLifecycle()
+    val subtitleOverride by rootViewModel.subtitleOverride.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         rootViewModel.uiEffects.collect { effect ->
@@ -66,13 +71,15 @@ fun SynapseApp(
         }
     }
 
-    SynapseShell(
-        appState         = appState,
-        onboardingDone   = onboardingDone,
-        subtitleOverride = subtitleOverride,
-        rootViewModel    = rootViewModel,
-        profileViewModel = profileViewModel,
-    )
+    CompositionLocalProvider(LocalSoundManager provides soundManager) {
+        SynapseShell(
+            appState         = appState,
+            onboardingDone   = onboardingDone,
+            subtitleOverride = subtitleOverride,
+            rootViewModel    = rootViewModel,
+            profileViewModel = profileViewModel,
+        )
+    }
 }
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
@@ -89,23 +96,23 @@ private val BarExit =
 private fun SynapseShell(
     appState        : AppState,
     onboardingDone  : Boolean,
-    subtitleOverride: Int?,
+    subtitleOverride: SubtitleOverrideState,
     rootViewModel   : RootViewModel   = hiltViewModel(),
     profileViewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val barConfig: BarConfig = appState.barConfig
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     Scaffold(
         modifier            = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        containerColor      = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(
             modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.synapse.gradients.page)
                 .padding(innerPadding)
-                .fillMaxSize(),
+                //.padding(bottom = 18.adp)
         ) {
             SynapseNavGraph(
                 navController  = appState.navController,
@@ -154,19 +161,27 @@ private fun SynapseShell(
 
                     SynapseTopBar(
                         title    = stringResource(appState.currentScreen.titleRes),
-                        subtitle = subtitleOverride
-                            ?.let { stringResource(it) }
-                            ?: appState.currentScreen.subtitleRes
+                        subtitle = when (subtitleOverride) {
+                            is SubtitleOverrideState.Resource -> stringResource(subtitleOverride.resId)
+                            SubtitleOverrideState.Default -> appState.currentScreen.subtitleRes
                                 .takeIf { it != 0 }
                                 ?.let { stringResource(it) }
-                            ?: "",
+                                ?: ""
+                        },
                         profileAvatarUrl          = profileState.avatarUrl,
                         userInitial               = profileState.avatarInitial.toString(),
                         isPremium                 = profileState.isPremium,
-                        onProfileClick            = { appState.navigateTo(SynapseScreen.Profile.route) },
-                        onPremiumClick            = { appState.navigateTo(SynapseScreen.Premium.route) },
-                        onManageSubscriptionClick = { openSubscriptionManagement(context) },
-                        modifier                  = Modifier.statusBarsPadding(),
+                        onProfileClick = {
+                            appState.navController.navigate(SynapseScreen.Profile.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onPremiumClick = {
+                            appState.navController.navigate(SynapseScreen.Premium.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        modifier                  = Modifier.statusBarsPadding()//.padding(top = 48.adp),
                     )
                 }
             }

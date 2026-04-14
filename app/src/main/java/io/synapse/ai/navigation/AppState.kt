@@ -1,4 +1,4 @@
-package com.venom.synapse.navigation
+package io.synapse.ai.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -6,7 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.venom.ui.navigation.BaseAppState
+import io.synapse.ai.navigation.core.BaseAppState
 
 class AppState(
     navController: NavHostController,

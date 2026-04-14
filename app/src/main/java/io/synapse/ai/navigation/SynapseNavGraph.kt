@@ -1,8 +1,6 @@
-package com.venom.synapse.navigation
+package io.synapse.ai.navigation
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -13,23 +11,21 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
-import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
-import com.venom.synapse.R
-import com.venom.synapse.features.add_pdf.presentation.screen.AddPdfScreen
-import com.venom.synapse.features.dashboard.presentation.screen.DashboardScreen
-import com.venom.synapse.features.dashboard.presentation.viewmodel.DashboardViewModel
-import com.venom.synapse.features.library.presentation.screen.LibraryScreen
-import com.venom.synapse.features.onboarding.presentation.screen.OnboardingScreen
-import com.venom.synapse.features.premium.presentation.screen.SynapsePremiumScreen
-import com.venom.synapse.features.profile.presentation.screen.ProfileScreen
-import com.venom.synapse.features.session.presentation.screen.QuizScreen
-import com.venom.synapse.features.session.presentation.screen.SessionSummaryScreen
-import com.venom.synapse.features.session.presentation.viewmodel.SessionViewModel
-import com.venom.synapse.features.stats.presentation.screen.StatsScreen
-import com.venom.synapse.navigation.core.AnimatedNavHost
-import com.venom.synapse.navigation.core.NavTransitions
-import com.venom.synapse.ui.viewmodel.RootViewModel
+import io.synapse.ai.features.add_pdf.presentation.screen.AddPdfScreen
+import io.synapse.ai.features.dashboard.presentation.screen.DashboardScreen
+import io.synapse.ai.features.dashboard.presentation.viewmodel.DashboardViewModel
+import io.synapse.ai.features.library.presentation.screen.LibraryScreen
+import io.synapse.ai.features.onboarding.presentation.screen.OnboardingScreen
+import io.synapse.ai.features.premium.presentation.screen.SynapsePremiumScreen
+import io.synapse.ai.features.profile.presentation.components.AboutScreen
+import io.synapse.ai.features.profile.presentation.screen.ProfileScreen
+import io.synapse.ai.features.session.presentation.screen.QuizScreen
+import io.synapse.ai.features.session.presentation.screen.SessionSummaryScreen
+import io.synapse.ai.features.session.presentation.viewmodel.SessionViewModel
+import io.synapse.ai.features.stats.presentation.screen.StatsScreen
+import io.synapse.ai.navigation.core.AnimatedNavHost
+import io.synapse.ai.navigation.core.NavTransitions
+import io.synapse.ai.ui.viewmodel.RootViewModel
 
 @Composable
 fun SynapseNavGraph(
@@ -230,8 +226,9 @@ fun SynapseNavGraph(
             popEnterTransition = NavTransitions.horizontalPopEnter(),
             popExitTransition = NavTransitions.horizontalPopExit(),
         ) {
-            val libraries by produceLibraries(R.raw.aboutlibraries)
-            LibrariesContainer(libraries, Modifier.fillMaxSize())
+            AboutScreen(
+                onNavigateBack = { navController.popBackStack() },
+            )
         }
     }
 }
