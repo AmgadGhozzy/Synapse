@@ -1,19 +1,17 @@
-package com.venom.synapse.core.theme
+package io.synapse.ai.core.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
-import com.venom.synapse.core.theme.tokens.GradientTokens
-import com.venom.synapse.core.theme.tokens.RadiusTokens
-import com.venom.synapse.core.theme.tokens.ShadowTokens
-import com.venom.synapse.core.theme.tokens.SpacingTokens
-import com.venom.synapse.core.theme.tokens.defaultGradientTokens
-import com.venom.synapse.core.theme.tokens.defaultRadiusTokens
-import com.venom.synapse.core.theme.tokens.defaultShadowTokens
-import com.venom.synapse.core.theme.tokens.defaultSpacingTokens
-import com.venom.ui.theme.tokens.GlassColors
-import com.venom.ui.theme.tokens.LocalGlassColors
+import io.synapse.ai.core.theme.tokens.GradientTokens
+import io.synapse.ai.core.theme.tokens.RadiusTokens
+import io.synapse.ai.core.theme.tokens.ShadowTokens
+import io.synapse.ai.core.theme.tokens.SpacingTokens
+import io.synapse.ai.core.theme.tokens.defaultGradientTokens
+import io.synapse.ai.core.theme.tokens.defaultRadiusTokens
+import io.synapse.ai.core.theme.tokens.defaultShadowTokens
+import io.synapse.ai.core.theme.tokens.defaultSpacingTokens
 
 /**
  * Synthetic helper to read Synapse-specific theme tokens via MaterialTheme.
@@ -21,7 +19,6 @@ import com.venom.ui.theme.tokens.LocalGlassColors
 data class SynapseTokens(
     val semantic: SemanticColors,
     val levelColors: LevelColors,
-    val glass: GlassColors,
     val gradients: GradientTokens,
     val spacing: SpacingTokens,
     val radius: RadiusTokens,
@@ -34,7 +31,6 @@ val MaterialTheme.synapse: SynapseTokens
     get() = SynapseTokens(
         semantic = LocalSemanticColors.current,
         levelColors = LocalLevelColors.current,
-        glass = LocalGlassColors.current,
         gradients = LocalGradientTokens.current,
         spacing = LocalSpacingTokens.current,
         radius = LocalRadiusTokens.current,
