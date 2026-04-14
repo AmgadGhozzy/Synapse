@@ -1,4 +1,4 @@
-package com.venom.synapse.core.theme.tokens
+package io.synapse.ai.core.theme.tokens
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
