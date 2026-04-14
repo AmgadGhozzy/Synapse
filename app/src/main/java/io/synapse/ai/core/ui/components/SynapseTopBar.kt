@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.EaseInOut
@@ -49,16 +49,16 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import coil.compose.AsyncImage
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
+import io.synapse.ai.core.theme.tokens.toShadow
 
 @Composable
 fun SynapseTopBar(
@@ -94,15 +94,15 @@ fun SynapseTopBar(
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelLarge.copy(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeight = 15.asp,
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge.copy(
+                    lineHeight = 20.asp,
                     fontWeight = FontWeight.Bold,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -127,7 +127,7 @@ private fun AvatarButton(
     Box(modifier = modifier, contentAlignment = Alignment.BottomEnd) {
         Box(
             modifier = Modifier
-                .size(56.adp)
+                .size(60.adp)
                 .clip(shape)
                 .background(MaterialTheme.synapse.gradients.primary)
                 .border(
@@ -153,7 +153,6 @@ private fun AvatarButton(
                     text = initial.take(1).uppercase(),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
                         color = Color.White.copy(alpha = 0.9f),
                     ),
                 )
@@ -278,7 +277,8 @@ private fun GoProButton(
                     )
                     // Label row
                     Row(
-                        modifier = Modifier.padding(
+                        modifier = Modifier.padding(bottom = 1.adp)
+                            .padding(
                             horizontal = MaterialTheme.synapse.spacing.s16,
                             vertical = MaterialTheme.synapse.spacing.s10,
                         ),
@@ -290,14 +290,14 @@ private fun GoProButton(
                             contentDescription = null,
                             tint = Color.White.copy(alpha = 0.9f),
                             modifier = Modifier
-                                .size(16.adp)
+                                .size(18.adp)
                                 .graphicsLayer { rotationZ = crownRotation },
                         )
                         Text(
                             text = pillLabel,
                             style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.ExtraBold,
-                                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                                lineHeight = 24.asp,
+                                fontWeight = FontWeight.ExtraBold
                             ),
                             color = Color.White.copy(alpha = 0.9f),
                         )
