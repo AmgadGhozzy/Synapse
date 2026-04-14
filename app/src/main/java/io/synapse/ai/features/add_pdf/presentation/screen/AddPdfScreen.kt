@@ -1,4 +1,4 @@
-package com.venom.synapse.features.add_pdf.presentation.screen
+package io.synapse.ai.features.add_pdf.presentation.screen
 
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -37,28 +37,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.components.ErrorBanner
-import com.venom.synapse.core.ui.components.SnackbarHost
-import com.venom.synapse.core.ui.components.rememberSnackbarController
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.features.add_pdf.presentation.components.AddPdfHeader
-import com.venom.synapse.features.add_pdf.presentation.components.ConfigureStep
-import com.venom.synapse.features.add_pdf.presentation.components.DoneStep
-import com.venom.synapse.features.add_pdf.presentation.components.GeneratingStep
-import com.venom.synapse.features.add_pdf.presentation.components.LANGUAGES
-import com.venom.synapse.features.add_pdf.presentation.components.LanguageBottomSheet
-import com.venom.synapse.features.add_pdf.presentation.components.StepIndicator
-import com.venom.synapse.features.add_pdf.presentation.components.UploadStep
-import com.venom.synapse.features.add_pdf.presentation.components.shortLabel
-import com.venom.synapse.features.add_pdf.presentation.state.AddPdfStep
-import com.venom.synapse.features.add_pdf.presentation.state.AddPdfUiEvent
-import com.venom.synapse.features.add_pdf.presentation.state.toIndicatorIndex
-import com.venom.synapse.features.add_pdf.presentation.viewmodel.AddPdfViewModel
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.other.ConfettiAnimationType
-import com.venom.ui.components.other.ConfettiView
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.ui.components.ConfettiAnimationType
+import io.synapse.ai.core.ui.components.ConfettiView
+import io.synapse.ai.core.ui.components.ErrorBanner
+import io.synapse.ai.core.ui.components.SnackbarHost
+import io.synapse.ai.core.ui.components.rememberSnackbarController
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.features.add_pdf.presentation.components.AddPdfHeader
+import io.synapse.ai.features.add_pdf.presentation.components.ConfigureStep
+import io.synapse.ai.features.add_pdf.presentation.components.DoneStep
+import io.synapse.ai.features.add_pdf.presentation.components.GeneratingStep
+import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
+import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
+import io.synapse.ai.features.add_pdf.presentation.components.StepIndicator
+import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
+import io.synapse.ai.features.add_pdf.presentation.components.shortLabel
+import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
+import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
+import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
+import io.synapse.ai.features.add_pdf.presentation.viewmodel.AddPdfViewModel
 
 @Composable
 fun AddPdfScreen(
@@ -77,15 +77,20 @@ fun AddPdfScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri ?: return@rememberLauncherForActivityResult
+        var fileSizeMb = 0f
         val fileName = context.contentResolver
             .query(uri, null, null, null, null)
             ?.use { cursor ->
                 if (cursor.moveToFirst()) {
+                    val sizeCol = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (sizeCol != -1) {
+                        fileSizeMb = cursor.getLong(sizeCol) / (1024f * 1024f)
+                    }
                     val col = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                     if (col != -1) cursor.getString(col) else "document.pdf"
                 } else "document.pdf"
             } ?: "document.pdf"
-        viewModel.onEvent(AddPdfUiEvent.FileSelected(uri.toString(), fileName))
+        viewModel.onEvent(AddPdfUiEvent.FileSelected(uri.toString(), fileName, fileSizeMb))
     }
 
     LaunchedEffect(Unit) {
@@ -187,7 +192,7 @@ fun AddPdfScreen(
                 label = "wizard_step",
             ) { step ->
                 when (step) {
-                    AddPdfStep.SELECT_PDF, AddPdfStep.EXTRACTING -> UploadStep(
+                    AddPdfStep.SELECT_PDF -> UploadStep(
                         uiState           = uiState,
                         onTabSelect       = { viewModel.onEvent(AddPdfUiEvent.SourceTabSelected(it)) },
                         onPickFile        = { filePicker.launch(arrayOf("application/pdf")) },
@@ -201,6 +206,7 @@ fun AddPdfScreen(
 
                     AddPdfStep.CONFIGURE -> ConfigureStep(
                         uiState               = uiState,
+                        onThinkingToggle     = { viewModel.onEvent(AddPdfUiEvent.ThinkingToggled) },
                         onQuestionCountChange = { viewModel.onEvent(AddPdfUiEvent.QuestionCountChanged(it)) },
                         onTypeToggle          = { viewModel.onEvent(AddPdfUiEvent.QuestionTypeToggled(it)) },
                         onFocusNotesChange    = { viewModel.onEvent(AddPdfUiEvent.FocusNotesChanged(it)) },
