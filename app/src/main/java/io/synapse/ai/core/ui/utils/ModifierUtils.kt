@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.utils
+package io.synapse.ai.core.ui.utils
 
 
 import androidx.compose.animation.core.LinearEasing
@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 private fun dashEffect(dashOnPx: Float, dashOffPx: Float, phase: Float = 0f) =
     PathEffect.dashPathEffect(floatArrayOf(dashOnPx, dashOffPx), phase)
 
-// ── Static ────────────────────────────────────────────────────────────────────
 fun Modifier.dashedBorder(
     color: Color,
     shape: Shape = RectangleShape,
@@ -61,7 +60,6 @@ fun Modifier.dashedBorder(
     )
 }
 
-// ── Animated (marching ants) ──────────────────────────────────────────────────
 fun Modifier.animatedDashedBorder(
     color: Color,
     shape: Shape = RectangleShape,

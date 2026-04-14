@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.utils
+package io.synapse.ai.core.ui.utils
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
