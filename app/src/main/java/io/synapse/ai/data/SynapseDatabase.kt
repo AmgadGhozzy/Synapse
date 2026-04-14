@@ -1,17 +1,17 @@
-package com.venom.synapse.data
+package io.synapse.ai.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.venom.synapse.data.dao.PackDao
-import com.venom.synapse.data.dao.ProgressDao
-import com.venom.synapse.data.dao.QuestionDao
-import com.venom.synapse.data.dao.SessionDao
-import com.venom.synapse.data.entity.PackEntity
-import com.venom.synapse.data.entity.QuestionEntity
-import com.venom.synapse.data.entity.QuestionProgressEntity
-import com.venom.synapse.data.entity.SessionQuestionCrossRef
-import com.venom.synapse.data.entity.StudySessionEntity
+import io.synapse.ai.data.dao.PackDao
+import io.synapse.ai.data.dao.ProgressDao
+import io.synapse.ai.data.dao.QuestionDao
+import io.synapse.ai.data.dao.SessionDao
+import io.synapse.ai.data.entity.PackEntity
+import io.synapse.ai.data.entity.QuestionEntity
+import io.synapse.ai.data.entity.QuestionProgressEntity
+import io.synapse.ai.data.entity.SessionQuestionCrossRef
+import io.synapse.ai.data.entity.StudySessionEntity
 
 @Database(
     entities = [
@@ -33,7 +33,7 @@ abstract class SynapseDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 3
         const val DB_NAME = "synapse_study.db"
     }
 }
