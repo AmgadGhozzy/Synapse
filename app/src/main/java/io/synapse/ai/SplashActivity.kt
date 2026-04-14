@@ -1,4 +1,4 @@
-package com.venom.synapse
+package io.synapse.ai
 
 import android.annotation.SuppressLint
 import android.content.Intent
@@ -26,10 +26,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import com.venom.data.repo.SettingsRepository
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.ui.components.common.adp
 import dagger.hilt.android.AndroidEntryPoint
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.data.repo.AppSettingsRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -47,7 +47,7 @@ import javax.inject.Inject
 class SplashActivity : ComponentActivity() {
 
     @Inject
-    lateinit var settingsRepository: SettingsRepository
+    lateinit var settingsRepository: AppSettingsRepository
 
     // Holds the system splash visible until our async work is done (API 31+)
     private var splashReady = false
