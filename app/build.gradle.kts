@@ -1,5 +1,5 @@
+import org.jetbrains.kotlin.konan.properties.Properties
 import java.io.FileInputStream
-import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,29 +14,22 @@ plugins {
     id("com.google.firebase.crashlytics")
 }
 
-val versionFile = rootProject.file("version.properties")
-
 val localProperties = Properties()
 val versionProperties = Properties()
 localProperties.load(FileInputStream(rootProject.file("local.properties")))
-versionProperties.load(FileInputStream(versionFile))
-
-val localVersionCode = versionProperties.getProperty("APP_VERSION_CODE").toInt()
-val localVersionName = versionProperties.getProperty("APP_VERSION_NAME")
 
 android {
-    namespace = "com.venom.synapse"
+    namespace = "io.synapse.ai"
     compileSdk = 36
     lint {
-        disable.add("NullSafeMutableLiveData")
         checkReleaseBuilds = true
     }
     defaultConfig {
-        applicationId = "com.venom.synapse"
+        applicationId = "io.synapse.ai"
         minSdk = 24
         targetSdk = 36
-        versionCode = localVersionCode
-        versionName = "${localVersionName}${localVersionCode}"
+        versionCode = 63
+        versionName = "2.1.3"
         ndk {
             abiFilters.add("arm64-v8a")
             abiFilters.add("arm-v7a")
@@ -78,44 +71,20 @@ android {
     packaging {
         resources {
             excludes += setOf(
-                "/META-INF/{AL2.0,LGPL2.1}",
-                "/META-INF/*.version",
-                "/META-INF/kotlin-project-structure-metadata.json",
+//                "/META-INF/{AL2.0,LGPL2.1}",
+//                "/META-INF/*.version",
+//                "/META-INF/kotlin-project-structure-metadata.json",
                 "**/dump_syms*"
             )
         }
     }
-    android {
-        lint {
-            disable += "NullSafeMutableLiveData"
-        }
-    }
-    // Auto increment app version
-    gradle.startParameter.taskNames.forEach {
-        if (it.contains(":app:assembleRelease")) {
-            versionFile.bufferedWriter().use { file ->
-                file.write("APP_VERSION_CODE=${(localVersionCode + 1)}")
-            }
-        }
-    }
 
-    tasks.whenTaskAdded {
-        if (name == "assembleDebug") {
-            doLast {
-                exec {
-                    commandLine("cmd", "/c", "D:\\Amgad\\unlock_device.bat")
-                    isIgnoreExitValue = true
-                }
-            }
-        }
-    }
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
         }
     }
 }
-
 
 dependencies {
 
@@ -124,31 +93,56 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.config.ktx)
 
-    // Ads
-    api(libs.play.services.ads)
+    // ML Kit
+    //implementation(libs.text.recognition)
 
-    // Core
-    implementation("com.venom:core:data")
-    implementation("com.venom:core:ui")
-    implementation("com.venom:core:di")
-    implementation("com.venom:core:resources")
-    implementation("com.venom:core:utils")
-    implementation("com.venom:core:domain")
-    implementation("com.venom:core:analytics")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.animation)
 
-    // Features
-//    implementation("com.venom:features:translation")
-//    implementation("com.venom:features:stackcard")
-//    implementation("com.venom:features:quiz")
-//    implementation("com.venom:features:lingospell")
-//    implementation("com.venom:features:settings")
-//
-//    implementation("com.venom:features:phrase")
-//    implementation("com.venom:features:dialog")
-//    implementation("com.venom:features:ocr")
-//    implementation("com.venom:features:quote")
-//    implementation("com.venom:features:wordcraftai")
+    // Hilt
+    api(libs.hilt.android)
+    ksp(libs.hilt.android.compiler)
+    api(libs.hilt.navigation.compose)
+
+    // WorkManager (EntitlementSyncWorker)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Room
+    api(libs.androidx.room.runtime)
+    api(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Datastore
+    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
+
+    implementation(libs.kotlinx.serialization.json)
+    api(libs.converter.moshi)
+    api(libs.moshi)
+
+    // Networking
+    api(libs.okhttp)
+    api(libs.okhttp.sse)
+    api(libs.retrofit)
+
+    // Supabase
+    implementation(libs.supabase.client)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.functions)
+
+    implementation(libs.ktor.client.okhttp)
+
+
+    // Credential Manager (Google Sign-In)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
 
     // Android Jetpack
@@ -159,51 +153,6 @@ dependencies {
     api(libs.androidx.lifecycle.viewmodel.compose)
     api(libs.androidx.lifecycle.viewmodel.ktx)
     api(libs.androidx.fragment.ktx)
-
-    // Hilt
-    api(libs.hilt.android)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.core.splashscreen)
-    ksp(libs.hilt.android.compiler)
-    api(libs.hilt.navigation.compose)
-
-    // Networking
-    api(libs.okhttp)
-    api(libs.retrofit)
-    api(libs.converter.moshi)
-    api(libs.moshi)
-
-    // Room
-    api(libs.androidx.room.runtime)
-    api(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-    implementation(libs.androidx.datastore)
-    implementation(libs.androidx.datastore.preferences)
-
-    implementation(libs.androidx.datastore)
-    implementation(libs.kotlinx.serialization.json)
-
-    // ML Kit
-    implementation("com.google.mlkit:text-recognition:16.0.1")
-
-    // Supabase
-    implementation(libs.supabase.client)
-    implementation(libs.supabase.postgrest)
-    implementation(libs.supabase.auth)
-    implementation(libs.supabase.functions)
-    implementation("io.ktor:ktor-client-okhttp:3.1.3")
-
-    // WorkManager (EntitlementSyncWorker)
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler)
-
-    // Credential Manager (Google Sign-In)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
-
 
     // Compose
     api(libs.compose.ui)
@@ -220,7 +169,17 @@ dependencies {
         exclude(group = "androidx.compose.material.icons", module = "twotone")
     }
 
+    api(libs.lottie.compose)
+    api(libs.konfetti.compose)
+    
+    // About Libraries
+    implementation(libs.aboutlibraries.core)
+    implementation(libs.aboutlibraries.compose.m3)
+    implementation(libs.aboutlibraries.compose.core)
 
+    // Vico Charts
+    api(libs.vico.compose.m3)
+    
     // Kotlin
     api(libs.kotlin.stdlib)
     api(libs.androidx.exifinterface)
