@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
@@ -19,10 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.venom.resources.R
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
-import com.venom.synapse.R as SynapseR
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 
 @Composable
 fun GoogleSignInButton(
@@ -33,7 +32,7 @@ fun GoogleSignInButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(60.adp),
+            .height(56.adp),
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
@@ -50,12 +49,12 @@ fun GoogleSignInButton(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.icon_google),
-                contentDescription = stringResource(SynapseR.string.google_logo_description),
-                modifier = Modifier.size(24.adp)
+                contentDescription = stringResource(R.string.google_logo_description),
+                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg)
             )
             Spacer(modifier = Modifier.width(MaterialTheme.synapse.spacing.s12))
             Text(
-                text = stringResource(SynapseR.string.google_sign_in_button),
+                text = stringResource(R.string.google_sign_in_button),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )

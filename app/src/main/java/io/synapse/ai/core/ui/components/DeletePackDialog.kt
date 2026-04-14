@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import com.venom.synapse.R
+import io.synapse.ai.R
 
 @Composable
 fun DeletePackDialog(

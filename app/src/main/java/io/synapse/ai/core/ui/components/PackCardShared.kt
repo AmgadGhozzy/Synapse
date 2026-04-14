@@ -1,10 +1,10 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.tokens.BrandColors
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.tokens.BrandColors
 
 
 // ── SwipeAction model ─────────────────────────────────────────────────────────

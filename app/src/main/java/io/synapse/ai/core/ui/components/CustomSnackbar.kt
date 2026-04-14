@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -29,8 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.adp
+import io.synapse.ai.core.theme.synapse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -169,8 +169,9 @@ fun SnackbarHost(
             hostState = controller.hostState,
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(
-                    bottom = 80.adp,
+                    bottom = 80.dp,
                     start  = MaterialTheme.synapse.spacing.screen,
                     end    = MaterialTheme.synapse.spacing.screen,
                 )
@@ -257,7 +258,7 @@ private fun ModernSnackbar(
                 Icon(
                     imageVector = it,
                     contentDescription = null,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
                     tint = contentColor
                 )
             }

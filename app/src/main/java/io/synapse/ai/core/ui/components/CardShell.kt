@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,10 +18,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.LocalAdaptiveScale
-import com.venom.synapse.core.theme.tokens.adp
-import com.venom.synapse.core.theme.tokens.toShadow
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.LocalAdaptiveScale
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable

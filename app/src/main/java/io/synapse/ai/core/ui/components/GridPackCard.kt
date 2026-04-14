@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.components
+package io.synapse.ai.core.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -41,19 +41,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.synapse.core.ui.state.LastStudiedLabel
-import com.venom.synapse.core.ui.state.PackDisplayItem
-import com.venom.synapse.core.ui.state.displayString
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.state.LastStudiedLabel
+import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.displayString
 import kotlinx.coroutines.delay
 
 /**
@@ -205,8 +204,7 @@ private fun GridPackCardContent(
         Text(
             text     = pack.title,
             style    = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight     = FontWeight.Bold,
-                platformStyle  = PlatformTextStyle(includeFontPadding = false),
+                fontWeight     = FontWeight.Bold
             ),
             color    = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -295,8 +293,7 @@ private fun IconAndCategoryRow(
             Text(
                 text     = category.uppercase(),
                 style    = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.ExtraBold,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    fontWeight    = FontWeight.ExtraBold
                 ),
                 color    = colorSet.accent,
                 maxLines = 1,
@@ -326,16 +323,14 @@ private fun ProgressSection(
             Text(
                 text  = stringResource(R.string.grid_card_learned, mastered, total),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.Medium,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    fontWeight    = FontWeight.Medium
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text  = stringResource(R.string.grid_card_pct, learnedPct),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.ExtraBold,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    fontWeight    = FontWeight.ExtraBold
                 ),
                 color = accent,
             )
@@ -411,9 +406,7 @@ private fun MetaRow(
             )
             Text(
                 text  = lastStudied.displayString(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                ),
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -451,8 +444,7 @@ private fun DueBadge(
         Text(
             text  = stringResource(R.string.due_badge, dueCards),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight    = FontWeight.Bold,
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                fontWeight    = FontWeight.Bold
             ),
             color = goldColor,
         )
@@ -479,8 +471,7 @@ private fun StreakChip(
         Text(
             text  = stringResource(R.string.grid_card_streak, streakDays),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight    = FontWeight.Bold,
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                fontWeight    = FontWeight.Bold
             ),
             color = goldColor,
         )
@@ -500,7 +491,7 @@ private fun ContinueButton(
         modifier = modifier
             .fillMaxWidth()
             .height(36.adp)
-            .clip(MaterialTheme.synapse.radius.lg)
+            .clip(MaterialTheme.shapes.large)
             .then(
                 if (hasDue) {
                     Modifier.background(ctaGradient)
@@ -508,7 +499,7 @@ private fun ContinueButton(
                     Modifier.border(
                         width = 1.5.dp,
                         color = colorSet.accent.copy(alpha = 0.30f),
-                        shape = MaterialTheme.synapse.radius.lg,
+                        shape = MaterialTheme.shapes.large,
                     )
                 }
             )
@@ -526,17 +517,18 @@ private fun ContinueButton(
             Text(
                 text  = stringResource(if (hasDue) R.string.grid_card_continue else R.string.grid_card_done),
                 style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight    = FontWeight.Bold,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    fontWeight    = FontWeight.Bold
                 ),
                 color = if (hasDue) Color.White.copy(alpha = 0.92f) else colorSet.accent,
             )
-            Icon(
-                imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                contentDescription = null,
-                tint               = if (hasDue) Color.White.copy(alpha = 0.92f) else colorSet.accent,
-                modifier           = Modifier.size(10.adp),
-            )
+            if (hasDue) {
+                Icon(
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    contentDescription = null,
+                    tint               = Color.White.copy(alpha = 0.92f),
+                    modifier           = Modifier.size(10.adp),
+                )
+            }
         }
     }
 }
