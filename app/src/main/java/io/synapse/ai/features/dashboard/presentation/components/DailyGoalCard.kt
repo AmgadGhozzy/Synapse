@@ -1,4 +1,4 @@
-package com.venom.synapse.features.dashboard.presentation.components
+package io.synapse.ai.features.dashboard.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.core.animateFloatAsState
@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,23 +36,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.synapse.core.ui.components.CardShell
-import com.venom.synapse.core.ui.utils.shake
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.localized
-import com.venom.ui.components.other.CircularProgressRing
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.CardShell
+import io.synapse.ai.core.ui.components.CircularProgressRing
+import io.synapse.ai.core.ui.utils.localized
+import io.synapse.ai.core.ui.utils.shake
 
 private const val SECONDS_PER_CARD = 5
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DailyGoalCard(
     todayStudied: Int,
@@ -61,6 +63,7 @@ fun DailyGoalCard(
     onStartStudying: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+
     val progress = if (dailyGoal > 0) (todayStudied / dailyGoal.toFloat()).coerceIn(0f, 1f) else 0f
 
     val animatedProgress by animateFloatAsState(
@@ -74,8 +77,10 @@ fun DailyGoalCard(
 
     val isGoalComplete = dailyGoal in 1..todayStudied
     val ctaText = when {
-        totalDue == 0 -> stringResource(R.string.goal_cta_all_caught_up)
-        isGoalComplete -> stringResource(R.string.goal_cta_extra_practice)
+        isGoalComplete && totalDue > 0 -> stringResource(R.string.goal_cta_extra_practice)
+        isGoalComplete -> stringResource(R.string.goal_cta_all_caught_up)
+        totalDue == 0 && todayStudied == 0 -> stringResource(R.string.dashboard_empty_section_title)
+        totalDue == 0 -> stringResource(R.string.dashboard_no_cards_to_review)
         else -> stringResource(R.string.goal_cta_study_cards, totalDue)
     }
 
@@ -113,11 +118,7 @@ fun DailyGoalCard(
 
                     Spacer(Modifier.height(tokens.spacing.listItemGap))
 
-                    // Stat chips: due count + streak
-                    GoalStatChips(
-                        streakDays = streakDays,
-                        totalDue = totalDue,
-                    )
+
                 }
 
                 CircularProgressRing(
@@ -125,17 +126,21 @@ fun DailyGoalCard(
                     progressColor = Color.White.copy(alpha = 0.7f),
                     trackColor = Color.White.copy(alpha = 0.15f),
                     strokeWidthDp = 10.adp,
-                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
-                    modifier = Modifier.size(97.adp),
+                    fontSize = 28.asp,
+                    modifier = Modifier.size(102.adp),
                 )
             }
 
+            GoalStatChips(
+                streakDays = streakDays,
+                totalDue = totalDue,
+            )
             Spacer(Modifier.height(tokens.spacing.s16))
 
             CtaButton(
                 ctaText = ctaText,
                 totalDue = totalDue,
-                onStartStudying = onStartStudying,
+                onClick = onStartStudying,
             )
         }
     }
@@ -152,13 +157,11 @@ private fun GoalLabel() {
             painter = painterResource(R.drawable.ic_target),
             contentDescription = null,
             tint = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier.size(24.adp),
+            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
         )
         Text(
             text = stringResource(R.string.daily_goal_label),
-            style = MaterialTheme.typography.titleLarge.copy(
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
-            ),
+            style = MaterialTheme.typography.titleLarge,
             color = Color.White.copy(alpha = 0.9f),
         )
     }
@@ -268,13 +271,13 @@ private fun GoalStatChips(
 private fun CtaButton(
     ctaText: String,
     totalDue: Int,
-    onStartStudying: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
 
     Surface(
-        onClick = onStartStudying,
+        onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .dropShadow(
@@ -305,8 +308,7 @@ private fun CtaButton(
                 Text(
                     text = ctaText,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                        fontWeight = FontWeight.Bold
                     ),
                 )
                 Icon(
@@ -427,7 +429,7 @@ private fun etaLabel(totalDue: Int): String {
 private fun DailyGoalCardPreview() {
     SynapseTheme {
         DailyGoalCard(
-            todayStudied = 23,
+            todayStudied = 20,
             dailyGoal = 30,
             streakDays = 7,
             totalDue = 87,
