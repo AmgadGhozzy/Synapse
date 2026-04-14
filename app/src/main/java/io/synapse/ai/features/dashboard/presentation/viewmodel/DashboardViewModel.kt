@@ -1,4 +1,4 @@
-package com.venom.synapse.features.dashboard.presentation.viewmodel
+package io.synapse.ai.features.dashboard.presentation.viewmodel
 
 import android.icu.util.Calendar
 import androidx.datastore.core.DataStore
@@ -6,20 +6,20 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.components.PackDisplayItemBuilder
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.core.ui.state.UiText
-import com.venom.synapse.data.repo.AppConfigProvider
-import com.venom.synapse.data.repo.EntitlementManager
-import com.venom.synapse.data.repo.QuizSessionManager
-import com.venom.synapse.domain.repo.IPackRepository
-import com.venom.synapse.domain.repo.IProgressRepository
-import com.venom.synapse.domain.repo.IQuestionRepository
-import com.venom.synapse.domain.repo.ISessionRepository
-import com.venom.synapse.features.dashboard.presentation.state.DashboardUiState
-import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.components.PackDisplayItemBuilder
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.AppConfigProvider
+import io.synapse.ai.data.repo.EntitlementManager
+import io.synapse.ai.data.repo.QuizSessionManager
+import io.synapse.ai.domain.repo.IPackRepository
+import io.synapse.ai.domain.repo.IProgressRepository
+import io.synapse.ai.domain.repo.IQuestionRepository
+import io.synapse.ai.domain.repo.ISessionRepository
+import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
+import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import javax.inject.Named
+
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -43,8 +45,9 @@ class DashboardViewModel @Inject constructor(
     private val sessionRepo       : ISessionRepository,
     private val entitlementManager: EntitlementManager,
     private val appConfigProvider : AppConfigProvider,
-    private val dataStore         : DataStore<Preferences>,
+    @Named("study_settings") private val dataStore: DataStore<Preferences>,
     private val quizSessionManager: QuizSessionManager,
+
     private val ioDispatcher      : CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -99,7 +102,7 @@ class DashboardViewModel @Inject constructor(
         if (_uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Premium.route))
         } else {
-            _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.AddPdf.route))
+            _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.AddPdf.createRoute()))
         }
     }
 
@@ -130,14 +133,14 @@ class DashboardViewModel @Inject constructor(
                             val todayMidnightMs = todayIndex * MS_PER_DAY
 
                             val studiedIndices = sessionRepo.getStudiedDayIndices()
-                            val currentStreak  = com.venom.synapse.domain.stats.StreakCalculator
+                            val currentStreak  = io.synapse.ai.domain.stats.StreakCalculator
                                 .currentStreak(studiedIndices, todayIndex)
 
                             val todayStudied = sessionRepo
                                 .getDailyActivity(todayMidnightMs, todayMidnightMs + MS_PER_DAY)
                                 .firstOrNull()?.questionsStudied ?: 0
 
-                            val (thisMondayMs, thisNextMondayMs) = com.venom.synapse.domain.stats.StreakCalculator
+                            val (thisMondayMs, thisNextMondayMs) = io.synapse.ai.domain.stats.StreakCalculator
                                 .currentWeekBounds(nowMs)
                             val lastMondayMs = thisMondayMs - 7 * MS_PER_DAY
 
