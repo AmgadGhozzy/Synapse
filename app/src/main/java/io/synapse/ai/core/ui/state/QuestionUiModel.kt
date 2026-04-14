@@ -1,9 +1,9 @@
-package com.venom.synapse.core.ui.state
+package io.synapse.ai.core.ui.state
 
 import androidx.compose.runtime.Immutable
-import com.venom.synapse.domain.model.QuestionContent
-import com.venom.synapse.domain.model.QuestionModel
-import com.venom.synapse.domain.model.QuestionType
+import io.synapse.ai.domain.model.QuestionContent
+import io.synapse.ai.domain.model.QuestionModel
+import io.synapse.ai.domain.model.QuestionType
 
 // QUESTION UI MODEL
 @Immutable

@@ -1,17 +1,11 @@
-package com.venom.synapse.core.ui.state
+package io.synapse.ai.core.ui.state
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.res.stringResource
-import com.venom.synapse.R
+import io.synapse.ai.R
 import java.util.concurrent.TimeUnit
 
-/**
- * Sealed hierarchy replacing hardcoded English strings for
- * the "last studied" label. The ViewModel produces one of these
- * from a nullable epoch-ms timestamp; the Composable resolves it
- * to a localised string via [displayString].
- */
 @Immutable
 sealed interface LastStudiedLabel {
     data object Never : LastStudiedLabel

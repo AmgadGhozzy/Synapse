@@ -1,6 +1,7 @@
-package com.venom.synapse.core.ui.state
+package io.synapse.ai.core.ui.state
 
-import com.venom.synapse.R
+import io.synapse.ai.R
+import io.synapse.ai.domain.model.SoundType
 
 sealed class UiEffect {
 
@@ -22,14 +23,9 @@ sealed class UiEffect {
 
     data class OpenShareSheet(val text: String, val title: String = "") : UiEffect()
 
+    data class ShareData(val jsonContent: String, val fileName: String) : UiEffect()
+
     data class OpenExternal(val url: String) : UiEffect()
 
     data class ScrollTo(val position: Int) : UiEffect()
-}
-
-enum class SoundType {
-    CORRECT,
-    WRONG,
-    SESSION_COMPLETE,
-    LEECH_WARNING,
 }

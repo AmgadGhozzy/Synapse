@@ -1,4 +1,4 @@
-package com.venom.synapse.core.ui.state
+package io.synapse.ai.core.ui.state
 
 import androidx.compose.runtime.Immutable
 
