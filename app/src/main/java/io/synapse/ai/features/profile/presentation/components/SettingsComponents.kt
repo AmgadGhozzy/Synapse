@@ -1,4 +1,4 @@
-package com.venom.synapse.features.profile.presentation.components
+package io.synapse.ai.features.profile.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
@@ -57,12 +57,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.localized
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.utils.localized
 
 @Composable
 fun ProfileSettingsSection(
@@ -110,7 +110,7 @@ fun ProfileSettingsRow(
                 .fillMaxWidth()
                 .semantics(mergeDescendants = true) {}
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.adp, vertical = 14.adp),
+                .padding(horizontal = 18.adp, vertical = 16.adp),
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.adp),
         ) {
@@ -352,10 +352,6 @@ fun ReminderTimePickerDialog(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Clear Data Confirmation Dialog
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 fun ClearDataConfirmDialog(
     onDismiss: () -> Unit,
@@ -378,7 +374,7 @@ fun ClearDataConfirmDialog(
                     painter            = painterResource(R.drawable.ic_trash_2),
                     contentDescription = null,
                     tint               = error,
-                    modifier           = Modifier.size(22.adp),
+                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                 )
             }
         },
@@ -419,23 +415,6 @@ fun ClearDataConfirmDialog(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Delete Account Confirmation Dialog
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Two-step confirmation dialog for permanent account deletion.
- *
- * Design:
- *   • Title + warning body using [MaterialTheme.colorScheme.error] tones.
- *   • "Delete" button is a filled [Button] with [error] container — visually
- *     distinct from the safe [TextButton] cancel path.
- *   • [userEmail] is shown in the warning copy so the user knows exactly
- *     which account will be deleted. Pass null for anonymous users.
- *
- * Caller is responsible for controlling visibility via a `rememberSaveable`
- * boolean and only calling [onConfirm] once (it triggers the ViewModel).
- */
 @Composable
 fun DeleteAccountConfirmDialog(
     userEmail: String?,
@@ -460,7 +439,7 @@ fun DeleteAccountConfirmDialog(
                     painter            = painterResource(R.drawable.ic_user_x),
                     contentDescription = null,
                     tint               = error,
-                    modifier           = Modifier.size(22.adp),
+                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                 )
             }
         },
@@ -534,10 +513,6 @@ fun DeleteAccountConfirmDialog(
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Destructive chevron row — for Delete Account / Clear All Data
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 fun DestructiveSettingsRow(
     label: String,
@@ -590,8 +565,8 @@ fun DestructiveSettingsRow(
 private fun SettingsIconBox(iconRes: Int, iconTint: Color, iconBg: Color) {
     Box(
         modifier         = Modifier
-            .size(36.adp)
-            .clip(RoundedCornerShape(10.adp))
+            .size(42.adp)
+            .clip(RoundedCornerShape(12.adp))
             .background(iconBg),
         contentAlignment = Alignment.Center,
     ) {
@@ -599,7 +574,7 @@ private fun SettingsIconBox(iconRes: Int, iconTint: Color, iconBg: Color) {
             painter            = painterResource(iconRes),
             contentDescription = null,
             tint               = iconTint,
-            modifier           = Modifier.size(17.adp),
+            modifier           = Modifier.size(20.adp),
         )
     }
 }
@@ -613,27 +588,28 @@ private fun SettingsDivider() {
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Existing components — kept for backward compatibility
-// ─────────────────────────────────────────────────────────────────────────────
-
 @Composable
 fun SynapseSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    checkedIconRes: Int? = null,
+    uncheckedIconRes: Int? = null,
 ) {
+    val iconRes = if (checked) checkedIconRes else uncheckedIconRes
     Switch(
         checked         = checked,
         onCheckedChange = onCheckedChange,
         modifier        = modifier,
-        thumbContent    = {
-            Icon(
-                painter            = painterResource(if (checked) R.drawable.ic_moon else R.drawable.ic_sun),
-                contentDescription = null,
-                modifier           = Modifier.size(12.adp),
-            )
-        },
+        thumbContent    = if (iconRes != null) {
+            {
+                Icon(
+                    painter            = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier           = Modifier.size(12.adp),
+                )
+            }
+        } else null,
         colors = SwitchDefaults.colors(
             checkedTrackColor   = MaterialTheme.colorScheme.secondary,
             checkedThumbColor   = Color.White.copy(0.9f),

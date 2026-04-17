@@ -1,4 +1,4 @@
-package com.venom.synapse.features.profile.presentation.components
+package io.synapse.ai.features.profile.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
@@ -29,11 +29,11 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.ui.components.CardShell
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.ui.components.CardShell
 
 @Composable
 fun PremiumBannerCard(
@@ -65,7 +65,7 @@ fun PremiumBannerCard(
                         painter            = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
                         tint               = Color.White.copy(0.9f),
-                        modifier           = Modifier.size(24.adp),
+                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
                     )
                 }
 

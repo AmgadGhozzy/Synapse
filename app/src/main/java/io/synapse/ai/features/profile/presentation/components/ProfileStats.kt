@@ -1,4 +1,4 @@
-package com.venom.synapse.features.profile.presentation.components
+package io.synapse.ai.features.profile.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
@@ -22,10 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 
 @Composable
 fun ProfileStatRow(
