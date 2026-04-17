@@ -2,7 +2,10 @@ package io.synapse.ai.features.add_pdf.presentation.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -10,13 +13,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -25,8 +27,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
@@ -66,6 +69,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -77,6 +83,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
@@ -93,65 +100,48 @@ import io.synapse.ai.core.ui.utils.localized
 import io.synapse.ai.domain.model.QuestionType
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiState
 import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
+import kotlinx.coroutines.runBlocking
 
-
-data class LanguageOption(val code: String, val label: String, val flag: String)
-
-val LANGUAGES = listOf(
-    LanguageOption("en", "English",    "🇺🇸"),
-    LanguageOption("ar", "Arabic",     "🇸🇦"),
-    LanguageOption("es", "Spanish",    "🇪🇸"),
-    LanguageOption("fr", "French",     "🇫🇷"),
-    LanguageOption("de", "German",     "🇩🇪"),
-    LanguageOption("pt", "Portuguese", "🇧🇷"),
-    LanguageOption("it", "Italian",    "🇮🇹"),
-    LanguageOption("ja", "Japanese",   "🇯🇵"),
-    LanguageOption("ko", "Korean",     "🇰🇷"),
-    LanguageOption("zh", "Chinese",    "🇨🇳"),
-)
 
 const val TEXT_MAX_CHARS = 5_000
-
-fun LanguageOption.shortLabel() = label.take(3).uppercase()
 
 private data class GenerationTask(val label: String, val done: Boolean)
 
 @Composable
 fun AddPdfHeader(
-    onBack  : () -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier              = modifier,
-        verticalAlignment     = Alignment.CenterVertically,
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.adp),
     ) {
         Surface(
-            onClick  = onBack,
-            shape    = MaterialTheme.synapse.radius.md,
-            color    = MaterialTheme.colorScheme.surface,
+            onClick = onBack,
+            shape = MaterialTheme.shapes.medium,
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
-                .size(44.adp)
-                .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()),
+                .size(48.adp)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.AutoMirrored.Rounded.ArrowBack,
                     contentDescription = stringResource(R.string.cd_back),
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
                 )
             }
         }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text  = stringResource(R.string.add_pdf_title),
+                text = stringResource(R.string.add_pdf_title),
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text  = stringResource(R.string.add_pdf_subtitle),
+                text = stringResource(R.string.add_pdf_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -159,18 +149,18 @@ fun AddPdfHeader(
 
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
             Row(
-                modifier              = Modifier.padding(horizontal = 14.adp, vertical = 7.adp),
-                verticalAlignment     = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 14.adp, vertical = 7.adp),
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.adp),
             ) {
                 Icon(
-                    painter            = painterResource(R.drawable.ic_sparkles),
+                    painter = painterResource(R.drawable.ic_sparkles),
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(14.adp),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.adp),
                 )
                 Text(
-                    text  = stringResource(R.string.add_pdf_ai_ready),
+                    text = stringResource(R.string.add_pdf_ai_ready),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -178,10 +168,11 @@ fun AddPdfHeader(
         }
     }
 }
+
 @Composable
 fun StepIndicator(
     currentIndex: Int,
-    modifier    : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val stepLabels = listOf(
         stringResource(R.string.step_upload),
@@ -193,32 +184,32 @@ fun StepIndicator(
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         stepLabels.forEachIndexed { index, label ->
             val isActive = index == currentIndex
-            val isDone   = index < currentIndex
+            val isDone = index < currentIndex
 
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.adp),
             ) {
                 if (isDone) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(30.adp)
-                        .clip(MaterialTheme.synapse.radius.sm)
-                        .background(MaterialTheme.colorScheme.primary),
-                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(30.adp)
+                            .clip(MaterialTheme.synapse.radius.sm)
+                            .background(MaterialTheme.colorScheme.primary),
+                    ) {
                         Icon(
-                            painter            = painterResource(R.drawable.ic_check),
+                            painter = painterResource(R.drawable.ic_check),
                             contentDescription = null,
-                            tint               = MaterialTheme.colorScheme.onPrimary,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(15.adp),
                         )
                     }
-                    } else {
+                } else {
                     val boxBackground = if (isActive) {
                         MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)
+                        MaterialTheme.colorScheme.surfaceVariant
                     }
 
                     val numberColor = if (isActive) {
@@ -235,7 +226,7 @@ fun StepIndicator(
                             .background(boxBackground),
                     ) {
                         Text(
-                            text  = "${index + 1}",
+                            text = "${index + 1}",
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = numberColor,
                             textAlign = TextAlign.Center,
@@ -244,14 +235,14 @@ fun StepIndicator(
                 }
 
                 Text(
-                    text  = label,
+                    text = label,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
                     ),
                     color = when {
                         isActive -> MaterialTheme.colorScheme.primary
-                        isDone   -> MaterialTheme.colorScheme.onSurfaceVariant
-                        else     -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.40f)
+                        isDone -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.40f)
                     },
                 )
             }
@@ -273,18 +264,19 @@ fun StepIndicator(
         }
     }
 }
+
 @Composable
 fun UploadStep(
-    uiState          : AddPdfUiState,
-    onTabSelect      : (SourceTab) -> Unit,
-    onPickFile       : () -> Unit,
-    onClearFile      : () -> Unit,
-    onOcrToggle      : () -> Unit,
+    uiState: AddPdfUiState,
+    onTabSelect: (SourceTab) -> Unit,
+    onPickFile: () -> Unit,
+    onClearFile: () -> Unit,
+    onOcrToggle: () -> Unit,
     onPasteTextChange: (String) -> Unit,
     onWebUrlChange: (String) -> Unit = {},
     onWebTabLockedClick: () -> Unit = {},
-    onContinue       : () -> Unit,
-    modifier         : Modifier = Modifier,
+    onContinue: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val canProceed by remember(
         uiState.sourceTab, uiState.fileName,
@@ -295,7 +287,7 @@ fun UploadStep(
             when (uiState.sourceTab) {
                 SourceTab.FILE -> uiState.fileName != null && !uiState.isLoading
                 SourceTab.TEXT -> uiState.pasteText.length >= 10
-                SourceTab.WEB   -> uiState.isPro && uiState.webUrl.isNotBlank()
+                SourceTab.WEB -> uiState.isPro && uiState.webUrl.isNotBlank()
                 SourceTab.YOUTUBE -> uiState.isPro && uiState.webUrl.isNotBlank()
             }
         }
@@ -310,35 +302,36 @@ fun UploadStep(
         ) { tab ->
             when (tab) {
                 SourceTab.FILE -> FileTab(
-                    fileName      = uiState.fileName,
-                    isLoading     = uiState.isLoading,
-                    ocrEnabled    = uiState.ocrEnabled,
-                    isOcrLocked   = uiState.isOcrFeatureLocked,
-                    maxPages      = uiState.maxPages,
-                    maxFileSize   = uiState.maxFileSizeMb,
-                    onPickFile    = onPickFile,
-                    onClearFile   = onClearFile,
-                    onOcrToggle   = onOcrToggle,
+                    fileName = uiState.fileName,
+                    isLoading = uiState.isLoading,
+                    ocrEnabled = uiState.ocrEnabled,
+                    isOcrLocked = uiState.isOcrFeatureLocked,
+                    maxPages = uiState.maxPages,
+                    maxFileSize = uiState.maxFileSizeMb,
+                    onPickFile = onPickFile,
+                    onClearFile = onClearFile,
+                    onOcrToggle = onOcrToggle,
                 )
+
                 SourceTab.YOUTUBE, SourceTab.WEB -> {
                     WebTab(
-                        webUrl        = uiState.webUrl,
-                        sourceTab     = uiState.sourceTab,
-                        isPro         = uiState.isPro,
-                        onUrlChange   = onWebUrlChange,
+                        webUrl = uiState.webUrl,
+                        isPro = uiState.isPro,
+                        onUrlChange = onWebUrlChange,
                         onLockedClick = onWebTabLockedClick,
                     )
                 }
+
                 SourceTab.TEXT -> TextTab(
-                    text         = uiState.pasteText,
+                    text = uiState.pasteText,
                     onTextChange = onPasteTextChange,
                 )
             }
         }
 
         PrimaryGradientButton(
-            text    = stringResource(R.string.add_pdf_continue),
-            icon    = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+            text = stringResource(R.string.add_pdf_continue),
+            icon = Icons.AutoMirrored.Rounded.ArrowForwardIos,
             enabled = canProceed,
             onClick = onContinue,
         )
@@ -351,77 +344,128 @@ fun SourceTabRow(
     onSelect: (SourceTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val tabs = listOf(
+        Triple(SourceTab.FILE, stringResource(R.string.tab_file_image),  R.drawable.ic_file_image),
+        Triple(SourceTab.WEB,  stringResource(R.string.tab_web_youtube), R.drawable.ic_youtube),
+        Triple(SourceTab.TEXT, stringResource(R.string.tab_plain_text),  R.drawable.ic_type),
+    )
+
+    val selectedIndex = tabs.indexOfFirst { it.first == selected }
+    val density = LocalDensity.current
+
+    // Row measures itself → pill mirrors its height, no intrinsics needed
+    var rowHeightDp by remember { mutableStateOf(0.dp) }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()),
+            .dropShadow(MaterialTheme.shapes.medium, MaterialTheme.synapse.shadows.subtle.toShadow()),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.synapse.radius.md,
+        shape = MaterialTheme.shapes.medium,
     ) {
-        Row(modifier = Modifier.padding(horizontal = 4.adp, vertical = 4.adp)) {
-            listOf(
-                Triple(SourceTab.FILE, stringResource(R.string.tab_file_image),  R.drawable.ic_file_image),
-                Triple(SourceTab.WEB,  stringResource(R.string.tab_web_youtube), R.drawable.ic_youtube),
-                Triple(SourceTab.TEXT, stringResource(R.string.tab_plain_text),  R.drawable.ic_type),
-            ).forEach { (tab, label, iconRes) ->
-                val isSelected = selected == tab
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (isSelected)
-                                Modifier.dropShadow(
-                                    MaterialTheme.synapse.radius.md,
-                                    MaterialTheme.synapse.shadows.subtle.toShadow()
-                                )
-                            else Modifier
-                        ),
-                    color   = if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent,
-                    shape   = MaterialTheme.synapse.radius.md,
-                    onClick = { onSelect(tab) },
-                ) {
-                    Row(
-                        modifier              = Modifier.padding(vertical = 10.adp, horizontal = 4.adp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment     = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            painter            = painterResource(iconRes),
-                            contentDescription = null,
-                            tint               = if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier           = Modifier.size(15.adp),
-                        )
-                        Spacer(Modifier.width(5.adp))
-                        Text(
-                            text  = label,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+        BoxWithConstraints(
+            modifier = Modifier
+                .padding(horizontal = 4.adp, vertical = 4.adp)
+                .fillMaxWidth(),
+        ) {
+            val tabWidth = maxWidth / tabs.size
+
+            val pillOffsetX by animateDpAsState(
+                targetValue   = tabWidth * selectedIndex,
+                animationSpec = tween(
+                    durationMillis = 400,
+                    easing         = FastOutSlowInEasing,
+                ),
+                label = "tabPillOffset",
+            )
+
+            // Pill drawn first (behind Row). Height comes from Row's onSizeChanged.
+            Box(
+                modifier = Modifier
+                    .offset(x = pillOffsetX)
+                    .width(tabWidth)
+                    .height(rowHeightDp)                          // ← driven by Row measurement
+                    .dropShadow(MaterialTheme.shapes.medium, MaterialTheme.synapse.shadows.subtle.toShadow())
+                    .background(
+                        color = MaterialTheme.colorScheme.surface,
+                        shape = MaterialTheme.shapes.medium,
+                    ),
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged() { size ->                      // ← feeds height to pill
+                        rowHeightDp = with(density) { size.height.toDp() }
+                    },
+            ) {
+                tabs.forEach { (tab, label, iconRes) ->
+                    val isSelected = selected == tab
+
+                    val contentColor by animateColorAsState(
+                        targetValue   = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(durationMillis = 200),
+                        label         = "tabIconColor_${tab.name}",
+                    )
+                    val textColor by animateColorAsState(
+                        targetValue   = if (isSelected) MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        animationSpec = tween(durationMillis = 200),
+                        label         = "tabTextColor_${tab.name}",
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication        = null,
+                                onClick           = { onSelect(tab) },
                             ),
-                            color    = if (isSelected) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Row(
+                            modifier              = Modifier.padding(vertical = 10.adp, horizontal = 4.adp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment     = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                painter            = painterResource(iconRes),
+                                contentDescription = null,
+                                tint               = contentColor,
+                                modifier           = Modifier.size(15.adp),
+                            )
+                            Spacer(Modifier.width(5.adp))
+                            Text(
+                                text     = label,
+                                style    = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                ),
+                                color    = textColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                 }
             }
         }
     }
 }
-
 @Composable
 fun FileTab(
-    fileName   : String?,
-    isLoading  : Boolean,
-    ocrEnabled : Boolean,
+    fileName: String?,
+    isLoading: Boolean,
+    ocrEnabled: Boolean,
     isOcrLocked: Boolean,
-    maxPages   : Int,
+    maxPages: Int,
     maxFileSize: Int,
-    onPickFile : () -> Unit,
+    onPickFile: () -> Unit,
     onClearFile: () -> Unit,
     onOcrToggle: () -> Unit,
-    modifier   : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.adp)) {
 //        AnimatedVisibility(
@@ -437,11 +481,11 @@ fun FileTab(
 //        }
 
         DropZone(
-            fileName    = fileName,
-            isLoading   = isLoading,
-            maxPages    = maxPages,
+            fileName = fileName,
+            isLoading = isLoading,
+            maxPages = maxPages,
             maxFileSize = maxFileSize,
-            onPickFile  = onPickFile,
+            onPickFile = onPickFile,
             onClearFile = onClearFile,
         )
     }
@@ -450,21 +494,21 @@ fun FileTab(
 
 @Composable
 private fun DropZone(
-    fileName   : String?,
-    isLoading  : Boolean,
-    maxPages   : Int,
+    fileName: String?,
+    isLoading: Boolean,
+    maxPages: Int,
     maxFileSize: Int,
-    onPickFile : () -> Unit,
+    onPickFile: () -> Unit,
     onClearFile: () -> Unit,
-    modifier   : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val borderColor = when {
         fileName != null -> MaterialTheme.colorScheme.tertiary
-        else             -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
     }
     val bgColor = when {
         fileName != null -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.25f)
-        else             -> Color.Transparent
+        else -> Color.Transparent
     }
 
     Box(
@@ -483,18 +527,22 @@ private fun DropZone(
     ) {
         AnimatedContent(
             targetState = when {
-                isLoading        -> DropZoneState.LOADING
+                isLoading -> DropZoneState.LOADING
                 fileName != null -> DropZoneState.CONFIRMED
-                else             -> DropZoneState.EMPTY
+                else -> DropZoneState.EMPTY
             },
             transitionSpec = { fadeIn() togetherWith fadeOut() }
         ) { state ->
             when (state) {
-                DropZoneState.EMPTY     -> DropZoneEmptyState(maxPages = maxPages, maxFileSize = maxFileSize)
-                DropZoneState.LOADING   -> DropZoneLoading()
+                DropZoneState.EMPTY -> DropZoneEmptyState(
+                    maxPages = maxPages,
+                    maxFileSize = maxFileSize
+                )
+
+                DropZoneState.LOADING -> DropZoneLoading()
                 DropZoneState.CONFIRMED -> DropZoneFileConfirmed(
                     fileName = fileName ?: "",
-                    onClear  = onClearFile,
+                    onClear = onClearFile,
                 )
             }
         }
@@ -505,9 +553,9 @@ private enum class DropZoneState { EMPTY, LOADING, CONFIRMED }
 
 @Composable
 private fun DropZoneEmptyState(
-    maxPages   : Int,
+    maxPages: Int,
     maxFileSize: Int,
-    modifier   : Modifier = Modifier
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -518,36 +566,36 @@ private fun DropZoneEmptyState(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier         = Modifier
+            modifier = Modifier
                 .size(64.adp)
                 .clip(MaterialTheme.synapse.radius.xl)
                 .background(MaterialTheme.colorScheme.primaryContainer),
         ) {
             Icon(
-                painter            = painterResource(R.drawable.ic_upload),
+                painter = painterResource(R.drawable.ic_upload),
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.primary,
-                modifier           = Modifier.size(28.adp),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.adp),
             )
         }
         Spacer(Modifier.height(4.adp))
         Text(
-            text  = stringResource(R.string.drop_zone_title),
+            text = stringResource(R.string.drop_zone_title),
             style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text  = stringResource(R.string.drop_zone_subtitle),
+            text = stringResource(R.string.drop_zone_subtitle),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.adp))
         Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = CircleShape) {
             Text(
-                text     = stringResource(R.string.drop_zone_hint, maxFileSize, maxPages),
+                text = stringResource(R.string.drop_zone_hint, maxFileSize, maxPages),
                 modifier = Modifier.padding(horizontal = 14.adp, vertical = 6.adp),
-                style    = MaterialTheme.typography.labelSmall,
-                color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -564,7 +612,7 @@ private fun DropZoneLoading(modifier: Modifier = Modifier) {
     ) {
         LoadingIndicator()
         Text(
-            text  = stringResource(R.string.drop_zone_reading),
+            text = stringResource(R.string.drop_zone_reading),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -574,19 +622,19 @@ private fun DropZoneLoading(modifier: Modifier = Modifier) {
 @Composable
 private fun DropZoneFileConfirmed(
     fileName: String,
-    onClear : () -> Unit,
+    onClear: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(16.adp),
-        verticalAlignment     = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.adp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier         = Modifier
+            modifier = Modifier
                 .size(44.adp)
                 .clip(MaterialTheme.synapse.radius.sm)
                 .background(
@@ -599,33 +647,33 @@ private fun DropZoneFileConfirmed(
                 ),
         ) {
             Icon(
-                painter            = painterResource(R.drawable.ic_file_text),
+                painter = painterResource(R.drawable.ic_file_text),
                 contentDescription = null,
-                tint               = Color.White.copy(0.9f),
-                modifier           = Modifier.size(19.adp),
+                tint = Color.White.copy(0.9f),
+                modifier = Modifier.size(19.adp),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text     = fileName,
-                style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color    = MaterialTheme.colorScheme.onSurface,
+                text = fileName,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text     = stringResource(R.string.file_type_pdf_ready),
-                style    = MaterialTheme.typography.labelSmall,
-                color    = MaterialTheme.colorScheme.tertiary,
+                text = stringResource(R.string.file_type_pdf_ready),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.tertiary,
                 modifier = Modifier.padding(top = 2.adp),
             )
         }
         IconButton(onClick = onClear, modifier = Modifier.size(36.adp)) {
             Icon(
-                painter            = painterResource(R.drawable.ic_x),
+                painter = painterResource(R.drawable.ic_x),
                 contentDescription = stringResource(R.string.cd_remove_file),
-                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier           = Modifier.size(16.adp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.adp),
             )
         }
     }
@@ -634,7 +682,7 @@ private fun DropZoneFileConfirmed(
 
 @Composable
 fun OcrBanner(
-    enabled : Boolean,
+    enabled: Boolean,
     isLocked: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
@@ -650,7 +698,7 @@ fun OcrBanner(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = MaterialTheme.synapse.radius.md,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
             modifier = Modifier.padding(12.adp),
@@ -709,61 +757,63 @@ fun OcrBanner(
                     )
                 }
             }
-                Switch(
-                    checked = enabled,
-                    onCheckedChange = { if (!isLocked) onToggle() },
-                    enabled = !isLocked,
-                )
+            Switch(
+                checked = enabled,
+                onCheckedChange = { if (!isLocked) onToggle() },
+                enabled = !isLocked,
+            )
         }
     }
 }
 
 @Composable
 fun WebTab(
-    webUrl       : String,
-    sourceTab    : SourceTab,
-    isPro        : Boolean,
-    onUrlChange  : (String) -> Unit,
+    webUrl: String,
+    isPro: Boolean,
+    onUrlChange: (String) -> Unit,
     onLockedClick: () -> Unit,
-    modifier     : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow()),
+            .dropShadow(
+                MaterialTheme.shapes.large,
+                MaterialTheme.synapse.shadows.subtle.toShadow()
+            ),
         color = MaterialTheme.colorScheme.surface,
         shape = MaterialTheme.shapes.large,
     ) {
         Column(
-            modifier            = Modifier.padding(20.adp),
+            modifier = Modifier.padding(20.adp),
             verticalArrangement = Arrangement.spacedBy(16.adp),
         ) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.adp),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier         = Modifier
+                    modifier = Modifier
                         .size(36.adp)
-                        .clip(MaterialTheme.synapse.radius.md)
+                        .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                 ) {
                     Icon(
-                        painter            = painterResource(R.drawable.ic_globe),
+                        painter = painterResource(R.drawable.ic_globe),
                         contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(16.adp),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.adp),
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text  = stringResource(R.string.web_tab_title),
+                        text = stringResource(R.string.web_tab_title),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text  = stringResource(R.string.web_tab_subtitle),
+                        text = stringResource(R.string.web_tab_subtitle),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -772,88 +822,91 @@ fun WebTab(
 
             Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value         = webUrl,
+                    value = webUrl,
                     onValueChange = { if (isPro) onUrlChange(it) },
-                    enabled       = isPro,
-                    modifier      = Modifier.fillMaxWidth(),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Uri),
-                placeholder   = {
-                    Text(
-                        text  = stringResource(R.string.web_tab_placeholder),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        painter            = painterResource(R.drawable.ic_link),
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier           = Modifier.size(16.adp),
-                    )
-                },
-                trailingIcon = {
-                    if (webUrl.isNotBlank()) {
-                        IconButton(onClick = { onUrlChange("") }) {
-                            Icon(
-                                painter            = painterResource(R.drawable.ic_x),
-                                contentDescription = stringResource(R.string.cd_remove_file),
-                                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier           = Modifier.size(14.adp),
-                            )
-                        }
-                    } else {
-                        val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
-                        if (clipboardManager.hasText()) {
-                            IconButton(onClick = {
-                                clipboardManager.getText()?.text?.let { if (isPro) onUrlChange(it) }
-                            }) {
+                    enabled = isPro,
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                    placeholder = {
+                        Text(
+                            text = stringResource(R.string.web_tab_placeholder),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_link),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.adp),
+                        )
+                    },
+                    trailingIcon = {
+                        if (webUrl.isNotBlank()) {
+                            IconButton(onClick = { onUrlChange("") }) {
                                 Icon(
-                                    painter            = painterResource(R.drawable.icon_paste),
-                                    contentDescription = "Paste",
-                                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier           = Modifier.size(16.adp),
+                                    painter = painterResource(R.drawable.ic_x),
+                                    contentDescription = stringResource(R.string.cd_remove_file),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.adp),
                                 )
                             }
+                        } else {
+                            val clipboardManager = LocalClipboard.current
+                            val clipData = runBlocking { clipboardManager.getClipEntry()?.clipData }
+                            if (clipData != null && clipData.itemCount > 0) {
+                                val clipText = clipData.getItemAt(0).text.toString()
+                                IconButton(onClick = {
+                                    if (isPro) onUrlChange(clipText)
+                                }) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.icon_paste),
+                                        contentDescription = "Paste",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.adp),
+                                    )
+                                }
+                            }
                         }
-                    }
-                },
-                singleLine = true,
-                shape      = MaterialTheme.synapse.radius.md,
-                colors     = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
-            )
-            
-            if (!isPro) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onLockedClick
-                        )
+                    },
+                    shape = MaterialTheme.shapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(0.8f),
+                    ),
+                    minLines = 2,
+                    maxLines = 2,
                 )
+
+                if (!isPro) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onLockedClick
+                            )
+                    )
+                }
             }
-        }
 
             // ── Supported formats chips ────────────────────────────────────
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.adp),
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 WebFormatChip(
-                    iconRes    = R.drawable.ic_youtube,
-                    label      = stringResource(R.string.web_format_youtube),
-                    tint       = MaterialTheme.colorScheme.error,
-                    isSelected = sourceTab == SourceTab.YOUTUBE,
+                    iconRes = R.drawable.ic_youtube,
+                    label = stringResource(R.string.web_format_youtube),
+                    tint = MaterialTheme.colorScheme.error,
+                    isSelected = webUrl.contains("youtu"),
                 )
                 WebFormatChip(
-                    iconRes    = R.drawable.ic_globe,
-                    label      = stringResource(R.string.web_format_article),
-                    tint       = MaterialTheme.colorScheme.primary,
-                    isSelected = sourceTab == SourceTab.WEB,
+                    iconRes = R.drawable.ic_globe,
+                    label = stringResource(R.string.web_format_article),
+                    tint = MaterialTheme.colorScheme.primary,
+                    isSelected = !webUrl.contains("youtu") && webUrl.isNotBlank(),
                 )
             }
         }
@@ -862,31 +915,30 @@ fun WebTab(
 
 @Composable
 private fun WebFormatChip(
-    iconRes   : Int,
-    label     : String,
-    tint      : Color,
+    iconRes: Int,
+    label: String,
+    tint: Color,
     isSelected: Boolean = false,
-    modifier  : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier,
-        color    = if (isSelected) tint.copy(alpha = 0.15f) else tint.copy(alpha = 0.05f),
-        shape    = CircleShape,
-        border   = if (isSelected) BorderStroke(1.adp, tint.copy(alpha = 0.5f)) else null,
+        color = if (isSelected) tint.copy(alpha = 0.15f) else tint.copy(alpha = 0.05f),
+        shape = CircleShape,
     ) {
         Row(
-            modifier              = Modifier.padding(horizontal = 10.adp, vertical = 5.adp),
-            verticalAlignment     = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 10.adp, vertical = 5.adp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(5.adp),
         ) {
             Icon(
-                painter            = painterResource(iconRes),
+                painter = painterResource(iconRes),
                 contentDescription = null,
-                tint               = tint,
-                modifier           = Modifier.size(11.adp),
+                tint = tint,
+                modifier = Modifier.size(11.adp),
             )
             Text(
-                text  = label,
+                text = label,
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = tint,
             )
@@ -896,79 +948,103 @@ private fun WebFormatChip(
 
 @Composable
 fun TextTab(
-    text        : String,
+    text: String,
     onTextChange: (String) -> Unit,
-    modifier    : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow())
-            .border(
-                1.adp,
-                MaterialTheme.colorScheme.outlineVariant,
-                MaterialTheme.shapes.large
+            .dropShadow(
+                MaterialTheme.shapes.large,
+                MaterialTheme.synapse.shadows.subtle.toShadow()
             ),
-        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surface,
+        shape = MaterialTheme.shapes.large,
     ) {
         Column(
-            modifier            = Modifier.padding(16.adp),
+            modifier = Modifier.padding(16.adp),
             verticalArrangement = Arrangement.spacedBy(8.adp),
         ) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.adp),
             ) {
                 Icon(
-                    painter            = painterResource(R.drawable.ic_type),
+                    painter = painterResource(R.drawable.ic_type),
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier           = Modifier.size(14.adp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.adp),
                 )
                 Text(
-                    text  = stringResource(R.string.text_tab_title),
+                    text = stringResource(R.string.text_tab_title),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
 
             OutlinedTextField(
-                value         = text,
+                value = text,
                 onValueChange = { if (it.length <= TEXT_MAX_CHARS) onTextChange(it) },
-                modifier      = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 220.adp),
-                placeholder   = {
+                modifier = Modifier
+                    .fillMaxWidth(),
+                placeholder = {
                     Text(
-                        text  = stringResource(R.string.text_tab_placeholder),
+                        text = stringResource(R.string.text_tab_placeholder),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 },
+                trailingIcon = {
+                    if (text.isNotBlank()) {
+                        IconButton(onClick = { onTextChange("") }) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_x),
+                                contentDescription = stringResource(R.string.cd_remove_file),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.adp),
+                            )
+                        }
+                    } else {
+                        val clipboardManager = LocalClipboard.current
+                        val clipData = runBlocking { clipboardManager.getClipEntry()?.clipData }
+                        if (clipData != null && clipData.itemCount > 0) {
+                            val clipText = clipData.getItemAt(0).text.toString()
+                            IconButton(onClick = {
+                                onTextChange(clipText)
+                            }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.icon_paste),
+                                    contentDescription = "Paste",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.adp),
+                                )
+                            }
+                        }
+                    }
+                },
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(0.8f),
+                ),
                 minLines = 6,
                 maxLines = 14,
-                shape    = MaterialTheme.synapse.radius.md,
-                colors   = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                ),
             )
-
             Row(
-                modifier              = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 val atLimit = text.length >= TEXT_MAX_CHARS
                 Text(
-                    text  = stringResource(R.string.text_tab_char_count, text.length),
+                    text = stringResource(R.string.text_tab_char_count, text.length),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (atLimit) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (text.length >= 10 && !atLimit) {
                     Text(
-                        text  = stringResource(R.string.text_tab_ready),
+                        text = stringResource(R.string.text_tab_ready),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.tertiary,
                     )
@@ -977,16 +1053,17 @@ fun TextTab(
         }
     }
 }
+
 @Composable
 fun ConfigureStep(
-    uiState              : AddPdfUiState,
+    uiState: AddPdfUiState,
     onQuestionCountChange: (Int) -> Unit,
-    onTypeToggle         : (QuestionType) -> Unit,
-    onFocusNotesChange   : (String) -> Unit,
-    onLanguageClick      : () -> Unit,
-    onThinkingToggle     : () -> Unit,
-    onGenerate           : () -> Unit,
-    modifier             : Modifier = Modifier,
+    onTypeToggle: (QuestionType) -> Unit,
+    onFocusNotesChange: (String) -> Unit,
+    onLanguageClick: () -> Unit,
+    onThinkingToggle: () -> Unit,
+    onGenerate: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val selectedLang = remember(uiState.language) {
         LANGUAGES.find { it.code == uiState.language } ?: LANGUAGES[0]
@@ -999,15 +1076,17 @@ fun ConfigureStep(
             text = when (uiState.sourceTab) {
                 SourceTab.FILE ->
                     stringResource(R.string.configure_source_file, uiState.fileName ?: "File")
+
                 SourceTab.TEXT ->
                     stringResource(R.string.configure_source_text, uiState.pasteText.length)
+
                 SourceTab.WEB, SourceTab.YOUTUBE ->
                     stringResource(R.string.configure_source_web)
             }
         )
 
         ThinkingBanner(
-            enabled  = uiState.thinkingEnabled,
+            enabled = uiState.thinkingEnabled,
             isLocked = uiState.isThinkingLocked,
             onToggle = onThinkingToggle,
         )
@@ -1029,7 +1108,7 @@ fun ConfigureStep(
 
         // Primary CTA — starts generation.
         PrimaryGradientButton(
-            text    = stringResource(R.string.configure_generate),
+            text = stringResource(R.string.configure_generate),
             iconRes = R.drawable.ic_sparkles,
             enabled = true,
             onClick = onGenerate,
@@ -1041,24 +1120,24 @@ fun ConfigureStep(
 fun SourceConfirmedPill(text: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color    = MaterialTheme.colorScheme.tertiaryContainer,
-        shape    = MaterialTheme.synapse.radius.md,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
-            modifier              = Modifier.padding(horizontal = 16.adp, vertical = 10.adp),
-            verticalAlignment     = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.adp, vertical = 10.adp),
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.adp),
         ) {
             Icon(
-                painter            = painterResource(R.drawable.ic_check_circle_2),
+                painter = painterResource(R.drawable.ic_check_circle_2),
                 contentDescription = null,
-                tint               = MaterialTheme.colorScheme.tertiary,
-                modifier           = Modifier.size(14.adp),
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(14.adp),
             )
             Text(
-                text     = text,
-                style    = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                color    = MaterialTheme.colorScheme.tertiary,
+                text = text,
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.tertiary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1070,74 +1149,104 @@ fun SourceConfirmedPill(text: String, modifier: Modifier = Modifier) {
 fun QuestionCountCard(count: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
     SectionCard(modifier = modifier) {
         Row(
-            modifier              = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             SectionLabel(text = stringResource(R.string.configure_questions_label))
-            Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.synapse.radius.md) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.medium
+            ) {
                 Text(
-                    text     = "$count",
+                    text = "$count",
                     modifier = Modifier.padding(horizontal = 12.adp, vertical = 4.adp),
-                    style    = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color    = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
         Slider(
-            value         = count.toFloat(),
+            value = count.toFloat(),
             onValueChange = { onChange(it.toInt()) },
-            valueRange    = 5f..50f,
-            steps         = 44,
-            modifier      = Modifier
+            valueRange = 5f..50f,
+            steps = 44,
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.adp),
-            colors        = SliderDefaults.colors(
-                thumbColor         = MaterialTheme.colorScheme.primary,
-                activeTrackColor   = MaterialTheme.colorScheme.primary,
+            colors = SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
                 inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
             ),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = stringResource(R.string.configure_questions_min), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = stringResource(R.string.configure_questions_max), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = stringResource(R.string.configure_questions_min),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.configure_questions_max),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun QuestionTypesCard(selected: Set<QuestionType>, onToggle: (QuestionType) -> Unit, modifier: Modifier = Modifier) {
+fun QuestionTypesCard(
+    selected: Set<QuestionType>,
+    onToggle: (QuestionType) -> Unit,
+    modifier: Modifier = Modifier
+) {
     SectionCard(modifier = modifier) {
-        SectionLabel(text = stringResource(R.string.configure_types_label), modifier = Modifier.padding(bottom = 12.adp))
+        SectionLabel(
+            text = stringResource(R.string.configure_types_label),
+            modifier = Modifier.padding(bottom = 12.adp)
+        )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.adp),
-            verticalArrangement   = Arrangement.spacedBy(8.adp),
+            verticalArrangement = Arrangement.spacedBy(8.adp),
         ) {
             listOf(
-                Triple(QuestionType.MCQ,       stringResource(R.string.type_mcq),        R.drawable.ic_brain),
-                Triple(QuestionType.TRUE_FALSE, stringResource(R.string.type_true_false), R.drawable.ic_toggle_left),
-                Triple(QuestionType.FLASHCARD,  stringResource(R.string.type_flashcard),  R.drawable.ic_book_open),
+                Triple(QuestionType.MCQ, stringResource(R.string.type_mcq), R.drawable.ic_brain),
+                Triple(
+                    QuestionType.TRUE_FALSE,
+                    stringResource(R.string.type_true_false),
+                    R.drawable.ic_toggle_left
+                ),
+                Triple(
+                    QuestionType.FLASHCARD,
+                    stringResource(R.string.type_flashcard),
+                    R.drawable.ic_book_open
+                ),
             ).forEach { (type, label, iconRes) ->
                 val isOn = type in selected
                 FilterChip(
                     selected = isOn,
-                    onClick  = { onToggle(type) },
-                    label    = {
+                    onClick = { onToggle(type) },
+                    label = {
                         Text(
-                            text  = label,
+                            text = label,
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = if (isOn) FontWeight.Bold else FontWeight.Normal
                             ),
                         )
                     },
                     leadingIcon = {
-                        Icon(painter = painterResource(iconRes), contentDescription = null, modifier = Modifier.size(13.adp))
+                        Icon(
+                            painter = painterResource(iconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(13.adp)
+                        )
                     },
-                    shape  = CircleShape,
+                    shape = CircleShape,
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor   = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor       = MaterialTheme.colorScheme.primary,
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.primary,
                         selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
                     ),
                 )
@@ -1147,52 +1256,130 @@ fun QuestionTypesCard(selected: Set<QuestionType>, onToggle: (QuestionType) -> U
 }
 
 @Composable
-fun AiFocusNotesCard(notes: String, onNotesChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun AiFocusNotesCard(
+    notes: String,
+    onNotesChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     SectionCard(modifier = modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.adp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.adp)) {
-                Icon(painter = painterResource(R.drawable.ic_graduation_cap), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.adp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.adp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_graduation_cap),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(15.adp)
+                )
                 SectionLabel(text = stringResource(R.string.configure_focus_label))
             }
-            Text(text = stringResource(R.string.configure_focus_optional), style = MaterialTheme.typography.labelSmall.copy(fontStyle = FontStyle.Italic), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = stringResource(R.string.configure_focus_optional),
+                style = MaterialTheme.typography.labelSmall.copy(fontStyle = FontStyle.Italic),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
+
         OutlinedTextField(
-            value         = notes,
+            value = notes,
             onValueChange = onNotesChange,
-            modifier      = Modifier.fillMaxWidth(),
-            placeholder   = { Text(text = stringResource(R.string.configure_focus_placeholder), style = MaterialTheme.typography.bodySmall) },
-            minLines = 3,
-            shape    = MaterialTheme.synapse.radius.md,
-            colors   = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor   = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text(
+                    text = stringResource(R.string.configure_focus_placeholder),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            },
+            trailingIcon = {
+                if (notes.isNotBlank()) {
+                    IconButton(onClick = { onNotesChange("") }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_x),
+                            contentDescription = stringResource(R.string.cd_remove_file),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.adp),
+                        )
+                    }
+                } else {
+                    val clipboardManager = LocalClipboard.current
+                    val clipData = runBlocking { clipboardManager.getClipEntry()?.clipData }
+                    if (clipData != null && clipData.itemCount > 0) {
+                        val clipText = clipData.getItemAt(0).text.toString()
+                        IconButton(onClick = {
+                            onNotesChange(clipText)
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.icon_paste),
+                                contentDescription = "Paste",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.adp),
+                            )
+                        }
+                    }
+                }
+            },
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(0.8f),
             ),
+            minLines = 3,
+            maxLines = 8,
         )
-        Text(text = stringResource(R.string.configure_focus_hint), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 6.adp))
+        Text(
+            text = stringResource(R.string.configure_focus_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 6.adp)
+        )
     }
 }
 
 @Composable
-fun LanguagePickerCard(selectedLanguage: LanguageOption, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun LanguagePickerCard(
+    selectedLanguage: LanguageOption,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     SectionCard(modifier = modifier) {
-        SectionLabel(text = stringResource(R.string.configure_language_label), modifier = Modifier.padding(bottom = 10.adp))
-        Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.synapse.radius.md, onClick = onClick) {
+        SectionLabel(
+            text = stringResource(R.string.configure_language_label),
+            modifier = Modifier.padding(bottom = 10.adp)
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.medium,
+            onClick = onClick
+        ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.adp, vertical = 12.adp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.adp),
             ) {
-                Text(text = selectedLanguage.flag)
-                Text(text = selectedLanguage.label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.adp)) {
-                    Icon(painter = painterResource(R.drawable.ic_globe), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.adp))
-                    Icon(painter = painterResource(R.drawable.ic_chevron_down), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.adp))
+                Text(
+                    text = selectedLanguage.label(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_down),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.adp)
+                    )
                 }
             }
         }
@@ -1201,25 +1388,25 @@ fun LanguagePickerCard(selectedLanguage: LanguageOption, onClick: () -> Unit, mo
 
 @Composable
 fun GeneratingStep(
-    progress        : Float,
-    questionCount   : Int,
-    language        : String,
+    progress: Float,
+    questionCount: Int,
+    language: String,
     focusNotesActive: Boolean,
-    modifier        : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val animatedProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(280))
 
-    val taskAnalysing  = stringResource(R.string.generating_task_analysing)
+    val taskAnalysing = stringResource(R.string.generating_task_analysing)
     val taskGenerating = stringResource(R.string.generating_task_generating)
-    val taskAnswers    = stringResource(R.string.generating_task_answers)
-    val taskSrs        = stringResource(R.string.generating_task_srs)
+    val taskAnswers = stringResource(R.string.generating_task_answers)
+    val taskSrs = stringResource(R.string.generating_task_srs)
 
     val tasks = remember(progress) {
         listOf(
-            GenerationTask(taskAnalysing,  progress > 0.20f),
+            GenerationTask(taskAnalysing, progress > 0.20f),
             GenerationTask(taskGenerating, progress > 0.50f),
-            GenerationTask(taskAnswers,    progress > 0.75f),
-            GenerationTask(taskSrs,        progress >= 1.00f),
+            GenerationTask(taskAnswers, progress > 0.75f),
+            GenerationTask(taskSrs, progress >= 1.00f),
         )
     }
 
@@ -1230,20 +1417,30 @@ fun GeneratingStep(
         }
         Spacer(Modifier.height(28.adp))
         Text(
-            text      = stringResource(R.string.generating_title),
-            style     = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-            color     = MaterialTheme.colorScheme.onBackground,
+            text = stringResource(R.string.generating_title),
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+            color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.adp))
-        val primaryColor  = MaterialTheme.colorScheme.primary
+        val primaryColor = MaterialTheme.colorScheme.primary
         val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
         Text(
             text = buildAnnotatedString {
                 append(stringResource(R.string.generating_subtitle_prefix))
-                withStyle(SpanStyle(color = primaryColor, fontWeight = FontWeight.SemiBold)) { append("$questionCount") }
+                withStyle(
+                    SpanStyle(
+                        color = primaryColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                ) { append("$questionCount") }
                 append(stringResource(R.string.generating_subtitle_in))
-                withStyle(SpanStyle(color = primaryColor, fontWeight = FontWeight.SemiBold)) { append(language) }
+                withStyle(
+                    SpanStyle(
+                        color = primaryColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                ) { append(language) }
                 if (focusNotesActive) append(stringResource(R.string.generating_subtitle_focus))
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -1251,16 +1448,31 @@ fun GeneratingStep(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.adp))
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.adp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(text = stringResource(R.string.generating_progress_label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(text = "${(animatedProgress * 100).toInt().localized()} ${stringResource(R.string.percent_mark)}", style = MaterialTheme.typography
-                .bodySmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.adp), horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.generating_progress_label),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "${
+                    (animatedProgress * 100).toInt().localized()
+                } ${stringResource(R.string.percent_mark)}",
+                style = MaterialTheme.typography
+                    .bodySmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
         }
         WavyProgressIndicator(animatedProgress)
         Spacer(Modifier.height(16.adp))
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.adp)) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.adp)
+        ) {
             tasks.forEach { task -> GeneratingTaskRow(label = task.label, done = task.done) }
         }
     }
@@ -1270,16 +1482,22 @@ fun GeneratingStep(
 fun GeneratingTaskRow(label: String, done: Boolean, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color    = if (done) MaterialTheme.synapse.semantic.success.copy(0.6f) else MaterialTheme.colorScheme.surfaceVariant,
-        shape    = MaterialTheme.synapse.radius.md,
+        color = if (done) MaterialTheme.synapse.semantic.success.copy(0.6f) else MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.medium,
     ) {
-        Row(modifier = Modifier.padding(horizontal = 16.adp, vertical = 10.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.adp)) {
-            if (done) Icon(painter = painterResource(R.drawable.ic_badge_check),
+        Row(
+            modifier = Modifier.padding(horizontal = 16.adp, vertical = 10.adp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.adp)
+        ) {
+            if (done) Icon(
+                painter = painterResource(R.drawable.ic_badge_check),
                 contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier =
-                    Modifier.size(MaterialTheme.synapse.spacing.icon_xs))
+                    Modifier.size(MaterialTheme.synapse.spacing.icon_xs)
+            )
             else LoadingIndicator(size = 20.adp)
             Text(
-                text  = label,
+                text = label,
                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = if (done) FontWeight.SemiBold else FontWeight.Normal),
                 color = if (done) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1289,21 +1507,19 @@ fun GeneratingTaskRow(label: String, done: Boolean, modifier: Modifier = Modifie
 
 @Composable
 fun DoneStep(
-    packName          : String,
-    questionCount     : Int,
-    language          : String,
-    languageFlag      : String,
-    languageShort     : String,
+    packName: String,
+    questionCount: Int,
+    language: String,
     generatedQuestions: List<QuestionUiModel>,
-    onStartStudying   : () -> Unit,
-    onBackToDashboard : () -> Unit,
-    modifier          : Modifier = Modifier,
+    onStartStudying: () -> Unit,
+    onBackToDashboard: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.adp)) {
         Spacer(Modifier.height(8.adp))
 
         DoneSuccessHeader(packName = packName, questionCount = questionCount, language = language)
-        DoneStatsRow(questionCount = questionCount, languageFlag = languageFlag, languageShort = languageShort)
+        DoneStatsRow(questionCount = questionCount, language = language)
 
         // Preview only rendered with real data — no mock fallback
         if (generatedQuestions.isNotEmpty()) {
@@ -1311,14 +1527,14 @@ fun DoneStep(
 
             generatedQuestions.take(3).forEachIndexed { i, q ->
                 PreviewQuestionCard(
-                    typeLabel    = q.type.name.replace("_", "/"),
-                    emoji        = when (q.type) {
-                        QuestionType.MCQ       -> "🧠"
+                    typeLabel = q.type.name.replace("_", "/"),
+                    emoji = when (q.type) {
+                        QuestionType.MCQ -> "🧠"
                         QuestionType.TRUE_FALSE -> "✅"
-                        QuestionType.FLASHCARD  -> "📚"
+                        QuestionType.FLASHCARD -> "📚"
                     },
                     questionText = q.questionText,
-                    index        = i,
+                    index = i,
                 )
             }
 
@@ -1329,90 +1545,179 @@ fun DoneStep(
                         .animatedDashedBorder(
                             MaterialTheme
                                 .colorScheme.primary.copy(alpha = 0.8f),
-                            shape = MaterialTheme.synapse.radius.md
+                            shape = MaterialTheme.shapes.medium
                         ),
-                    shape    = MaterialTheme.synapse.radius.md,
+                    shape = MaterialTheme.shapes.medium,
                 ) {
                     Text(
-                        text      = stringResource(R.string.done_more_questions, questionCount - 3),
-                        modifier  = Modifier.padding(14.adp),
-                        style     = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
-                        color     = MaterialTheme.colorScheme.primary,
+                        text = stringResource(R.string.done_more_questions, questionCount - 3),
+                        modifier = Modifier.padding(14.adp),
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center,
                     )
                 }
             }
         }
 
-        PrimaryGradientButton(text = stringResource(R.string.done_start_studying), iconRes = R.drawable.ic_zap, enabled = true, onClick = onStartStudying)
-        SecondaryButton(text = stringResource(R.string.done_back_to_dashboard), onClick = onBackToDashboard)
+        PrimaryGradientButton(
+            text = stringResource(R.string.done_start_studying),
+            iconRes = R.drawable.ic_zap,
+            enabled = true,
+            onClick = onStartStudying
+        )
+        SecondaryButton(
+            text = stringResource(R.string.done_back_to_dashboard),
+            onClick = onBackToDashboard
+        )
         Spacer(Modifier.height(8.adp))
     }
 }
 
 @Composable
-fun DoneSuccessHeader(packName: String, questionCount: Int, language: String, modifier: Modifier = Modifier) {
+fun DoneSuccessHeader(
+    packName: String,
+    questionCount: Int,
+    language: String,
+    modifier: Modifier = Modifier
+) {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        AnimatedVisibility(visible = visible, enter = scaleIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn()) {
-            StatusIconHeader(iconRes = R.drawable.ic_check,
+        AnimatedVisibility(
+            visible = visible,
+            enter = scaleIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + fadeIn()
+        ) {
+            StatusIconHeader(
+                iconRes = R.drawable.ic_check,
                 iconCd = R.string.done_title,
                 accentColor = MaterialTheme.synapse.semantic.success
             )
         }
         Spacer(Modifier.height(16.adp))
-        Text(text = stringResource(R.string.done_title), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black), color = MaterialTheme.colorScheme.onBackground)
+        Text(
+            text = stringResource(R.string.done_title),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Spacer(Modifier.height(8.adp))
-        val primaryColor  = MaterialTheme.colorScheme.primary
+        val primaryColor = MaterialTheme.colorScheme.primary
         val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
         Text(
             text = buildAnnotatedString {
-                withStyle(SpanStyle(color = primaryColor, fontWeight = FontWeight.Bold)) { append(" $packName ") }
+                withStyle(
+                    SpanStyle(
+                        color = primaryColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                ) { append(" $packName ") }
                 append(stringResource(R.string.done_subtitle_ready))
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(" ${stringResource(R.string.done_subtitle_questions, questionCount)}") }
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) {
+                    append(
+                        " ${
+                            stringResource(
+                                R.string.done_subtitle_questions,
+                                questionCount
+                            )
+                        }"
+                    )
+                }
                 append(" ${stringResource(R.string.done_subtitle_in, language)}")
             },
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = subtitleColor,
+            style = MaterialTheme.typography.bodyMedium,
+            color = subtitleColor,
             textAlign = TextAlign.Center,
         )
     }
 }
 
 @Composable
-fun DoneStatsRow(questionCount: Int, languageFlag: String, languageShort: String, modifier: Modifier = Modifier) {
+fun DoneStatsRow(questionCount: Int, language: String, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.adp)) {
-        StatChip(value = "$questionCount", label = stringResource(R.string.stat_questions), color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
-        StatChip(value = "$languageFlag $languageShort", label = stringResource(R.string.stat_language), color = MaterialTheme.colorScheme.secondary, modifier = Modifier.weight(1f))
+        StatChip(
+            value = "$questionCount",
+            label = stringResource(R.string.stat_questions),
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f)
+        )
+        StatChip(
+            value = language,
+            label = stringResource(R.string.stat_language),
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
 @Composable
 fun StatChip(value: String, label: String, color: Color, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = color.copy(alpha = 0.12f), shape = MaterialTheme.synapse.radius.md) {
-        Column(modifier = Modifier.padding(12.adp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = value, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black), color = color)
-            Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.adp))
+    Surface(
+        modifier = modifier,
+        color = color.copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(12.adp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                color = color
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.adp)
+            )
         }
     }
 }
 
 @Composable
-fun PreviewQuestionCard(typeLabel: String, emoji: String, questionText: String, index: Int, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier
-        .fillMaxWidth()
-        .dropShadow(MaterialTheme.synapse.radius.md, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.synapse.radius.md, color = MaterialTheme.colorScheme.surface) {
+fun PreviewQuestionCard(
+    typeLabel: String,
+    emoji: String,
+    questionText: String,
+    index: Int,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .dropShadow(
+                MaterialTheme.shapes.medium,
+                MaterialTheme.synapse.shadows.subtle.toShadow()
+            ), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surface
+    ) {
         Column(modifier = Modifier.padding(16.adp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.adp), modifier = Modifier.padding(bottom = 8.adp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.adp),
+                modifier = Modifier.padding(bottom = 8.adp)
+            ) {
                 Text(text = emoji)
                 Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = CircleShape) {
-                    Text(text = typeLabel.uppercase(), modifier = Modifier.padding(horizontal = 8.adp, vertical = 2.adp), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold), color = MaterialTheme.colorScheme.secondary)
+                    Text(
+                        text = typeLabel.uppercase(),
+                        modifier = Modifier.padding(horizontal = 8.adp, vertical = 2.adp),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
                 }
-                Text(text = "Q${index + 1}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "Q${index + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Text(text = questionText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = questionText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -1421,81 +1726,259 @@ fun PreviewQuestionCard(typeLabel: String, emoji: String, questionText: String, 
 @Composable
 fun LanguageBottomSheet(
     selectedCode: String,
-    onSelect    : (String) -> Unit,
-    onDismiss   : () -> Unit,
-    modifier    : Modifier = Modifier,
+    isPro: Boolean,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onUpgrade: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val visibleCount = 5
+    val visibleLanguages = LANGUAGES.take(visibleCount)
+    val lockedLanguages = LANGUAGES.drop(visibleCount)
+    val hasLocked = !isPro && lockedLanguages.any { it.code != selectedCode }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState       = sheetState,
-        modifier         = modifier,
-        shape            = MaterialTheme.synapse.radius.xl,
-        tonalElevation   = 0.adp,
-        containerColor   = MaterialTheme.colorScheme.surface,
+        sheetState = sheetState,
+        modifier = modifier,
+        shape = MaterialTheme.synapse.radius.xl,
+        tonalElevation = 0.adp,
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
-        Row(modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.adp)
-            .padding(bottom = 12.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.adp)) {
-            Icon(painter = painterResource(R.drawable.ic_globe), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.adp))
-            Text(text = stringResource(R.string.language_sheet_title), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            Surface(onClick = onDismiss, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(30.adp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.adp)
+                .padding(bottom = 12.adp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.adp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_globe),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.adp)
+            )
+            Text(
+                text = stringResource(R.string.language_sheet_title),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Surface(
+                onClick = onDismiss,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(30.adp)
+            ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(painter = painterResource(R.drawable.ic_x), contentDescription = stringResource(R.string.cd_close), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.adp))
+                    Icon(
+                        painter = painterResource(R.drawable.ic_x),
+                        contentDescription = stringResource(R.string.cd_close),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.adp)
+                    )
                 }
             }
         }
         HorizontalDivider()
         LazyColumn(modifier = Modifier.navigationBarsPadding()) {
-            items(LANGUAGES, key = { it.code }) { lang ->
+            items(visibleLanguages, key = { it.code }) { lang ->
                 val isSelected = selectedCode == lang.code
-                Surface(modifier = Modifier.fillMaxWidth(), color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent, onClick = { onSelect(lang.code) }) {
-                    Row(modifier = Modifier.padding(horizontal = 20.adp, vertical = 14.adp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.adp)) {
-                        Text(text = lang.flag)
-                        Text(text = lang.label, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        if (isSelected) Icon(painter = painterResource(R.drawable.ic_check), contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.adp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                    onClick = { onSelect(lang.code) }) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.adp, vertical = 14.adp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.adp)
+                    ) {
+                        Text(
+                            text = lang.label(),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (isSelected) Icon(
+                            painter = painterResource(R.drawable.ic_check),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(15.adp)
+                        )
                     }
                 }
-                if (lang != LANGUAGES.last()) HorizontalDivider(modifier = Modifier.padding(horizontal = 20.adp))
+            }
+            if (hasLocked) {
+                item(key = "locked_header") {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(0.5f)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.language_premium_locked),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 20.adp, vertical = 12.adp),
+                        )
+                    }
+                }
+                items(lockedLanguages, key = { "locked_${it.code}" }) { lang ->
+                    val isSelected = selectedCode == lang.code
+                    val isLocked = !isPro
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                        onClick = { if (isLocked) onUpgrade() else onSelect(lang.code) },
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 20.adp, vertical = 14.adp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.adp),
+                        ) {
+                            Text(
+                                text = lang.label(),
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                    0.6f
+                                ),
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.ic_lock),
+                                contentDescription = null,
+                                tint = MaterialTheme.synapse.semantic.gold,
+                                modifier = Modifier.size(18.adp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun SectionCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier = modifier
-        .fillMaxWidth()
-        .dropShadow(MaterialTheme.shapes.large, MaterialTheme.synapse.shadows.subtle.toShadow()), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
+private fun SectionCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .dropShadow(
+                MaterialTheme.shapes.large,
+                MaterialTheme.synapse.shadows.subtle.toShadow()
+            ), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface
+    ) {
         Column(modifier = Modifier.padding(20.adp), content = content)
     }
 }
 
 @Composable
 private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(text = text, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    )
 }
 
 @Preview(name = "Header Light", showBackground = true)
-@Composable private fun AddPdfHeaderPreview() { SynapseTheme { AddPdfHeader(onBack = {}, modifier = Modifier.padding(20.adp)) } }
+@Composable
+private fun AddPdfHeaderPreview() {
+    SynapseTheme { AddPdfHeader(onBack = {}, modifier = Modifier.padding(20.adp)) }
+}
 
 @Preview(name = "StepIndicator Light", showBackground = true)
-@Composable private fun StepIndicatorPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { StepIndicator(currentIndex = 1, modifier = Modifier
-    .fillMaxWidth()
-    .padding(20.adp)) } } }
+@Composable
+private fun StepIndicatorPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            StepIndicator(
+                currentIndex = 1, modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.adp)
+            )
+        }
+    }
+}
 
 @Preview(name = "OcrBanner Locked", showBackground = true)
-@Composable private fun OcrBannerLockedPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { OcrBanner(enabled = false, isLocked = true, onToggle = {}, modifier = Modifier.padding(16.adp)) } } }
+@Composable
+private fun OcrBannerLockedPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            OcrBanner(
+                enabled = false,
+                isLocked = true,
+                onToggle = {},
+                modifier = Modifier.padding(16.adp)
+            )
+        }
+    }
+}
 
 @Preview(name = "OcrBanner Pro On", showBackground = true)
-@Composable private fun OcrBannerProOnPreview()  { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { OcrBanner(enabled = true,  isLocked = false,  onToggle = {}, modifier = Modifier.padding(16.adp)) } } }
+@Composable
+private fun OcrBannerProOnPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            OcrBanner(
+                enabled = true,
+                isLocked = false,
+                onToggle = {},
+                modifier = Modifier.padding(16.adp)
+            )
+        }
+    }
+}
 
 @Preview(name = "OcrBanner Pro Off", showBackground = true)
-@Composable private fun OcrBannerProOffPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { OcrBanner(enabled = false, isLocked = false,  onToggle = {}, modifier = Modifier.padding(16.adp)) } } }
+@Composable
+private fun OcrBannerProOffPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            OcrBanner(
+                enabled = false,
+                isLocked = false,
+                onToggle = {},
+                modifier = Modifier.padding(16.adp)
+            )
+        }
+    }
+}
 
 @Preview(name = "WebTab", showBackground = true)
-@Composable private fun WebTabPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { WebTab(webUrl = "", sourceTab = SourceTab.WEB, isPro = true, onLockedClick = {}, onUrlChange = {}, modifier = Modifier.padding(16.adp)) } } }
+@Composable
+private fun WebTabPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            WebTab(
+                webUrl = "",
+                isPro = true,
+                onLockedClick = {},
+                onUrlChange = {},
+                modifier = Modifier.padding(16.adp)
+            )
+        }
+    }
+}
 
 @Preview(name = "GeneratingStep Light", showBackground = true)
-@Composable private fun GeneratingStepPreview() { SynapseTheme { Surface(color = MaterialTheme.colorScheme.background) { GeneratingStep(progress = 0.65f, questionCount = 20, language = "English", focusNotesActive = true, modifier = Modifier.padding(20.adp)) } } }
+@Composable
+private fun GeneratingStepPreview() {
+    SynapseTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            GeneratingStep(
+                progress = 0.65f,
+                questionCount = 20,
+                language = "English",
+                focusNotesActive = true,
+                modifier = Modifier.padding(20.adp)
+            )
+        }
+    }
+}
