@@ -16,21 +16,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.synapse.ai.BuildConfig
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
@@ -49,8 +55,6 @@ import io.synapse.ai.navigation.rememberSynapseAppState
 import io.synapse.ai.ui.viewmodel.RootViewModel
 import io.synapse.ai.ui.viewmodel.SubtitleOverrideState
 
-// ── Root composable ───────────────────────────────────────────────────────────
-
 @Composable
 fun SynapseApp(
     soundManager: SoundManager,
@@ -64,26 +68,25 @@ fun SynapseApp(
     LaunchedEffect(Unit) {
         rootViewModel.uiEffects.collect { effect ->
             when (effect) {
-                is UiEffect.Navigate     -> appState.navigateTo(effect.route)
+                is UiEffect.Navigate -> appState.navigateTo(effect.route)
                 is UiEffect.NavigateBack -> appState.navigateBack()
-                else                     -> Unit
+                else -> Unit
             }
         }
     }
 
     CompositionLocalProvider(LocalSoundManager provides soundManager) {
         SynapseShell(
-            appState         = appState,
-            onboardingDone   = onboardingDone,
+            appState = appState,
+            onboardingDone = onboardingDone,
             subtitleOverride = subtitleOverride,
-            rootViewModel    = rootViewModel,
+            rootViewModel = rootViewModel,
             profileViewModel = profileViewModel,
         )
     }
 }
 
 // ── Shell ─────────────────────────────────────────────────────────────────────
-
 private val BarEnter =
     slideInVertically(tween(280, easing = MotionTokens.EmphasizedDecelerate)) { it } +
             fadeIn(tween(230, easing = MotionTokens.StandardDecelerate))
@@ -94,17 +97,17 @@ private val BarExit =
 
 @Composable
 private fun SynapseShell(
-    appState        : AppState,
-    onboardingDone  : Boolean,
+    appState: AppState,
+    onboardingDone: Boolean,
     subtitleOverride: SubtitleOverrideState,
-    rootViewModel   : RootViewModel   = hiltViewModel(),
+    rootViewModel: RootViewModel = hiltViewModel(),
     profileViewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val barConfig: BarConfig = appState.barConfig
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        modifier            = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize().safeDrawingPadding(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         Box(
@@ -112,25 +115,28 @@ private fun SynapseShell(
                 .fillMaxSize()
                 .background(MaterialTheme.synapse.gradients.page)
                 .padding(innerPadding)
-                //.padding(bottom = 18.adp)
+
         ) {
             SynapseNavGraph(
-                navController  = appState.navController,
+                navController = appState.navController,
                 onboardingDone = onboardingDone,
-                rootViewModel  = rootViewModel,
+                rootViewModel = rootViewModel,
+                modifier = Modifier
+                    .padding(bottom = if (BuildConfig.DEBUG) 18.adp else 0.adp)
+                    .padding(top = if (BuildConfig.DEBUG) 48.adp else 0.adp)
             )
 
             // Bottom nav
             AnimatedVisibility(
-                visible  = barConfig.showBottomBar,
-                enter    = BarEnter,
-                exit     = BarExit,
+                visible = barConfig.showBottomBar,
+                enter = BarEnter,
+                exit = BarExit,
                 modifier = Modifier
                     .navigationBarsPadding()
                     .align(Alignment.BottomCenter),
             ) {
                 BottomBar(
-                    items        = SynapseNavigationItems.visibleItems,
+                    items = SynapseNavigationItems.visibleItems,
                     navController = appState.navController,
                     currentRoute = appState.currentRoute,
                 )
@@ -139,28 +145,31 @@ private fun SynapseShell(
             // Top bar overlaid on content with gradient backing
             AnimatedVisibility(
                 visible = barConfig.showTopBar,
-                enter   = BarEnter,
-                exit    = BarExit,
+                enter = BarEnter,
+                exit = BarExit,
             ) {
+                var topBarHeightPx by remember { mutableIntStateOf(0) }
+                val density = LocalDensity.current
+
                 Box {
-                    // Gradient scrim behind top bar fades
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(120.adp)
+                            .height(with(density) { topBarHeightPx.toDp() })
+                            .matchParentSize()
                             .background(
                                 Brush.verticalGradient(
                                     colorStops = arrayOf(
-                                        0.0f  to MaterialTheme.colorScheme.background,
+                                        0.0f to MaterialTheme.colorScheme.background,
                                         0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
-                                        1.0f  to Color.Transparent,
+                                        1.0f to Color.Transparent,
                                     )
                                 )
                             ),
                     )
 
                     SynapseTopBar(
-                        title    = stringResource(appState.currentScreen.titleRes),
+                        title = stringResource(appState.currentScreen.titleRes),
                         subtitle = when (subtitleOverride) {
                             is SubtitleOverrideState.Resource -> stringResource(subtitleOverride.resId)
                             SubtitleOverrideState.Default -> appState.currentScreen.subtitleRes
@@ -168,9 +177,9 @@ private fun SynapseShell(
                                 ?.let { stringResource(it) }
                                 ?: ""
                         },
-                        profileAvatarUrl          = profileState.avatarUrl,
-                        userInitial               = profileState.avatarInitial.toString(),
-                        isPremium                 = profileState.isPremium,
+                        profileAvatarUrl = profileState.avatarUrl,
+                        userInitial = profileState.avatarInitial.toString(),
+                        isPremium = profileState.isPremium,
                         onProfileClick = {
                             appState.navController.navigate(SynapseScreen.Profile.route) {
                                 launchSingleTop = true
@@ -181,7 +190,8 @@ private fun SynapseShell(
                                 launchSingleTop = true
                             }
                         },
-                        modifier                  = Modifier.statusBarsPadding()//.padding(top = 48.adp),
+                        modifier = Modifier
+                            .onSizeChanged { topBarHeightPx = it.height }
                     )
                 }
             }
@@ -196,7 +206,7 @@ private fun SynapseShell(
  */
 internal fun openSubscriptionManagement(
     context: Context,
-    skuId  : String? = null,
+    skuId: String? = null,
 ) {
     val baseUrl = "https://play.google.com/store/account/subscriptions"
     val url = buildString {
