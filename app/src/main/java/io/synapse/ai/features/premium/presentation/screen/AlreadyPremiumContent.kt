@@ -1,4 +1,4 @@
-package com.venom.synapse.features.premium.presentation.screen
+package io.synapse.ai.features.premium.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,11 +21,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.features.premium.presentation.components.AmbientOrb
-import com.venom.synapse.features.premium.presentation.components.AppIconDisplay
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.features.premium.presentation.components.AmbientOrb
+import io.synapse.ai.features.premium.presentation.components.AppIconDisplay
 
 @Composable
 fun AlreadyPremiumContent(
@@ -88,7 +88,7 @@ fun AlreadyPremiumContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(MaterialTheme.synapse.radius.lg)
+                    .clip(MaterialTheme.shapes.large)
                     .background(gradients.gold)
                     .clickable { openSubManage() }
                     .padding(vertical = MaterialTheme.synapse.spacing.s16),
@@ -106,7 +106,7 @@ fun AlreadyPremiumContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(MaterialTheme.synapse.radius.lg)
+                    .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable { onRestore() }
                     .padding(vertical = MaterialTheme.synapse.spacing.s16),
