@@ -1,4 +1,4 @@
-package com.venom.synapse.features.premium.presentation.components
+package io.synapse.ai.features.premium.presentation.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -59,17 +59,17 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.LocalGradientTokens
-import com.venom.synapse.core.theme.White
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.synapse.features.premium.presentation.state.PremiumPlanUiModel
-import com.venom.synapse.features.premium.presentation.state.ProFeatureUiModel
-import com.venom.synapse.features.premium.presentation.state.SocialProofData
-import com.venom.synapse.features.premium.presentation.state.iconKeyToDrawableRes
-import com.venom.synapse.features.premium.presentation.state.toColor
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.LocalGradientTokens
+import io.synapse.ai.core.theme.White
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.features.premium.presentation.state.PremiumPlanUiModel
+import io.synapse.ai.features.premium.presentation.state.ProFeatureUiModel
+import io.synapse.ai.features.premium.presentation.state.SocialProofData
+import io.synapse.ai.features.premium.presentation.state.iconKeyToDrawableRes
+import io.synapse.ai.features.premium.presentation.state.toColor
 
 @Composable
 fun HeroSection(
@@ -175,14 +175,14 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
             )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s12,
-                vertical = MaterialTheme.synapse.spacing.s2
+                vertical = MaterialTheme.synapse.spacing.s8
             ),
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_crown),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.size(16.adp),
+            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
         )
         Text(
             text = stringResource(R.string.premium_pro_label),
@@ -256,7 +256,7 @@ internal fun PremiumFeatureRow(
                 painter = painterResource(iconKeyToDrawableRes(feature.iconKey)),
                 contentDescription = null,
                 tint = featureColor,
-                modifier = Modifier.size(22.adp),
+                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
             )
         }
 
@@ -284,8 +284,8 @@ internal fun PremiumFeatureRow(
 
 @Composable
 fun PlansRow(
-    plans: List<PremiumPlanUiModel>,
-    selectedPlanId: String,
+    products: List<PremiumPlanUiModel>,
+    selectedSkuId: String,
     onPlanSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -293,11 +293,11 @@ fun PlansRow(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
         modifier = modifier.fillMaxWidth(),
     ) {
-        plans.forEach { plan ->
+        products.forEach { product ->
             PlanCard(
-                plan = plan,
-                isSelected = plan.id == selectedPlanId,
-                onSelect = { onPlanSelected(plan.id) },
+                plan = product,
+                isSelected = product.skuId == selectedSkuId,
+                onSelect = { onPlanSelected(product.skuId) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -316,7 +316,7 @@ internal fun CheckIndicator(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .padding(20.adp)
-            .size(24.adp)
+            .size(MaterialTheme.synapse.spacing.icon_lg)
             .clip(MaterialShapes.Cookie7Sided.toShape())
             .background(backgroundColor)
             .border(
@@ -329,7 +329,7 @@ internal fun CheckIndicator(
             painter = painterResource(R.drawable.ic_check),
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(12.adp),
+            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
         )
     }
 }
@@ -342,7 +342,7 @@ fun PlanCard(
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val gradients = MaterialTheme.synapse.gradients
+    val gradients  = MaterialTheme.synapse.gradients
     val isGradient = isSelected && plan.isHighlighted
 
     val cardBg: Brush = if (isGradient) {
@@ -359,23 +359,20 @@ fun PlanCard(
     val borderColor = when {
         isGradient -> Color.White.copy(alpha = 0.28f)
         isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        else       -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
     }
     val borderWidth = if (isSelected) 2.adp else 1.adp
 
-    val priceColor = if (isGradient) Color.White else MaterialTheme.colorScheme.onSurface
-    val labelColor = if (isGradient) Color.White.copy(alpha = 0.75f)
+    val onCard     = if (isGradient) Color.White else MaterialTheme.colorScheme.onSurface
+    val onCardMid  = if (isGradient) Color.White.copy(alpha = 0.75f)
     else if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
     else MaterialTheme.colorScheme.onSurfaceVariant
-    val periodColor =
-        if (isGradient) Color.White.copy(alpha = 0.65f) else MaterialTheme.colorScheme.onSurfaceVariant
-    val noteColor =
-        if (isGradient) Color.White.copy(alpha = 0.55f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(
-            alpha = 0.75f
-        )
+    val onCardFaint = if (isGradient) Color.White.copy(alpha = 0.55f)
+    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
 
-    val shadow = if (isGradient) MaterialTheme.synapse.shadows.strong.toShadow() else MaterialTheme.synapse.shadows.subtle.toShadow()
-    val shape = MaterialTheme.shapes.large
+    val shadow = if (isGradient) MaterialTheme.synapse.shadows.strong.toShadow()
+    else MaterialTheme.synapse.shadows.subtle.toShadow()
+    val shape  = MaterialTheme.shapes.large
 
     Box(
         modifier = modifier
@@ -385,132 +382,169 @@ fun PlanCard(
             .border(width = borderWidth, color = borderColor, shape = shape)
             .clickable(onClick = onSelect),
     ) {
+        // Shimmer on highlighted selected card
         if (isGradient) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clipToBounds()
-            ) {
+            Box(modifier = Modifier.matchParentSize().clipToBounds()) {
                 ShimmerSweep(durationMs = 2_800, delayMs = 1_600)
             }
         }
 
-        Column(modifier = Modifier.padding(20.adp)) {
+        Column(modifier = Modifier.padding(horizontal = 20.adp, vertical = 18.adp)) {
+
+            // ── Period label ───────────────────────────────────────────────
             val labelText = if (plan.isHighlighted) {
-                stringResource(R.string.premium_plan_label_best, plan.label.resolve())
+                stringResource(R.string.premium_plan_label_best, plan.title.resolve())
             } else {
-                plan.label.resolve().uppercase()
+                plan.title.resolve().uppercase()
             }
             Text(
-                text = labelText,
+                text  = labelText,
                 style = MaterialTheme.typography.labelMedium,
-                color = labelColor,
+                color = onCardMid,
             )
 
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s6))
 
+            // ── Main price + period label ──────────────────────────────────
+            // "$59.99  /year"  — period is smaller, baseline-aligned
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = plan.priceDisplay,
+                    text  = plan.mainPrice,
                     style = MaterialTheme.typography.headlineLarge,
-                    color = priceColor,
+                    color = onCard,
                 )
                 Text(
-                    text = plan.periodDisplay.resolve(),
+                    text  = plan.periodDisplay.resolve(),
                     style = MaterialTheme.typography.labelLarge,
-                    color = periodColor,
-                    modifier = Modifier.padding(
-                        bottom = MaterialTheme.synapse.spacing.s3,
-                        start = MaterialTheme.synapse.spacing.s2
-                    ),
+                    color = onCardMid,
+                    modifier = Modifier.padding(start = 2.adp, bottom = 3.adp),
                 )
             }
 
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s2))
+            // ── Sub price — monthly equivalent for annual plans ────────────
+            // "$4.99/mo"
+            plan.subPrice?.let { subPriceUiText ->
+                Spacer(Modifier.height(1.adp))
+                Text(
+                    text  = subPriceUiText.resolve(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = onCardMid,
+                )
+            }
+
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
+
+            // ── Billing note — full disclosure ─────────────────────────────
+            // "Billed annually. Cancel anytime via Google Play."
             Text(
-                text = plan.noteDisplay,
-                style = MaterialTheme.typography.labelMedium,
-                color = noteColor
+                text  = plan.noteDisplay.resolve(),
+                style = MaterialTheme.typography.labelSmall,
+                color = onCardFaint,
             )
         }
 
-        if (plan.badgeLabel != null) {
+        // ── Savings badge ──────────────────────────────────────────────────
+        // "SAVE 50%" — top-right corner
+        plan.badgeLabel?.let { badgeLabelUiText ->
             Box(
-                contentAlignment = Alignment.TopEnd,
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(18.adp)
+                    .padding(top = 12.adp, end = 12.adp)
                     .clip(MaterialTheme.synapse.radius.pill)
                     .background(MaterialTheme.synapse.gradients.gold)
-                    .padding(
-                        horizontal = 8.adp,
-                        vertical = 2.adp,
-                    ),
+                    .padding(horizontal = 8.adp, vertical = 3.adp),
             ) {
                 Text(
-                    text = plan.badgeLabel.resolve(),
+                    text  = badgeLabelUiText.resolve(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.9f)
+                    color = if (isGradient) Color.White else Color.White.copy(alpha = 0.92f),
                 )
             }
-
         }
+
+        // ── Selection check indicator ──────────────────────────────────────
         if (isSelected) {
             CheckIndicator(
                 backgroundColor = if (isGradient) Color.White.copy(alpha = 0.26f)
                 else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-                borderColor = if (isGradient) Color.White.copy(alpha = 0.45f)
+                borderColor     = if (isGradient) Color.White.copy(alpha = 0.45f)
                 else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                iconTint = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.align(Alignment.BottomEnd)
+                iconTint        = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
+                modifier        = Modifier.align(Alignment.BottomEnd),
             )
         }
     }
 }
 
+// ── CtaSection ────────────────────────────────────────────────────────────────
+// Adds trial info line + auto-renew disclosure below the CTA button.
+
 @Composable
 fun CtaSection(
-    trialDays: Int,
-    isPurchasing: Boolean,
-    socialProof: SocialProofData?,
-    onStartTrial: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
+    trialDays     : Int,
+    isPurchasing  : Boolean,
+    socialProof   : SocialProofData?,
+    selectedSkuId : String,
+    products      : List<PremiumPlanUiModel>,
+    onStartTrial  : () -> Unit,
+    onDismiss     : () -> Unit,
+    modifier      : Modifier = Modifier,
 ) {
+    val selectedProduct = products.find { it.skuId == selectedSkuId }
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth(),
     ) {
+        // ── Primary CTA ────────────────────────────────────────────────────
         PremiumCtaButton(
-            trialDays = trialDays,
+            trialDays    = trialDays,
             isPurchasing = isPurchasing,
-            onClick = onStartTrial,
+            onClick      = onStartTrial,
         )
 
+        // ── Trial info + auto-renew disclosure ─────────────────────────────
+        // Google Play compliance: must show price, billing cycle, auto-renew,
+        // and cancellation method near the subscribe button.
+        val trialInfo = selectedProduct?.trialInfo
+        if (trialInfo != null) {
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
+            Text(
+                text      = trialInfo.resolve(),
+                style     = MaterialTheme.typography.labelSmall,
+                color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                textAlign = TextAlign.Center,
+                modifier  = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s16),
+            )
+        }
+
+        // ── Social proof ───────────────────────────────────────────────────
         socialProof?.let {
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
             SocialProofRow(socialProof = it)
         }
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
+        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
 
+        // ── Trust line ─────────────────────────────────────────────────────
         TrustLine()
 
+        // ── Skip ───────────────────────────────────────────────────────────
         Text(
-            text = stringResource(R.string.premium_cta_skip),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            text      = stringResource(R.string.premium_cta_skip),
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             textAlign = TextAlign.Center,
-            modifier = Modifier
+            modifier  = Modifier
                 .clickable(onClick = onDismiss)
                 .padding(
-                    vertical = MaterialTheme.synapse.spacing.s10,
+                    vertical   = MaterialTheme.synapse.spacing.s10,
                     horizontal = MaterialTheme.synapse.spacing.s16
                 ),
         )
     }
 }
-
 @Composable
 internal fun PremiumCtaButton(
     trialDays: Int,
@@ -544,7 +578,7 @@ internal fun PremiumCtaButton(
         if (isPurchasing) {
             LottieAnimation(
                 composition = rememberLottieComposition(
-                    LottieCompositionSpec.RawRes(com.venom.resources.R.raw.dot_loading)
+                    LottieCompositionSpec.RawRes(R.raw.dot_loading)
                 ).value,
                 iterations = LottieConstants.IterateForever,
                 contentScale = ContentScale.FillWidth,
@@ -562,7 +596,7 @@ internal fun PremiumCtaButton(
                     painter = painterResource(R.drawable.ic_gem),
                     contentDescription = null,
                     tint = Color.White.copy(0.9f),
-                    modifier = Modifier.size(20.adp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
                 )
                 Text(
                     text = stringResource(R.string.premium_cta_start_trial, trialDays),
@@ -575,7 +609,7 @@ internal fun PremiumCtaButton(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
                     tint = Color.White.copy(0.9f),
-                    modifier = Modifier.size(20.adp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
                 )
             }
         }
@@ -664,7 +698,7 @@ fun SocialProofRow(
                         painter = painterResource(R.drawable.ic_star_fill),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(14.adp),
+                        modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                     )
                 }
             }
@@ -688,7 +722,7 @@ fun TrustLine(modifier: Modifier = Modifier) {
             painter = painterResource(R.drawable.ic_lock),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-            modifier = Modifier.size(10.adp),
+            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
         )
         Text(
             text = stringResource(R.string.premium_trust_line),
