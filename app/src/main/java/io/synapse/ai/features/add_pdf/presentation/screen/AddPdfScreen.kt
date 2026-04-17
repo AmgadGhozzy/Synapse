@@ -2,6 +2,7 @@ package io.synapse.ai.features.add_pdf.presentation.screen
 
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -33,8 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
@@ -50,11 +50,10 @@ import io.synapse.ai.features.add_pdf.presentation.components.AddPdfHeader
 import io.synapse.ai.features.add_pdf.presentation.components.ConfigureStep
 import io.synapse.ai.features.add_pdf.presentation.components.DoneStep
 import io.synapse.ai.features.add_pdf.presentation.components.GeneratingStep
-import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
 import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
 import io.synapse.ai.features.add_pdf.presentation.components.StepIndicator
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
-import io.synapse.ai.features.add_pdf.presentation.components.shortLabel
+import io.synapse.ai.features.add_pdf.presentation.components.getLanguageLabelByCode
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
 import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
@@ -93,6 +92,10 @@ fun AddPdfScreen(
         viewModel.onEvent(AddPdfUiEvent.FileSelected(uri.toString(), fileName, fileSizeMb))
     }
 
+    BackHandler {
+        viewModel.onEvent(AddPdfUiEvent.GoBack)
+    }
+
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
@@ -129,11 +132,11 @@ fun AddPdfScreen(
             AddPdfHeader(
                 onBack   = { viewModel.onEvent(AddPdfUiEvent.GoBack) },
                 modifier = Modifier
-                    .statusBarsPadding()
                     .padding(horizontal = MaterialTheme.synapse.spacing.screen, vertical = MaterialTheme.synapse.spacing.s12),
             )
         },
         snackbarHost        = { snackbarController.SnackbarHost() },
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
 
@@ -217,20 +220,14 @@ fun AddPdfScreen(
                     AddPdfStep.GENERATING -> GeneratingStep(
                         progress         = uiState.generationProgress,
                         questionCount    = uiState.questionCount,
-                        language         = LANGUAGES.find { it.code == uiState.language }?.label
-                            ?: stringResource(R.string.language_english),
+                        language         = getLanguageLabelByCode(uiState.language),
                         focusNotesActive = uiState.focusNotes.isNotBlank(),
                     )
 
                     AddPdfStep.DONE -> DoneStep(
                         packName           = uiState.packTitle,
                         questionCount      = uiState.questionCount,
-                        language           = LANGUAGES.find { it.code == uiState.language }?.label
-                            ?: stringResource(R.string.language_english),
-                        languageFlag       = LANGUAGES.find { it.code == uiState.language }?.flag
-                            ?: "🇺🇸",
-                        languageShort      = LANGUAGES.find { it.code == uiState.language }?.shortLabel()
-                            ?: stringResource(R.string.language_english_short),
+                        language           = getLanguageLabelByCode(uiState.language),
                         generatedQuestions = uiState.generatedQuestions,
                         onStartStudying    = { onNavigateToSession(uiState.packId) },
                         onBackToDashboard  = onNavigateBack,
@@ -244,11 +241,13 @@ fun AddPdfScreen(
         if (showLanguagePicker) {
             LanguageBottomSheet(
                 selectedCode = uiState.language,
+                isPro        = uiState.isPro,
                 onSelect     = {
                     viewModel.onEvent(AddPdfUiEvent.LanguageSelected(it))
                     showLanguagePicker = false
                 },
                 onDismiss    = { showLanguagePicker = false },
+                onUpgrade  = { showLanguagePicker = false; onNavigateToPremium() },
             )
         }
     }
