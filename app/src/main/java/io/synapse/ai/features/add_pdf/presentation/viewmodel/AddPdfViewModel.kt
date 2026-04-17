@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -60,7 +60,6 @@ class AddPdfViewModel @Inject constructor(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
-    // Restore the initial source tab from navigation arguments.
     private val initialSourceTab = when (savedStateHandle.get<String>(SynapseScreen.AddPdf.ARG_SOURCE)) {
         SynapseScreen.AddPdf.SOURCE_TEXT -> SourceTab.TEXT
         else                             -> SourceTab.FILE
@@ -76,16 +75,37 @@ class AddPdfViewModel @Inject constructor(
     private var generatedResult: GeneratedPackResult? = null
 
     init {
+        observePremiumConfig()
         checkPackLimit()
+    }
 
-        _uiState.update {
-            it.copy(
-                isOcrFeatureLocked = appConfig.isOcrProLocked,
-                isPro              = appConfig.isPremium,
-                isThinkingLocked   = appConfig.isThinkingLocked,
-                maxPages           = appConfig.ocrMaxPages,
-                maxFileSizeMb      = appConfig.addPdfMaxFileSizeMb,
-            )
+    private fun observePremiumConfig() {
+        viewModelScope.launch {
+            combine(
+                appConfig.isPremiumFlow,
+                appConfig.isOcrProLockedFlow,
+                appConfig.isThinkingLockedFlow,
+                appConfig.ocrMaxPagesFlow,
+                appConfig.addPdfMaxFileSizeMbFlow,
+            ) { isPremium, isOcrLocked, isThinkingLocked, maxPages, maxFileSize ->
+                PremiumConfig(
+                    isPremium = isPremium,
+                    isOcrLocked = isOcrLocked,
+                    isThinkingLocked = isThinkingLocked,
+                    maxPages = maxPages,
+                    maxFileSizeMb = maxFileSize,
+                )
+            }.collect { config ->
+                _uiState.update {
+                    it.copy(
+                        isOcrFeatureLocked = config.isOcrLocked,
+                        isPro              = config.isPremium,
+                        isThinkingLocked   = config.isThinkingLocked,
+                        maxPages           = config.maxPages,
+                        maxFileSizeMb      = config.maxFileSizeMb,
+                    )
+                }
+            }
         }
     }
 
@@ -478,10 +498,16 @@ class AddPdfViewModel @Inject constructor(
 
     private fun checkPackLimit() {
         viewModelScope.launch {
-            val count = withContext(ioDispatcher) { packRepo.observeAllPacks().first().size }
-            if (count >= appConfig.libraryFreePackLimit) {
-                _uiState.update { it.copy(isPackLimitReached = true) }
-                _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+            combine(
+                packRepo.observeAllPacks(),
+                appConfig.libraryFreePackLimitFlow,
+            ) { packs, limit ->
+                packs.size >= limit
+            }.collect { isLimitReached ->
+                if (isLimitReached) {
+                    _uiState.update { it.copy(isPackLimitReached = true) }
+                    _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+                }
             }
         }
     }
@@ -592,11 +618,18 @@ class AddPdfViewModel @Inject constructor(
     private companion object {
         const val TAG = "AddPdfViewModel"
 
-        /** Client-side YouTube URL pattern — mirrors the server-side validation. */
         val YOUTUBE_PATTERN = Regex(
             "^https?://(www\\.)?youtube\\.com/watch\\?v=[\\w-]{11}" +
             "|^https?://youtu\\.be/[\\w-]{11}" +
             "|^https?://(www\\.)?youtube\\.com/shorts/[\\w-]{11}"
+        )
+
+        private data class PremiumConfig(
+            val isPremium: Boolean,
+            val isOcrLocked: Boolean,
+            val isThinkingLocked: Boolean,
+            val maxPages: Int,
+            val maxFileSizeMb: Int,
         )
     }
 }
