@@ -1,21 +1,25 @@
-package com.venom.synapse.features.profile.presentation.viewmodel
+package io.synapse.ai.features.profile.presentation.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.state.UiEffect
-import com.venom.synapse.core.ui.state.UiText
-import com.venom.synapse.data.sync.RemoteDataRepository
-import com.venom.synapse.domain.repo.IAuthRepository
-import com.venom.synapse.domain.repo.ILocalDataRepository
-import com.venom.synapse.domain.repo.IPackRepository
-import com.venom.synapse.domain.repo.IQuestionRepository
-import com.venom.synapse.domain.repo.ISessionRepository
-import com.venom.synapse.domain.stats.StreakCalculator
-import com.venom.synapse.features.profile.presentation.state.ProfileUiState
-import com.venom.synapse.navigation.SynapseScreen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.AppConfigProvider
+import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.data.sync.RemoteDataRepository
+import io.synapse.ai.data.sync.SyncConsent
+import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.domain.repo.ILocalDataRepository
+import io.synapse.ai.domain.repo.IPackRepository
+import io.synapse.ai.domain.repo.IQuestionRepository
+import io.synapse.ai.domain.repo.ISessionRepository
+import io.synapse.ai.domain.stats.StreakCalculator
+import io.synapse.ai.domain.usecase.ExportDataUseCase
+import io.synapse.ai.features.profile.presentation.state.ProfileUiState
+import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,7 +44,12 @@ class ProfileViewModel @Inject constructor(
     private val authRepo: IAuthRepository,
     private val localDataRepo: ILocalDataRepository,
     private val remoteDataRepo: RemoteDataRepository,
-    private val entitlementManager: com.venom.synapse.data.repo.EntitlementManager,
+    private val premiumManager: PremiumManager,
+    private val consentManager: io.synapse.ai.data.sync.ConsentManager,
+    private val syncEngine: io.synapse.ai.data.sync.SyncEngine,
+    private val appConfigProvider: AppConfigProvider,
+    private val analyticsConsentRepo: io.synapse.ai.core.analytics.data.ConsentRepository,
+    private val exportDataUseCase: ExportDataUseCase,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -56,12 +65,25 @@ class ProfileViewModel @Inject constructor(
         combine(
             packRepo.observeAllPacks(),
             sessionRepo.observeStudiedDayIndices(),
-            combine(authRepo.userState, entitlementManager.entitlement, ::Pair)
-        ) { packs, studiedDayIndices, (userState, entitlement) ->
+            combine(authRepo.userState, premiumManager.isPro, ::Pair),
+            combine(
+                consentManager.isSyncEnabled,
+                consentManager.consentState,
+                syncEngine.status,
+                consentManager.lastSyncedTime
+            ) { enabled, consent, status, lastSynced ->
+                listOf(enabled, consent, status, lastSynced)
+            },
+            analyticsConsentRepo.consent,
+        ) { packs, studiedDayIndices, (userState, entitlement), syncInfo, userConsent ->
+            val isSyncEnabled = syncInfo[0] as Boolean
+            val consentState = syncInfo[1] as io.synapse.ai.data.sync.SyncConsent
+            val syncStatus = syncInfo[2] as io.synapse.ai.data.sync.SyncStatus
+            val lastSyncedTime = syncInfo[3] as String?
             val todayIndex = System.currentTimeMillis() / 86_400_000L
             val streakDays = StreakCalculator.currentStreak(studiedDayIndices, todayIndex)
 
-            val isPremium = entitlement.isAccessGranted
+            val isPremium = entitlement
 
             val (totalCards, studyTimeHours, avgRetentionPct) = withContext(ioDispatcher) {
                 val cards = packs.sumOf { pack -> questionRepo.countByPack(pack.id) }
@@ -94,6 +116,13 @@ class ProfileViewModel @Inject constructor(
                 totalCardsLearned = totalCards,
                 studyTimeHours    = studyTimeHours,
                 avgRetentionPct   = avgRetentionPct,
+                isSyncEnabled     = isSyncEnabled,
+                consentState      = consentState,
+                syncStatus        = syncStatus,
+                lastSyncedTime    = lastSyncedTime,
+                analyticsEnabled = userConsent.analyticsEnabled,
+                crashEnabled     = userConsent.crashEnabled,
+                pushEnabled      = userConsent.pushEnabled,
             )
         }
             .catch { e -> emit(ProfileUiState(isLoading = false, error = e.message)) }
@@ -106,9 +135,12 @@ class ProfileViewModel @Inject constructor(
     // ── Navigation / simple actions ───────────────────────────────────────────
     fun onUpgradeTapped()    = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Premium.route))
 
-    fun onHelpTapped()       = _uiEffects.tryEmit(UiEffect.OpenExternal("https://help.synapse.app"))// TODO: implement privacy
-    fun onPrivacyTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal("https://synapse.app/privacy"))
-    fun onRateAppTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal("market://details?id=com.venom.synapse"))
+    fun onHelpTapped()       = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appHelpUrl))
+    fun onPrivacyTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appPrivacy))
+    fun onRateAppTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appRateAppUrl))
+    fun onAboutTapped()      = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.About.route))
+    fun onContactUsTapped()  = _uiEffects.tryEmit(UiEffect.OpenExternal("mailto:${appConfigProvider.appEmail}"))
+    fun onDeleteAccountViaTapped() = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appDeleteAccountUrl))
 
     // ── Sign out (Authenticated only) ────────────────────────────────────────
 
@@ -131,6 +163,7 @@ class ProfileViewModel @Inject constructor(
                 withContext(ioDispatcher) {
                     localDataRepo.clearAllLocalData()   // 1. wipe Room cache
                     authRepo.signOut()                  // 2. revoke JWT + new anon session
+                    syncEngine.onSignOut()              // 3. Clear sync logic / consent
                 }
                 _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Dashboard.route))
             } catch (e: Exception) {
@@ -148,21 +181,6 @@ class ProfileViewModel @Inject constructor(
     }
 
     // ── Delete account (Authenticated only — NEVER anonymous) ────────────────
-
-    /**
-     * Delete-account flow — server delete FIRST, local wipe on success.
-     *
-     * Order rationale:
-     *   If the remote delete fails (no network), we must NOT clear local data.
-     *   That would leave the user with an intact remote account but empty local
-     *   cache — they would be stuck. Only wipe after server confirms success.
-     *
-     * The Edge Function (`delete-account`) uses service_role server-side.
-     * Entitlement clearing is handled inside [AuthRepositoryImpl.deleteAccount()].
-     *
-     * Anonymous users are blocked before reaching this method — the UI
-     * hides "Delete Account" for anonymous sessions entirely.
-     */
     fun onDeleteAccount() {
         // Double-check: never allow anonymous account deletion
         if (authRepo.userState.value.isAnonymous) return
@@ -191,20 +209,6 @@ class ProfileViewModel @Inject constructor(
     }
 
     // ── Reset progress ───────────────────────────────────────────────────────
-
-    /**
-     * Resets all user progress.
-     *
-     * ANONYMOUS:
-     *   Room-only wipe — works offline. The user's packs and progress are
-     *   permanently deleted from the device.
-     *
-     * AUTHENTICATED:
-     *   Requires internet. Calls the server to wipe remote progress FIRST,
-     *   then clears the local Room cache. If the server call fails (offline),
-     *   the action is blocked with an error message.
-     *
-     * TODO: When RemoteDataRepository is built, replace the local-only **/
     fun onClearAllData() {
         viewModelScope.launch {
             if (_isActionLoading.value) return@launch
@@ -243,6 +247,55 @@ class ProfileViewModel @Inject constructor(
                 } ?: UiText.Raw(R.string.auth_google_sign_in_failed)
                 _uiEffects.tryEmit(UiEffect.ShowToast(errorText))
             }
+        }
+    }
+
+    // ── Sync Actions ──────────────────────────────────────────────────────────
+
+    fun onSyncToggleChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            if (enabled) {
+                syncEngine.onSyncEnabled()
+            } else {
+                syncEngine.onSyncDisabled()
+            }
+        }
+    }
+
+    fun onConsentGranted() {
+        viewModelScope.launch {
+            consentManager.setConsent(SyncConsent.ACCEPTED)
+            onSyncToggleChanged(true)
+        }
+    }
+
+    fun onConsentDenied() {
+        viewModelScope.launch {
+            consentManager.setConsent(SyncConsent.REJECTED)
+        }
+    }
+
+    fun onManualSyncRequested() {
+        syncEngine.manualSync()
+    }
+
+    // ── Privacy Consent Actions ────────────────────────────────────────────────
+
+    fun onAnalyticsConsentChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            analyticsConsentRepo.updateAnalytics(enabled)
+        }
+    }
+
+    fun onCrashConsentChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            analyticsConsentRepo.updateCrash(enabled)
+        }
+    }
+
+    fun onPushConsentChanged(enabled: Boolean) {
+        viewModelScope.launch {
+            analyticsConsentRepo.updatePush(enabled)
         }
     }
 }
