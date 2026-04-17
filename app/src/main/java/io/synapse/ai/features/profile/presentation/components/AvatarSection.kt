@@ -1,4 +1,4 @@
-package com.venom.synapse.features.profile.presentation.components
+package io.synapse.ai.features.profile.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,27 +21,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import coil.compose.AsyncImage
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.features.profile.presentation.state.ProfileUiState
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.features.profile.presentation.state.ProfileUiState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ProfileAvatarSection(
     uiState: ProfileUiState,
-    gradient: Brush,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val semantic = MaterialTheme.synapse.semantic
+    val tokens = MaterialTheme.synapse
     val shape = MaterialShapes.Cookie9Sided.toShape()
 
     Column(
@@ -52,10 +50,10 @@ fun ProfileAvatarSection(
             Box(
                 modifier = Modifier
                     .size(86.adp)
-                    .background(gradient, shape)
+                    .background(tokens.gradients.primary, shape)
                     .border(
                         2.adp,
-                        if (uiState.isPremium) MaterialTheme.synapse.gradients.gold else gradient,
+                        if (uiState.isPremium) tokens.gradients.gold else tokens.gradients.primary,
                         shape
                     ),
                 contentAlignment = Alignment.Center,
@@ -65,7 +63,10 @@ fun ProfileAvatarSection(
                         model = uiState.avatarUrl,
                         contentDescription = stringResource(R.string.profile_photo_description),
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().size(86.adp).clip(shape),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .size(86.adp)
+                            .clip(shape),
                     )
                 } else {
                     Text(
@@ -77,12 +78,13 @@ fun ProfileAvatarSection(
                 }
             }
             if (!uiState.isAnonymous) {
-                val badgeColor = if (uiState.isPremium) semantic.gold else semantic.success
+                val badgeColor =
+                    if (uiState.isPremium) tokens.semantic.gold else tokens.semantic.success
                 Icon(
                     painter = painterResource(R.drawable.ic_seal_check),
                     contentDescription = null,
                     tint = badgeColor,
-                    modifier = Modifier.size(24.adp),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
                 )
             }
         }
@@ -101,7 +103,6 @@ fun ProfileAvatarSection(
             style = MaterialTheme.typography.bodySmall,
             color = cs.onSurfaceVariant,
         )
-        Spacer(Modifier.height(8.adp))
 
         // Plan badge chip
         Box(
@@ -114,7 +115,7 @@ fun ProfileAvatarSection(
             Text(
                 text = stringResource(uiState.planLabelRes),
                 style = MaterialTheme.typography.labelLarge,
-                color = if (uiState.isPremium) semantic.gold else cs.onSurfaceVariant,
+                color = if (uiState.isPremium) tokens.semantic.gold else cs.onSurfaceVariant,
             )
         }
     }
