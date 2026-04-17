@@ -1,6 +1,7 @@
-package com.venom.synapse.features.profile.presentation.state
+package io.synapse.ai.features.profile.presentation.state
 
 import androidx.compose.runtime.Immutable
+import io.synapse.ai.core.theme.AppTheme
 
 @Immutable
 data class StudySettingsUiState(
@@ -10,4 +11,5 @@ data class StudySettingsUiState(
     val dailyReminderEnabled: Boolean = true,
     val reminderHour: Int = 8,
     val reminderMinute: Int = 0,
+    val appTheme: AppTheme = AppTheme.DARK,
 )

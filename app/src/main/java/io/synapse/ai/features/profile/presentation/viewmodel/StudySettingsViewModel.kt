@@ -1,35 +1,27 @@
-package com.venom.synapse.features.profile.presentation.viewmodel
+package io.synapse.ai.features.profile.presentation.viewmodel
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.venom.synapse.features.profile.presentation.state.StudySettingsUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.synapse.ai.core.theme.AppTheme
+import io.synapse.ai.features.profile.presentation.state.StudySettingsUiState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import javax.inject.Named
 
-/**
- * Manages study preferences: daily goal, new-cards-per-day, review limit,
- * and daily reminder toggle + time. Persisted via DataStore.
- *
- * The [DataStore] is provided by [StudySettingsModule] — no Context is held
- * inside the ViewModel, which eliminates the context-leak lint warning.
- *
- * The fully-qualified [androidx.datastore.preferences.core.Preferences] type
- * is used in the constructor to avoid any import ambiguity with
- * [java.util.prefs.Preferences] that may exist on the classpath.
- */
 @HiltViewModel
 class StudySettingsViewModel @Inject constructor(
-    private val dataStore: DataStore<androidx.datastore.preferences.core.Preferences>,
+    @Named("study_settings") private val dataStore: DataStore<androidx.datastore.preferences.core.Preferences>,
 ) : ViewModel() {
 
     companion object {
@@ -39,6 +31,7 @@ class StudySettingsViewModel @Inject constructor(
         private val KEY_DAILY_REMINDER  = booleanPreferencesKey("daily_reminder")
         private val KEY_REMINDER_HOUR   = intPreferencesKey("reminder_hour")
         private val KEY_REMINDER_MINUTE = intPreferencesKey("reminder_minute")
+        private val KEY_APP_THEME       = stringPreferencesKey("app_theme")
 
         // ── Stepper bounds ────────────────────────────────────────────────────
         const val DAILY_GOAL_MIN  = 5;   const val DAILY_GOAL_MAX  = 200; const val DAILY_GOAL_STEP  = 5
@@ -55,6 +48,9 @@ class StudySettingsViewModel @Inject constructor(
                 dailyReminderEnabled = prefs[KEY_DAILY_REMINDER]  ?: true,
                 reminderHour         = prefs[KEY_REMINDER_HOUR]   ?: 8,
                 reminderMinute       = prefs[KEY_REMINDER_MINUTE] ?: 0,
+                appTheme             = prefs[KEY_APP_THEME]?.let { savedTheme ->
+                    try { AppTheme.valueOf(savedTheme) } catch (e: Exception) { AppTheme.SYSTEM }
+                } ?: AppTheme.SYSTEM,
             )
         }
         .stateIn(
@@ -71,8 +67,9 @@ class StudySettingsViewModel @Inject constructor(
     fun decrementNewPerDay()   = updateNewPerDay(uiState.value.newCardsPerDay - NEW_PER_DAY_STEP)
     fun incrementReviewLimit() = updateReviewLimit(uiState.value.reviewLimit + REVIEW_STEP)
     fun decrementReviewLimit() = updateReviewLimit(uiState.value.reviewLimit - REVIEW_STEP)
+    fun updateAppTheme(theme: AppTheme) = save { it[KEY_APP_THEME] = theme.name }
 
-    fun updateDailyReminder(enabled: Boolean) = save { it[KEY_DAILY_REMINDER] = enabled }
+    fun updateDailyReminder(enabled: Boolean) = save { it[KEY_DAILY_REMINDER] = enabled } // TODO: implement DailyReminder
 
     fun updateReminderTime(hour: Int, minute: Int) = save {
         it[KEY_REMINDER_HOUR]   = hour

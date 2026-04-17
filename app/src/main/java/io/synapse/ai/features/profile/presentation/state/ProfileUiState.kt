@@ -1,7 +1,9 @@
-package com.venom.synapse.features.profile.presentation.state
+package io.synapse.ai.features.profile.presentation.state
 
 import androidx.compose.runtime.Immutable
-import com.venom.synapse.R
+import io.synapse.ai.R
+import io.synapse.ai.data.sync.SyncConsent
+import io.synapse.ai.data.sync.SyncStatus
 
 @Immutable
 data class ProfileUiState(
@@ -21,4 +23,12 @@ data class ProfileUiState(
     val totalCardsLearned: Int = 0,
     val studyTimeHours: Float = 0f,
     val avgRetentionPct: Float = 0f,
+    val isSyncEnabled: Boolean = false,
+    val consentState: SyncConsent = SyncConsent.UNKNOWN,
+    val syncStatus: SyncStatus = SyncStatus.IDLE,
+    val lastSyncedTime: String? = null,
+    // Privacy consent toggles
+    val analyticsEnabled: Boolean = false,
+    val crashEnabled: Boolean = false,
+    val pushEnabled: Boolean = false,
 )
