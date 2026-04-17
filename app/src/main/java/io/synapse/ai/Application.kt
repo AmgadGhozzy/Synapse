@@ -9,6 +9,7 @@ import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.data.ConsentRepository
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.data.repo.AppConfigProvider
+import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.di.NetworkEntryPoint
 import io.synapse.ai.domain.repo.IAuthRepository
 import kotlinx.coroutines.CoroutineScope
@@ -27,13 +28,15 @@ class Application : Application() {
     @Inject lateinit var consentRepository: ConsentRepository
     @Inject lateinit var appConfigProvider: AppConfigProvider
     @Inject lateinit var authRepo: IAuthRepository
+    @Inject lateinit var premiumManager: PremiumManager
 
     override fun onCreate() {
         super.onCreate()
         initializeTracking()
         bootstrapAuth()
+        initializePremium()
         preWarmNetworkClients()
-        
+
         applicationScope.launch {
             appConfigProvider.fetchAndActivate()
         }
@@ -41,6 +44,10 @@ class Application : Application() {
         if (BuildConfig.DEBUG) {
             enableStrictMode()
         }
+    }
+
+    private fun initializePremium() {
+        premiumManager.initialize()
     }
 
     /**

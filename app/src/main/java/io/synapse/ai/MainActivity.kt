@@ -11,20 +11,21 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.LimitedFontScale
 import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.StudySettingsViewModel
 import io.synapse.ai.ui.SynapseApp
 import io.synapse.ai.ui.viewmodel.RootViewModel
 import javax.inject.Inject
 
-/**
- * Single-Activity host.
- */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var soundManager: SoundManager
+
+    @Inject
+    lateinit var premiumManager: PremiumManager
 
     private val rootViewModel: RootViewModel by viewModels()
     private val profileViewModel: ProfileViewModel by viewModels()
@@ -51,6 +52,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        premiumManager.verifyWithServer()
     }
 
     companion object {
