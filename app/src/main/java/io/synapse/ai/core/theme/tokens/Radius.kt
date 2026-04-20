@@ -18,12 +18,12 @@ data class RadiusTokens(
 fun buildAdaptiveRadius(scale: Float): RadiusTokens {
     fun dp(v: Float) = adaptDp(v, scale)
     return RadiusTokens(
-        xs   = RoundedCornerShape(dp(4f)),
-        sm   = RoundedCornerShape(dp(8f)),
-        md   = RoundedCornerShape(dp(12f)),
-        lg   = RoundedCornerShape(dp(16f)),
-        xl   = RoundedCornerShape(dp(20f)),
-        xxl  = RoundedCornerShape(dp(24f)),
+        xs = RoundedCornerShape(dp(4f)),
+        sm = RoundedCornerShape(dp(8f)),
+        md = RoundedCornerShape(dp(12f)),
+        lg = RoundedCornerShape(dp(16f)),
+        xl = RoundedCornerShape(dp(20f)),
+        xxl = RoundedCornerShape(dp(24f)),
         xxxl = RoundedCornerShape(dp(28f)),
         pill = RoundedCornerShape(50),
     )
@@ -35,9 +35,9 @@ fun buildAdaptiveMaterialShapes(scale: Float): Shapes {
     fun dp(v: Float) = adaptDp(v, scale)
     return Shapes(
         extraSmall = RoundedCornerShape(dp(4f)),
-        small      = RoundedCornerShape(dp(8f)),
-        medium     = RoundedCornerShape(dp(16f)),
-        large      = RoundedCornerShape(dp(24f)),
+        small = RoundedCornerShape(dp(8f)),
+        medium = RoundedCornerShape(dp(16f)),
+        large = RoundedCornerShape(dp(24f)),
         extraLarge = RoundedCornerShape(dp(28f)),
     )
 }
