@@ -227,7 +227,7 @@ fun ActionButton(
                 scaleY          = scale
                 transformOrigin = TransformOrigin(1f, 0.5f)
             }
-            .background(action.color, MaterialTheme.synapse.radius.md)
+            .background(action.color, MaterialTheme.shapes.medium)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

@@ -1,74 +1,62 @@
 package io.synapse.ai.core.ui.components
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
 import io.synapse.ai.R
-import io.synapse.ai.core.theme.tokens.BrandColors
 
-
-// ── SwipeAction model ─────────────────────────────────────────────────────────
-
-/**
- * Describes a single action revealed when the card is swiped.
- *
- * @param labelRes  String resource for the icon label (also used as contentDescription).
- * @param iconRes   Drawable resource for the action icon.
- * @param color     Background colour of the action button.
- * @param onClick   Callback invoked when the action is tapped.
- */
 data class SwipeAction(
     val labelRes: Int,
-    val iconRes:  Int,
-    val color:    Color,
-    val onClick:  () -> Unit,
+    val iconRes: Int,
+    val color: Color,
+    val onClick: () -> Unit,
 )
 
+@Composable
 fun buildPackCardActions(
     onEdit: () -> Unit,
     onExport: () -> Unit,
     onDelete: () -> Unit,
-): List<SwipeAction> = listOf(
-    SwipeAction(
-        labelRes = R.string.action_edit,
-        iconRes  = R.drawable.ic_edit,
-        color    = BrandColors.BrandPrimaryAction,
-        onClick  = onEdit,
-    ),
-    SwipeAction(
-        labelRes = R.string.action_export,
-        iconRes  = R.drawable.ic_share_2,
-        color    = BrandColors.BrandSecondaryDeep,
-        onClick  = onExport,
-    ),
-    SwipeAction(
-        labelRes = R.string.action_delete,
-        iconRes  = R.drawable.ic_trash_2,
-        color    = BrandColors.BrandErrorLight,
-        onClick  = onDelete,
-    ),
-)
+): List<SwipeAction> {
+
+    val editColor = MaterialTheme.colorScheme.secondary
+    val exportColor = MaterialTheme.colorScheme.primary
+    val deleteColor = MaterialTheme.colorScheme.error
+
+    return listOf(
+        SwipeAction(
+            labelRes = R.string.action_edit,
+            iconRes = R.drawable.ic_edit,
+            color = editColor,
+            onClick = onEdit,
+        ),
+        SwipeAction(
+            labelRes = R.string.action_export,
+            iconRes = R.drawable.ic_share_2,
+            color = exportColor,
+            onClick = onExport,
+        ),
+        SwipeAction(
+            labelRes = R.string.action_delete,
+            iconRes = R.drawable.ic_trash_2,
+            color = deleteColor,
+            onClick = onDelete,
+        ),
+    )
+}
 
 enum class DragValue { Closed, Open }
 
-/**
- * Shared color logic for pack cards.
- */
 @Immutable
 data class CardColorSet(
-    /** Primary accent — progress bars, badge bg, icon color. */
     val accent: Color,
-    /** Translucent tinted background — icon container, category pill bg. */
     val bg: Color,
-    /** Translucent tinted border — icon container outline. */
     val border: Color,
 )
 
-/**
- * Safely parse a CSS hex string (e.g. `"#4F46E5"`) into a Compose [Color].
- * Returns [fallback] on blank or malformed input instead of throwing.
- */
-fun parseColorSafe(hex: String, fallback: Color = Color(0xFF4F46E5)): Color =
+fun parseColorSafe(hex: String, fallback: Color): Color =
     if (hex.isBlank()) fallback
     else try {
         Color(hex.toColorInt())
@@ -76,14 +64,14 @@ fun parseColorSafe(hex: String, fallback: Color = Color(0xFF4F46E5)): Color =
         fallback
     }
 
-/**
- * Build a [CardColorSet] from a hex string.
- */
+@Composable
 fun buildCardColorSet(hex: String): CardColorSet {
-    val accent = parseColorSafe(hex)
+    val fallbackColor = MaterialTheme.colorScheme.primary
+    val accent = parseColorSafe(hex, fallbackColor)
+
     return CardColorSet(
-        accent = accent,
-        bg     = accent.copy(alpha = 0.10f),
+        accent = accent.copy(alpha = 0.85f),
+        bg = accent.copy(alpha = 0.10f),
         border = accent.copy(alpha = 0.15f),
     )
 }

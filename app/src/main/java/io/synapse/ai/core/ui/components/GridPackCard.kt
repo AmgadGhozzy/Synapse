@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,7 +43,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
@@ -79,9 +77,9 @@ fun GridPackCard(
     enableSwipeActions: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val colorSet = remember(pack.colorHex) { buildCardColorSet(pack.colorHex) }
+    val colorSet = buildCardColorSet(pack.colorHex)
     val semantic = MaterialTheme.synapse.semantic
-    val hasDue   = pack.cardsToReview > 0
+    val hasDue = pack.cardsToReview > 0
 
     val learnedPct = remember(pack.masteredCards, pack.totalCards) {
         if (pack.totalCards > 0) (pack.masteredCards * 100f / pack.totalCards).toInt() else 0
@@ -94,47 +92,50 @@ fun GridPackCard(
         progressVisible = true
     }
     val animatedProgress by animateFloatAsState(
-        targetValue   = if (progressVisible) pack.progress else 0f,
+        targetValue = if (progressVisible) pack.progress else 0f,
         animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
     )
 
-    val shadowModifier = modifier.dropShadow(
-        shape  = MaterialTheme.shapes.extraLarge,
-        shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = colorSet.accent),
-    )
+    val shadowModifier = modifier
+        .dropShadow(
+            shape = MaterialTheme.shapes.extraLarge,
+            shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = colorSet.accent),
+        )
 
     if (enableSwipeActions && actions.isNotEmpty()) {
         SwipeableCardContainer(
-            actions         = actions,
-            isSwiped        = isSwiped,
-            onSwipeOpen     = onSwipeOpen,
-            onSwipeClose    = onSwipeClose,
-            onTap           = onClick,
+            actions = actions,
+            isSwiped = isSwiped,
+            onSwipeOpen = onSwipeOpen,
+            onSwipeClose = onSwipeClose,
+            onTap = onClick,
             verticalActions = true,
-            modifier        = shadowModifier,
+            modifier = shadowModifier,
         ) {
             GridPackCardSurface(
-                pack             = pack,
-                colorSet         = colorSet,
-                semanticGold     = semantic.gold,
-                hasDue           = hasDue,
-                learnedPct       = learnedPct,
+                pack = pack,
+                colorSet = colorSet,
+                semanticGold = semantic.gold,
+                semanticGoldBg = semantic.goldBg,
+                hasDue = hasDue,
+                learnedPct = learnedPct,
                 animatedProgress = animatedProgress,
-                onClick          = onClick,
-                isClickable      = false,
+                onClick = onClick,
+                isClickable = false,
             )
         }
     } else {
         GridPackCardSurface(
-            pack             = pack,
-            colorSet         = colorSet,
-            semanticGold     = semantic.gold,
-            hasDue           = hasDue,
-            learnedPct       = learnedPct,
+            pack = pack,
+            colorSet = colorSet,
+            semanticGold = semantic.gold,
+            semanticGoldBg = semantic.goldBg,
+            hasDue = hasDue,
+            learnedPct = learnedPct,
             animatedProgress = animatedProgress,
-            onClick          = onClick,
-            isClickable      = true,
-            modifier         = shadowModifier,
+            onClick = onClick,
+            isClickable = true,
+            modifier = shadowModifier,
         )
     }
 }
@@ -144,6 +145,7 @@ private fun GridPackCardSurface(
     pack: PackDisplayItem,
     colorSet: CardColorSet,
     semanticGold: Color,
+    semanticGoldBg: Color,
     hasDue: Boolean,
     learnedPct: Int,
     animatedProgress: Float,
@@ -159,13 +161,14 @@ private fun GridPackCardSurface(
         color = MaterialTheme.colorScheme.surface,
     ) {
         GridPackCardContent(
-            pack             = pack,
-            colorSet         = colorSet,
-            semanticGold     = semanticGold,
-            hasDue           = hasDue,
-            learnedPct       = learnedPct,
+            pack = pack,
+            colorSet = colorSet,
+            semanticGold = semanticGold,
+            semanticGoldBg = semanticGoldBg,
+            hasDue = hasDue,
+            learnedPct = learnedPct,
             animatedProgress = animatedProgress,
-            onClick          = onClick,
+            onClick = onClick,
         )
     }
 }
@@ -175,6 +178,7 @@ private fun GridPackCardContent(
     pack: PackDisplayItem,
     colorSet: CardColorSet,
     semanticGold: Color,
+    semanticGoldBg: Color,
     hasDue: Boolean,
     learnedPct: Int,
     animatedProgress: Float,
@@ -185,64 +189,61 @@ private fun GridPackCardContent(
     Column(
         modifier = Modifier
             .fillMaxHeight()
-            .padding(
-                horizontal = sp.s14,
-                vertical   = sp.s14,
-            ),
+            .padding(sp.s16),
     ) {
 
         // ── Row 1: Emoji icon + category pill ─────────────────────────
         IconAndCategoryRow(
-            emoji    = pack.emoji,
+            emoji = pack.emoji,
             category = pack.category,
             colorSet = colorSet,
         )
 
         Spacer(Modifier.height(sp.s10))
 
-        // ── Title (2 lines reserved) ──────────────────────────────────
+        // ── Title (1 line) ────────────────────────────────────────────
         Text(
-            text     = pack.title,
-            style    = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight     = FontWeight.Bold
+            text = pack.title,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.SemiBold
             ),
-            color    = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            minLines = 2,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
 
-        Spacer(Modifier.height(sp.s10))
+        Spacer(Modifier.height(sp.s12))
 
         // ── Progress section: label row + bar ─────────────────────────
         ProgressSection(
-            mastered         = pack.masteredCards,
-            total            = pack.totalCards,
-            learnedPct       = learnedPct,
+            mastered = pack.masteredCards,
+            total = pack.totalCards,
+            learnedPct = learnedPct,
             animatedProgress = animatedProgress,
-            accent           = colorSet.accent,
+            accent = colorSet.accent,
         )
 
-        Spacer(Modifier.height(sp.s8))
+        Spacer(Modifier.height(sp.s14))
 
         // ── Meta row: last studied | due badge + streak ───────────────
         MetaRow(
             lastStudied = pack.lastStudiedLabel,
-            dueCards    = pack.cardsToReview,
-            streakDays  = pack.streakDays,
-            goldColor   = semanticGold,
-            hasDue      = hasDue,
+            dueCards = pack.cardsToReview,
+            streakDays = pack.streakDays,
+            goldColor = semanticGold,
+            goldBgColor = semanticGoldBg,
+            hasDue = hasDue,
         )
 
         Spacer(Modifier.weight(1f))
 
-        Spacer(Modifier.height(sp.s10))
+        Spacer(Modifier.height(sp.s12))
 
         // ── Continue / Done CTA ───────────────────────────────────────
         ContinueButton(
-            hasDue   = hasDue,
+            hasDue = hasDue,
             colorSet = colorSet,
-            onClick  = onClick,
+            onClick = onClick,
         )
     }
 }
@@ -255,24 +256,19 @@ private fun IconAndCategoryRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier          = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Emoji container — tinted bg + subtle accent border
         Box(
             modifier = Modifier
                 .size(38.adp)
-                .clip(MaterialTheme.synapse.radius.md)
-                .background(colorSet.bg)
-                .border(
-                    width = 1.dp,
-                    color = colorSet.border,
-                    shape = MaterialTheme.synapse.radius.md,
-                ),
+                .clip(MaterialTheme.shapes.medium)
+                .background(colorSet.bg),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text  = emoji,
+                text = emoji,
                 style = MaterialTheme.typography.titleMedium,
             )
         }
@@ -284,18 +280,17 @@ private fun IconAndCategoryRow(
             modifier = Modifier
                 .clip(CircleShape)
                 .background(colorSet.bg)
-                .border(1.dp, colorSet.border, CircleShape)
                 .padding(
                     horizontal = MaterialTheme.synapse.spacing.s8,
-                    vertical   = MaterialTheme.synapse.spacing.s4,
+                    vertical = MaterialTheme.synapse.spacing.s4,
                 ),
         ) {
             Text(
-                text     = category.uppercase(),
-                style    = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.ExtraBold
+                text = category.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold
                 ),
-                color    = colorSet.accent,
+                color = colorSet.accent,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -316,21 +311,21 @@ private fun ProgressSection(
 
     Column(modifier = modifier) {
         Row(
-            modifier              = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text  = stringResource(R.string.grid_card_learned, mastered, total),
+                text = stringResource(R.string.grid_card_learned, mastered, total),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.Medium
+                    fontWeight = FontWeight.Medium
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             )
             Text(
-                text  = stringResource(R.string.grid_card_pct, learnedPct),
+                text = stringResource(R.string.grid_card_pct, learnedPct),
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight    = FontWeight.ExtraBold
+                    fontWeight = FontWeight.ExtraBold
                 ),
                 color = accent,
             )
@@ -340,7 +335,7 @@ private fun ProgressSection(
 
         ProgressBar(
             progress = animatedProgress,
-            accent   = accent,
+            accent = accent,
         )
     }
 }
@@ -365,8 +360,8 @@ private fun ProgressBar(
                 .fillMaxWidth(fraction)
                 .fillMaxHeight()
                 .dropShadow(
-                    shape  = MaterialTheme.synapse.radius.xxxl,
-                    shadow = Shadow(radius = 6.dp, color = accent, alpha = 0.45f),
+                    shape = MaterialTheme.synapse.radius.xxxl,
+                    shadow = Shadow(radius = 6.adp, color = accent, alpha = 0.45f),
                 )
                 .clip(MaterialTheme.synapse.radius.xxxl)
                 .background(
@@ -384,39 +379,40 @@ private fun MetaRow(
     dueCards: Int,
     streakDays: Int,
     goldColor: Color,
+    goldBgColor: Color,
     hasDue: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val sp = MaterialTheme.synapse.spacing
 
     Row(
-        modifier              = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment     = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(sp.s4),
         ) {
             Icon(
-                painter           = painterResource(R.drawable.ic_clock),
+                painter = painterResource(R.drawable.ic_clock),
                 contentDescription = null,
-                tint              = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier          = Modifier.size(10.adp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(10.adp),
             )
             Text(
-                text  = lastStudied.displayString(),
+                text = lastStudied.displayString(),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             )
         }
 
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(sp.s6),
         ) {
             if (hasDue) {
-                DueBadge(dueCards = dueCards, goldColor = goldColor)
+                DueBadge(dueCards = dueCards, goldColor = goldColor, goldBgColor = goldBgColor)
             }
             if (streakDays > 0) {
                 StreakChip(streakDays = streakDays, goldColor = goldColor)
@@ -429,22 +425,22 @@ private fun MetaRow(
 private fun DueBadge(
     dueCards: Int,
     goldColor: Color,
+    goldBgColor: Color,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .clip(CircleShape)
-            .background(goldColor.copy(alpha = 0.13f))
-            .border(1.dp, goldColor.copy(alpha = 0.28f), CircleShape)
+            .background(goldBgColor)
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s8,
-                vertical   = MaterialTheme.synapse.spacing.s2,
+                vertical = MaterialTheme.synapse.spacing.s2,
             ),
     ) {
         Text(
-            text  = stringResource(R.string.due_badge, dueCards),
+            text = stringResource(R.string.due_badge, dueCards),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight    = FontWeight.Bold
+                fontWeight = FontWeight.Bold
             ),
             color = goldColor,
         )
@@ -458,20 +454,20 @@ private fun StreakChip(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier              = modifier,
-        verticalAlignment     = Alignment.CenterVertically,
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s2),
     ) {
         Icon(
-            painter           = painterResource(R.drawable.ic_zap),
+            painter = painterResource(R.drawable.ic_zap),
             contentDescription = null,
-            tint              = goldColor,
-            modifier          = Modifier.size(10.adp),
+            tint = goldColor,
+            modifier = Modifier.size(10.adp),
         )
         Text(
-            text  = stringResource(R.string.grid_card_streak, streakDays),
+            text = stringResource(R.string.grid_card_streak, streakDays),
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight    = FontWeight.Bold
+                fontWeight = FontWeight.Bold
             ),
             color = goldColor,
         )
@@ -485,54 +481,46 @@ private fun ContinueButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val ctaGradient = MaterialTheme.synapse.gradients.primary
+    // ✅ الحل: إذا كان هناك مراجعة، نستخدم خلفية شفافة بنسبة 15% من لون المادة
+    // والنص يكون بنفس لون المادة (Accent). هذا يريح العين في الدارك مود ويعطي فخامة مذهلة.
+    val buttonBg = if (hasDue) colorSet.accent.copy(alpha = 0.15f) else Color.Transparent
+    val buttonBorder = if (hasDue) Color.Transparent else colorSet.border
+    val textColor = colorSet.accent // النص دائماً يأخذ لون المادة المبهج
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(36.adp)
             .clip(MaterialTheme.shapes.large)
-            .then(
-                if (hasDue) {
-                    Modifier.background(ctaGradient)
-                } else {
-                    Modifier.border(
-                        width = 1.5.dp,
-                        color = colorSet.accent.copy(alpha = 0.30f),
-                        shape = MaterialTheme.shapes.large,
-                    )
-                }
+            .background(buttonBg)
+            .border(
+                width = 1.adp,
+                color = buttonBorder,
+                shape = MaterialTheme.shapes.large,
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick,
-            ),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Row(
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         ) {
             Text(
-                text  = stringResource(if (hasDue) R.string.grid_card_continue else R.string.grid_card_done),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight    = FontWeight.Bold
-                ),
-                color = if (hasDue) Color.White.copy(alpha = 0.92f) else colorSet.accent,
+                text = stringResource(if (hasDue) R.string.grid_card_continue else R.string.grid_card_done),
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = textColor,
             )
             if (hasDue) {
                 Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
-                    tint               = Color.White.copy(alpha = 0.92f),
-                    modifier           = Modifier.size(10.adp),
+                    tint = textColor,
+                    modifier = Modifier.size(10.adp),
                 )
             }
         }
     }
 }
-
 // ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Light — Due", showBackground = true)
@@ -541,12 +529,12 @@ private fun ContinueButton(
 private fun GridPackCardDuePreview() {
     SynapseTheme {
         GridPackCard(
-            pack        = PackDisplayItem.Mocks.first(),
+            pack = PackDisplayItem.Mocks.first(),
             animDelayMs = 0,
-            onClick     = {},
-            modifier    = Modifier
-                .padding(16.dp)
-                .width(180.dp),
+            onClick = {},
+            modifier = Modifier
+                .padding(16.adp)
+                .width(180.adp),
         )
     }
 }
@@ -557,12 +545,12 @@ private fun GridPackCardDuePreview() {
 private fun GridPackCardNoDuePreview() {
     SynapseTheme {
         GridPackCard(
-            pack        = PackDisplayItem.Mocks.last(),
+            pack = PackDisplayItem.Mocks.last(),
             animDelayMs = 0,
-            onClick     = {},
-            modifier    = Modifier
-                .padding(16.dp)
-                .width(180.dp),
+            onClick = {},
+            modifier = Modifier
+                .padding(16.adp)
+                .width(180.adp),
         )
     }
 }
