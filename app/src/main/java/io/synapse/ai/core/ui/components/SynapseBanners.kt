@@ -41,8 +41,8 @@ fun ErrorBanner(
 
     Surface(
         modifier = modifier,
-        color = MaterialTheme.colorScheme.errorContainer,
-        shape = MaterialTheme.synapse.radius.md,
+        color = MaterialTheme.synapse.semantic.errorContainer,
+        shape = MaterialTheme.shapes.medium,
     ) {
         Row(
             modifier = Modifier
@@ -55,7 +55,7 @@ fun ErrorBanner(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = MaterialTheme.synapse.semantic.error,
                 modifier = Modifier
                     .weight(1f)
                     .animateContentSize()
@@ -71,14 +71,14 @@ fun ErrorBanner(
                 Icon(
                     painter = painterResource(R.drawable.ic_x),
                     contentDescription = stringResource(R.string.banner_dismiss),
-                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    tint = MaterialTheme.synapse.semantic.error,
                     modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
             }
         }
     }
 }
-// ── Preview ───────────────────────────────────────────────────────────────────
+
 @Preview(name = "Error Banner — Light", showBackground = true)
 @Preview(name = "Error Banner — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable

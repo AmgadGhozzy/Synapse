@@ -47,9 +47,7 @@ fun CircularProgressRing(
     glowEnabled: Boolean = true,
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    val resolvedTrackColor = trackColor
-        ?: if (isDarkTheme) Color.White.copy(alpha = 0.07f)
-        else Color.Black.copy(alpha = 0.08f)
+    val resolvedTrackColor = trackColor ?: MaterialTheme.colorScheme.surfaceVariant
 
     val animatedProgress by animateFloatAsState(
         targetValue  = progress.coerceIn(0f, 1f),

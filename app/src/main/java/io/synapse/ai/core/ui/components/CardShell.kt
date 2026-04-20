@@ -17,9 +17,8 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import io.synapse.ai.core.theme.synapse
-import io.synapse.ai.core.theme.tokens.LocalAdaptiveScale
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
 
@@ -32,8 +31,6 @@ fun CardShell(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val scale = LocalAdaptiveScale.current
-
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -42,9 +39,14 @@ fun CardShell(
                 shadow = MaterialTheme.synapse.shadows.medium.toShadow(customColor = color)
             )
             .border(
-                width = Dp.Hairline,
-                brush = Brush.verticalGradient(listOf(color.copy(alpha = 0.15f), color.copy(alpha = 0.05f))),
-                shape = shape,
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.35f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                ),
+                shape = shape
             )
             .clip(shape)
             .background(bgGrad)
