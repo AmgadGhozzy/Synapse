@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -20,6 +19,7 @@ import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.ui.state.ToastType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -105,6 +106,19 @@ class SnackbarController(
         info(context.getString(messageRes))
     }
 
+    fun showToast(type: ToastType, message: String) {
+        when (type) {
+            ToastType.SUCCESS -> success(message)
+            ToastType.ERROR -> error(message)
+            ToastType.INFO -> info(message)
+            ToastType.WARNING -> info(message)
+        }
+    }
+
+    fun showToast(type: ToastType, @StringRes messageRes: Int) {
+        showToast(type, context.getString(messageRes))
+    }
+
     /**
      * Show custom message
      */
@@ -121,7 +135,7 @@ class SnackbarController(
                 duration = duration,
                 withDismissAction = actionLabel == null
             ).let { result ->
-                if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                if (result == SnackbarResult.ActionPerformed) {
                     action?.invoke()
                 }
             }
@@ -169,7 +183,6 @@ fun SnackbarHost(
             hostState = controller.hostState,
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(
                     bottom = 80.dp,
                     start  = MaterialTheme.synapse.spacing.screen,
@@ -246,7 +259,7 @@ private fun ModernSnackbar(
         },
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = MaterialTheme.synapse.radius.md,
+        shape = MaterialTheme.shapes.large,
         actionContentColor = contentColor
     ) {
         Row(
@@ -258,13 +271,13 @@ private fun ModernSnackbar(
                 Icon(
                     imageVector = it,
                     contentDescription = null,
-                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                     tint = contentColor
                 )
             }
             Text(
                 text = snackbarData.visuals.message,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.weight(1f, fill = false)
             )
         }

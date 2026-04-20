@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -42,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -50,8 +56,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
@@ -107,8 +115,8 @@ fun SynapseTopBar(
                 color = MaterialTheme.colorScheme.onBackground,
             )
         }
-
-        GoProButton(isPremium = isPremium, onClick = onPremiumClick)
+        UnlockAIButton(isPremium = isPremium, onClick = onPremiumClick)
+        //GoProButton(isPremium = isPremium, onClick = onPremiumClick)
     }
 }
 
@@ -132,7 +140,7 @@ private fun AvatarButton(
                 .background(MaterialTheme.synapse.gradients.primary)
                 .border(
                     width = 2.adp,
-                    brush = if (isPremium) MaterialTheme.synapse.gradients.gold
+                    brush = if (isPremium) MaterialTheme.synapse.gradients.premium
                     else MaterialTheme.synapse.gradients.primary,
                     shape = shape,
                 )
@@ -262,7 +270,7 @@ private fun GoProButton(
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .background(MaterialTheme.synapse.gradients.gold),
+                            .background(MaterialTheme.synapse.gradients.premium),
                     )
                     // Shimmer sweep
                     Box(
@@ -277,11 +285,11 @@ private fun GoProButton(
                     )
                     // Label row
                     Row(
-                        modifier = Modifier.padding(bottom = 1.adp)
+                        modifier = Modifier
                             .padding(
-                            horizontal = MaterialTheme.synapse.spacing.s16,
-                            vertical = MaterialTheme.synapse.spacing.s10,
-                        ),
+                                horizontal = MaterialTheme.synapse.spacing.s16,
+                                vertical = MaterialTheme.synapse.spacing.s10,
+                            ),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
                     ) {
@@ -296,10 +304,11 @@ private fun GoProButton(
                         Text(
                             text = pillLabel,
                             style = MaterialTheme.typography.labelLarge.copy(
-                                lineHeight = 24.asp,
-                                fontWeight = FontWeight.ExtraBold
+                                lineHeight = 36.asp,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center
                             ),
-                            color = Color.White.copy(alpha = 0.9f),
+                            color = Color.White.copy(alpha = 0.9f)
                         )
                     }
                 }
@@ -307,7 +316,81 @@ private fun GoProButton(
         }
     }
 }
+@Composable
+fun UnlockAIButton(
+    isPremium: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "glow")
 
+    val shimmerOffset by infiniteTransition.animateFloat(
+        initialValue = -300f,
+        targetValue = 900f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        )
+    )
+    val pillLabel = if (isPremium) stringResource(R.string.go_pro_label_premium)
+    else stringResource(R.string.go_pro_label)
+    val shape = RoundedCornerShape(18.dp)
+
+    val baseColor = if (isPremium) MaterialTheme.synapse.semantic.gold else MaterialTheme.synapse.semantic.accent
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(baseColor.copy(alpha = 0.12f))
+            .border(
+                width = 1.dp,
+                color = baseColor.copy(alpha = 0.20f),
+                shape = shape
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onClick() }
+    ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            baseColor.copy(alpha = 0.15f),
+                            Color.Transparent
+                        ),
+                        start = Offset(shimmerOffset, 0f),
+                        end = Offset(shimmerOffset + 220f, 220f)
+                    )
+                )
+        )
+
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.adp, vertical = 10.adp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.adp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.AutoAwesome,
+                contentDescription = null,
+                tint = baseColor,
+                modifier = Modifier.size(18.adp)
+            )
+
+            Text(
+                text = pillLabel,
+                color = baseColor,
+                fontSize = 14.asp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.2.asp
+            )
+        }
+    }
+}
 
 @Preview(name = "Light", showBackground = true, locale = "ar")
 @Preview(name = "Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
