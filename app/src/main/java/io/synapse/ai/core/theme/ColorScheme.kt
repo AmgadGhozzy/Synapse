@@ -4,113 +4,90 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import io.synapse.ai.core.theme.tokens.BrandColors
 
-/**
- * ══════════════════════════════════════════════════════════════════════
- * ColorScheme.kt — Synapse Material 3 Color Schemes
- * ══════════════════════════════════════════════════════════════════════
- *
- * WCAG AA compliance verified:
- *   Dark:  primary (#7B6FFF) on background (#09090F) → 5.4:1 ✓
- *          secondary (#818CF8) on background         → 4.8:1 ✓
- *          tertiary (#FBB830) on background          → 9.1:1 ✓
- *          onSurface (#EDE9FE) on surface (#0D0B25)  → 13.2:1 ✓
- *   Light: primary (#4F46E5) on white — bold ≥18sp  → 3.85:1 ✓ (AA large)
- *          secondary (#4338CA) on white              → 5.9:1 ✓
- *          onSurface (#0D0B22) on white              → 19.6:1 ✓
- * ══════════════════════════════════════════════════════════════════════
- */
-
 val SynapseLightColorScheme = lightColorScheme(
 
-    // ── Primary ──────────────────────────────────────────────────────────────
-    primary             = BrandColors.BrandPrimaryLight,      // #4F46E5 Indigo600
-    onPrimary           = White,
-    primaryContainer    = BrandColors.BrandNeutralCardLight,  // #EDE9FE Violet100
-    onPrimaryContainer  = Violet950,                          // #2E1065
-    inversePrimary      = BrandColors.BrandPrimaryDark,       // #7B6FFF VioletBright
+    primary = BrandColors.PrimaryLight,
+    onPrimary = BrandColors.OnPrimaryLight,
+    primaryContainer = Indigo50,
+    onPrimaryContainer = Indigo950,
+    inversePrimary = BrandColors.PrimaryDark,
 
-    // ── Secondary ─────────────────────────────────────────────────────────────
-    secondary           = BrandColors.BrandSecondaryLight,    // #4338CA Indigo700
-    onSecondary         = White,
-    secondaryContainer  = Indigo50,                           // #EEF2FF
-    onSecondaryContainer = Indigo950,                         // #1E1B4B
+    secondary = BrandColors.SecondaryLight,
+    onSecondary = BrandColors.OnSecondaryLight,
+    secondaryContainer = Violet50,
+    onSecondaryContainer = Violet900,
 
-    // ── Tertiary (Gold) ───────────────────────────────────────────────────────
-    tertiary            = BrandColors.BrandGoldLight,         // #D97706 Amber600
-    onTertiary          = White,
-    tertiaryContainer   = Amber50,                            // #FFFBEB
-    onTertiaryContainer = Amber900,                           // #78350F
+    tertiary = BrandColors.TertiaryLight,
+    onTertiary = BrandColors.OnTertiaryLight,
+    tertiaryContainer = Amber50,
+    onTertiaryContainer = Slate950,
 
-    // ── Background & Surface ──────────────────────────────────────────────────
-    background          = BrandColors.BrandNeutralBgLight,    // #F5F3FF Violet50
-    onBackground        = SynapseNearBlack,                   // #0D0B22
+    background = BrandColors.NeutralLightBg,
+    onBackground = BrandColors.OnLight,
 
-    surface             = White,
-    onSurface           = SynapseNearBlack,                   // #0D0B22
-    surfaceVariant      = BrandColors.BrandNeutralCardLight,  // #EDE9FE Violet100
-    onSurfaceVariant    = SynapseOnSurfaceVariantLt,          // #4A4570
-    surfaceTint         = BrandColors.BrandPrimaryLight,      // #4F46E5
+    surface = BrandColors.NeutralLightSurface,
+    onSurface = BrandColors.OnLight,
 
-    // ── Inverse ───────────────────────────────────────────────────────────────
-    inverseSurface      = BrandColors.BrandNeutralSurfaceDark, // #0D0B25
-    inverseOnSurface    = BrandColors.BrandNeutralCardLight,   // #EDE9FE
+    // used now
+    surfaceVariant = BrandColors.NeutralLightSurfaceLow,
+    onSurfaceVariant = BrandColors.OnLightMuted,
 
-    // ── Error ─────────────────────────────────────────────────────────────────
-    error               = BrandColors.BrandErrorLight,        // #DC2626 Red600
-    onError             = White,
-    errorContainer      = Red50,                              // #FEF2F2
-    onErrorContainer    = Red950,                             // #450A0A
+    inverseSurface = BrandColors.NeutralDarkSurface,
+    inverseOnSurface = BrandColors.OnDark,
 
-    // ── Outlines ──────────────────────────────────────────────────────────────
-    outline             = SynapseOutlineLt,                   // #8B87B8
-    outlineVariant      = SynapseOutlineVariantLt,            // #D4CFEE
-    scrim               = SynapseScrim,                       // #0A0820
+    surfaceTint = BrandColors.PrimaryLight,
+
+    error = BrandColors.ErrorLight,
+    onError = BrandColors.OnErrorLight,
+    errorContainer = Red50,
+    onErrorContainer = Red950,
+
+    outline = BrandColors.OutlineLight,
+    outlineVariant = BrandColors.OutlineVariantLight,
+
+    scrim = Black
 )
 
 val SynapseDarkColorScheme = darkColorScheme(
 
-    // ── Primary ──────────────────────────────────────────────────────────────
-    // [FIX] Was Indigo500 (#6366F1) — now VioletBright (#7B6FFF): 5.4:1 on #09090F
-    primary             = BrandColors.BrandPrimaryDark,       // #7B6FFF VioletBright
-    onPrimary           = White,
-    primaryContainer    = BrandColors.BrandNeutralElevatedDark, // #1B183E
-    onPrimaryContainer  = BrandColors.BrandPrimaryPale,       // #C4B5FD Violet300
-    inversePrimary      = BrandColors.BrandPrimaryLight,      // #4F46E5 Indigo600
+    primary = BrandColors.PrimaryDark,
+    onPrimary = BrandColors.OnPrimaryDark,
+    primaryContainer = Indigo950,
+    onPrimaryContainer = Indigo50,
+    inversePrimary = BrandColors.PrimaryLight,
 
-    // ── Secondary ─────────────────────────────────────────────────────────────
-    secondary           = BrandColors.BrandSecondaryDark,     // #818CF8 Indigo400
-    onSecondary         = BrandColors.BrandNeutralDeepDark,   // #09090F
-    secondaryContainer  = Indigo950,                          // #1E1B4B
-    onSecondaryContainer = Indigo200,                         // #C7D2FE
+    secondary = BrandColors.SecondaryDark,
+    onSecondary = BrandColors.OnSecondaryDark,
+    secondaryContainer = Violet950,
+    onSecondaryContainer = Violet50,
 
-    // ── Tertiary (Gold) ───────────────────────────────────────────────────────
-    tertiary            = BrandColors.BrandGoldDark,          // #FBB830 SynapseGold
-    onTertiary          = BrandColors.BrandNeutralDeepDark,   // #09090F
-    tertiaryContainer   = Amber950,                           // #451A03
-    onTertiaryContainer = Amber200,                           // #FDE68A
+    tertiary = BrandColors.TertiaryDark,
+    onTertiary = BrandColors.OnTertiaryDark,
+    tertiaryContainer = Amber950,
+    onTertiaryContainer = Amber50,
 
-    // ── Background & Surface ──────────────────────────────────────────────────
-    background          = BrandColors.BrandNeutralDeepDark,   // #09090F
-    onBackground        = BrandColors.BrandNeutralCardLight,  // #EDE9FE Violet100
+    background = BrandColors.NeutralDarkBg,
+    onBackground = BrandColors.OnDark,
 
-    surface             = BrandColors.BrandNeutralSurfaceDark, // #0D0B25
-    onSurface           = BrandColors.BrandNeutralCardLight,   // #EDE9FE Violet100
-    surfaceVariant      = BrandColors.BrandNeutralCardDark,    // #13112E
-    onSurfaceVariant    = SynapseTextSub,                      // #9896C8
-    surfaceTint         = BrandColors.BrandPrimaryDark,        // #7B6FFF
+    surface = BrandColors.NeutralDarkSurface,
+    onSurface = BrandColors.OnDark,
 
-    // ── Inverse ───────────────────────────────────────────────────────────────
-    inverseSurface      = BrandColors.BrandNeutralCardLight,  // #EDE9FE
-    inverseOnSurface    = BrandColors.BrandNeutralSurfaceDark, // #0D0B25
+    // used now
+    surfaceVariant = BrandColors.NeutralDarkSurfaceLow,
+    onSurfaceVariant = BrandColors.OnDarkMuted,
 
-    // ── Error ─────────────────────────────────────────────────────────────────
-    error               = BrandColors.BrandErrorDark,         // #F87171 Red400
-    onError             = Red950,                             // #450A0A
-    errorContainer      = Red900,                             // #7F1D1D
-    onErrorContainer    = Red200,                             // #FECACA
+    inverseSurface = White,
+    inverseOnSurface = Slate900,
 
-    // ── Outlines ──────────────────────────────────────────────────────────────
-    outline             = SynapseOutlineDk,                   // #524D8A
-    outlineVariant      = SynapseOutlineVariantDk,            // #1B1A3A
-    scrim               = SynapseScrim,                       // #0A0820
+    surfaceTint = BrandColors.PrimaryDark,
+
+    error = BrandColors.ErrorDark,
+    onError = BrandColors.OnErrorDark,
+    errorContainer = Red950,
+    onErrorContainer = Red50,
+
+    outline = BrandColors.OutlineDark,
+    outlineVariant = BrandColors.OutlineVariantDark,
+
+    scrim = Black
 )
