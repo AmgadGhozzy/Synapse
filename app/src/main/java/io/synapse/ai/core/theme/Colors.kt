@@ -2,14 +2,6 @@ package io.synapse.ai.core.theme
 
 import androidx.compose.ui.graphics.Color
 
-/**
- * Synapse Color Palette
- * Section 1: Tailwind CSS v3.4 palette
- * Section 2: Synapse custom brand intermediaries
- */
-
-// SECTION 1 — Tailwind CSS v3.4
-
 // ── Slate ────────────────────────────────────────────────────────────────────
 val Slate25  = Color(0xFFFCFDFE)
 val Slate50  = Color(0xFFF8FAFC)
@@ -325,10 +317,10 @@ val SynapseVioletMid = Color(0xFF4C3EC7)
 /** #FBB830 — Premium gold accent */
 val SynapseGold = Color(0xFFFBB830)
 
-/** #FDCA6E — Pale premium highlight for shimmer and small accent chips */
+/** #FDCA6E — Pale gold highlight for shimmer and small accent chips */
 val SynapseGoldPale = Color(0xFFFDCA6E)
 
-/** #92580A — Deep premium gold for darker gradient anchors */
+/** #92580A — Deep gold gold for darker gradient anchors */
 val SynapseGoldDeep = Color(0xFF92580A)
 
 // ── Neutral Surface Stack ─────────────────────────────────────────────────────
@@ -374,7 +366,7 @@ val SynapseOutlineVariantDk = Color(0xFF1B1A3A)
 // ── Streak Hero Card ──────────────────────────────────────────────────────────
 
 /** #1C1200 — Streak hero dark bg start (near-black amber) */
-val SynapseStreakBgDark1 = Color(0xFF1C1200)
+val StreakBackgroundDeep = Color(0xFF1C1200)
 
 /** #2D1F02 — Streak hero dark bg mid */
-val SynapseStreakBgDark2 = Color(0xFF2D1F02)
+val StreakSurfaceDark = Color(0xFF281E02)
