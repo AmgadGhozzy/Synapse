@@ -1,8 +1,8 @@
-package com.venom.synapse.features.dashboard.presentation.state
+package io.synapse.ai.features.dashboard.presentation.state
 
 import androidx.compose.runtime.Immutable
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.state.PackDisplayItem
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.PackDisplayItem
 
 @Immutable
 data class DashboardUiState(
@@ -12,12 +12,9 @@ data class DashboardUiState(
     val dailyGoal: Int = 30,
     val streakDays: Int = 0,
     val accuracyPercent: Int = 0,
-    val accuracyDeltaRes: Int? = null,
-    val accuracyDelta: Int? = null,
-    val timeStudiedMinutes: Int = 0,
+    val masteredCardsCount: Int = 0,
     val totalDue: Int = 0,
     val totalCardsCount: Int = 0,
-    val masteredCardsCount: Int = 0,
 
     val packs: List<PackDisplayItem> = emptyList(),
     val allPackIds: List<Long> = emptyList(),

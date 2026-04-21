@@ -50,9 +50,9 @@ import io.synapse.ai.core.ui.state.PackDisplayItem
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.dashboard.presentation.components.DailyGoalCard
 import io.synapse.ai.features.dashboard.presentation.components.DashboardFab
+import io.synapse.ai.features.dashboard.presentation.components.DashboardKpiCard
 import io.synapse.ai.features.dashboard.presentation.components.EmptyPacksState
 import io.synapse.ai.features.dashboard.presentation.components.SectionHeader
-import io.synapse.ai.features.dashboard.presentation.components.StatsRow
 import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
 import io.synapse.ai.features.dashboard.presentation.viewmodel.DashboardViewModel
 import io.synapse.ai.ui.viewmodel.RootViewModel
@@ -72,25 +72,35 @@ fun DashboardScreen(
     val listState = rememberLazyGridState()
     val context = LocalContext.current
 
-    val isFabExpanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    val isAtTop by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    var shouldCollapseFab by remember { mutableStateOf(false) }
+
+    val isFabExpanded by remember(isAtTop, shouldCollapseFab) {
+        derivedStateOf { isAtTop && !shouldCollapseFab }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
-                is UiEffect.Navigate  -> onNavigate(effect.route)
-                is UiEffect.ShowToast -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.Navigate -> onNavigate(effect.route)
+                is UiEffect.ShowToast -> snackbarController.showToast(
+                    effect.type,
+                    effect.text.asString(context)
+                )
+
                 is UiEffect.ShowError -> snackbarController.error(effect.text.asString(context))
-                else                  -> Unit
+                else -> Unit
             }
         }
     }
 
     var isVisible by remember { mutableStateOf(false) }
-    // Sync time-of-day greeting into the shell top-bar.
-    LaunchedEffect(uiState.greetingRes) {
+    LaunchedEffect(Unit) {
         rootViewModel.setSubtitleResOverride(uiState.greetingRes)
         delay(50)
         isVisible = true
+        delay(10_000)
+        shouldCollapseFab = true
     }
     DisposableEffect(Unit) {
         onDispose { rootViewModel.clearSubtitleResOverride() }
@@ -100,46 +110,47 @@ fun DashboardScreen(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { snackbarController.SnackbarHost() },
-        containerColor       = Color.Transparent,
+        containerColor = Color.Transparent,
         floatingActionButton = {
             DashboardFab(
-                isLocked  = uiState.isPackLimitReached,
+                isLocked = uiState.isPackLimitReached,
                 isExpanded = isFabExpanded,
-                onClick   = viewModel::onAddPack,
+                onClick = viewModel::onAddPack,
                 isVisible = isVisible,
-                modifier  = Modifier.padding(bottom = MaterialTheme.synapse.spacing.fabBottom),
+                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.fabBottom),
             )
         },
-    ) { innerPadding ->
+
+        ) { innerPadding ->
         DashboardContent(
-            uiState         = uiState,
-            listState       = listState,
+            uiState = uiState,
+            listState = listState,
             onStartStudying = viewModel::onStartStudying,
-            onPackTapped    = viewModel::onPackTapped,
-            onDeletePack    = viewModel::onDeletePack,
-            onEditPack      = viewModel::onEditPack,
-            onExportPack    = viewModel::onExportPack,
-            onSeeAllPacks   = viewModel::onSeeAllPacks,
-            onAddPack       = viewModel::onAddPack,
-            modifier        = Modifier.padding(innerPadding),
+            onPackTapped = viewModel::onPackTapped,
+            onDeletePack = viewModel::onDeletePack,
+            onEditPack = viewModel::onEditPack,
+            onExportPack = viewModel::onExportPack,
+            onSeeAllPacks = viewModel::onSeeAllPacks,
+            onAddPack = viewModel::onAddPack,
+            modifier = Modifier.padding(innerPadding),
         )
     }
 }
 
 @Composable
 private fun DashboardContent(
-    uiState         : DashboardUiState,
-    listState       : LazyGridState,
-    onStartStudying : () -> Unit,
-    onPackTapped    : (Long) -> Unit,
-    onDeletePack    : (Long) -> Unit,
-    onEditPack      : (Long) -> Unit,
-    onExportPack    : (Long) -> Unit,
-    onSeeAllPacks   : () -> Unit,
-    onAddPack       : () -> Unit,
-    modifier        : Modifier = Modifier,
+    uiState: DashboardUiState,
+    listState: LazyGridState,
+    onStartStudying: () -> Unit,
+    onPackTapped: (Long) -> Unit,
+    onDeletePack: (Long) -> Unit,
+    onEditPack: (Long) -> Unit,
+    onExportPack: (Long) -> Unit,
+    onSeeAllPacks: () -> Unit,
+    onAddPack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    var openSwipedPackId   by remember { mutableStateOf<Long?>(null) }
+    var openSwipedPackId by remember { mutableStateOf<Long?>(null) }
     var pendingDeletePackId by remember { mutableStateOf<Long?>(null) }
 
     pendingDeletePackId?.let { packId ->
@@ -150,40 +161,41 @@ private fun DashboardContent(
     }
 
     // Callbacks extracted so they aren't recreated on every recomposition.
-    val onSwipeOpen  : (Long) -> Unit = remember { { id -> openSwipedPackId = id } }
-    val onSwipeClose : (Long) -> Unit = remember { { id -> if (openSwipedPackId == id) openSwipedPackId = null } }
-    val onPendingDel : (Long) -> Unit = remember { { id -> pendingDeletePackId = id } }
+    val onSwipeOpen: (Long) -> Unit = remember { { id -> openSwipedPackId = id } }
+    val onSwipeClose: (Long) -> Unit =
+        remember { { id -> if (openSwipedPackId == id) openSwipedPackId = null } }
+    val onPendingDel: (Long) -> Unit = remember { { id -> pendingDeletePackId = id } }
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         if (maxWidth > WIDE_LAYOUT_BREAKPOINT) {
             LandscapeLayout(
-                uiState         = uiState,
-                listState       = listState,
+                uiState = uiState,
+                listState = listState,
                 openSwipedPackId = openSwipedPackId,
                 onStartStudying = onStartStudying,
-                onPackTapped    = onPackTapped,
-                onEditPack      = onEditPack,
-                onExportPack    = onExportPack,
-                onSwipeOpen     = onSwipeOpen,
-                onSwipeClose    = onSwipeClose,
+                onPackTapped = onPackTapped,
+                onEditPack = onEditPack,
+                onExportPack = onExportPack,
+                onSwipeOpen = onSwipeOpen,
+                onSwipeClose = onSwipeClose,
                 onPendingDelete = onPendingDel,
-                onSeeAllPacks   = onSeeAllPacks,
-                onAddPack       = onAddPack,
+                onSeeAllPacks = onSeeAllPacks,
+                onAddPack = onAddPack,
             )
         } else {
             PortraitLayout(
-                uiState          = uiState,
-                listState        = listState,
+                uiState = uiState,
+                listState = listState,
                 openSwipedPackId = openSwipedPackId,
-                onStartStudying  = onStartStudying,
-                onPackTapped     = onPackTapped,
-                onEditPack       = onEditPack,
-                onExportPack     = onExportPack,
-                onSwipeOpen      = onSwipeOpen,
-                onSwipeClose     = onSwipeClose,
-                onPendingDelete  = onPendingDel,
-                onSeeAllPacks    = onSeeAllPacks,
-                onAddPack        = onAddPack,
+                onStartStudying = onStartStudying,
+                onPackTapped = onPackTapped,
+                onEditPack = onEditPack,
+                onExportPack = onExportPack,
+                onSwipeOpen = onSwipeOpen,
+                onSwipeClose = onSwipeClose,
+                onPendingDelete = onPendingDel,
+                onSeeAllPacks = onSeeAllPacks,
+                onAddPack = onAddPack,
             )
         }
     }
@@ -191,68 +203,69 @@ private fun DashboardContent(
 
 @Composable
 private fun PortraitLayout(
-    uiState          : DashboardUiState,
-    listState        : LazyGridState,
-    openSwipedPackId : Long?,
-    onStartStudying  : () -> Unit,
-    onPackTapped     : (Long) -> Unit,
-    onEditPack       : (Long) -> Unit,
-    onExportPack     : (Long) -> Unit,
-    onSwipeOpen      : (Long) -> Unit,
-    onSwipeClose     : (Long) -> Unit,
-    onPendingDelete  : (Long) -> Unit,
-    onSeeAllPacks    : () -> Unit,
-    onAddPack        : () -> Unit,
-    modifier         : Modifier = Modifier,
+    uiState: DashboardUiState,
+    listState: LazyGridState,
+    openSwipedPackId: Long?,
+    onStartStudying: () -> Unit,
+    onPackTapped: (Long) -> Unit,
+    onEditPack: (Long) -> Unit,
+    onExportPack: (Long) -> Unit,
+    onSwipeOpen: (Long) -> Unit,
+    onSwipeClose: (Long) -> Unit,
+    onPendingDelete: (Long) -> Unit,
+    onSeeAllPacks: () -> Unit,
+    onAddPack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val spacing      = MaterialTheme.synapse.spacing
+    val spacing = MaterialTheme.synapse.spacing
     val sectionTitle = stringResource(
         if (uiState.totalPackCount > 0) R.string.section_jump_back_in
         else R.string.dashboard_empty_section_title,
     )
 
     LazyVerticalGrid(
-        columns              = GridCells.Adaptive(minSize = 180.dp),
-        state                = listState,
-        contentPadding       = PaddingValues(
-            start  = spacing.screen,
-            end    = spacing.screen,
-            top    = spacing.screenContentTop,
+        columns = GridCells.Adaptive(minSize = 180.dp),
+        state = listState,
+        contentPadding = PaddingValues(
+            start = spacing.screen,
+            end = spacing.screen,
+            top = spacing.screenContentTop,
             bottom = spacing.screenContentBottom,
         ),
-        verticalArrangement  = Arrangement.spacedBy(spacing.s12),
-        horizontalArrangement = Arrangement.spacedBy(spacing.s12),
-        modifier             = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxSize(),
     ) {
 
         // ── Daily Goal Card ───────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             DailyGoalCard(
-                todayStudied    = uiState.todayStudied,
-                dailyGoal       = uiState.dailyGoal,
-                streakDays      = uiState.streakDays,
-                totalDue        = uiState.totalDue,
+                todayStudied = uiState.todayStudied,
+                dailyGoal = uiState.dailyGoal,
+                streakDays = uiState.streakDays,
+                totalDue = uiState.totalDue,
                 onStartStudying = onStartStudying,
             )
         }
 
-        // ── Stats Row ─────────────────────────────────────────────────
+        // ── KPI Card ─────────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
-            StatsRow(
-                streak          = uiState.streakDays,
+            DashboardKpiCard(
+                streakDays = uiState.streakDays,
                 accuracyPercent = uiState.accuracyPercent,
-                accuracyDelta   = uiState.accuracyDelta,
-                accuracyDeltaRes = uiState.accuracyDeltaRes,
-                timeMinutes     = uiState.timeStudiedMinutes,
+                masteredCards = uiState.masteredCardsCount,
+                modifier = Modifier
+                    .padding(top = spacing.s12)
+                    .padding(horizontal = spacing.s16),
             )
         }
 
         // ── Section header ────────────────────────────────────────────
         item(span = { GridItemSpan(maxLineSpan) }) {
             SectionHeader(
-                title      = sectionTitle,
-                onSeeAll   = onSeeAllPacks,
+                title = sectionTitle,
+                onSeeAll = onSeeAllPacks,
                 showSeeAll = uiState.totalPackCount > 0,
+                modifier = Modifier.padding(horizontal = spacing.s18),
             )
         }
 
@@ -263,15 +276,18 @@ private fun PortraitLayout(
         } else {
             items(uiState.packs, key = { it.id }) { pack ->
                 PackCard(
-                    pack             = pack,
+                    pack = pack,
                     openSwipedPackId = openSwipedPackId,
-                    onPackTapped     = onPackTapped,
-                    onEditPack       = onEditPack,
-                    onExportPack     = onExportPack,
-                    onSwipeOpen      = onSwipeOpen,
-                    onSwipeClose     = onSwipeClose,
-                    onPendingDelete  = onPendingDelete,
-                    modifier         = Modifier.fillMaxWidth().animateItem(),
+                    onPackTapped = onPackTapped,
+                    onEditPack = onEditPack,
+                    onExportPack = onExportPack,
+                    onSwipeOpen = onSwipeOpen,
+                    onSwipeClose = onSwipeClose,
+                    onPendingDelete = onPendingDelete,
+                    modifier = Modifier
+                        .padding(horizontal = spacing.s8)
+                        .fillMaxWidth()
+                        .animateItem(),
                 )
             }
         }
@@ -280,50 +296,50 @@ private fun PortraitLayout(
 
 @Composable
 private fun LandscapeLayout(
-    uiState          : DashboardUiState,
-    listState        : LazyGridState,
-    openSwipedPackId : Long?,
-    onStartStudying  : () -> Unit,
-    onPackTapped     : (Long) -> Unit,
-    onEditPack       : (Long) -> Unit,
-    onExportPack     : (Long) -> Unit,
-    onSwipeOpen      : (Long) -> Unit,
-    onSwipeClose     : (Long) -> Unit,
-    onPendingDelete  : (Long) -> Unit,
-    onSeeAllPacks    : () -> Unit,
-    onAddPack        : () -> Unit,
-    modifier         : Modifier = Modifier,
+    uiState: DashboardUiState,
+    listState: LazyGridState,
+    openSwipedPackId: Long?,
+    onStartStudying: () -> Unit,
+    onPackTapped: (Long) -> Unit,
+    onEditPack: (Long) -> Unit,
+    onExportPack: (Long) -> Unit,
+    onSwipeOpen: (Long) -> Unit,
+    onSwipeClose: (Long) -> Unit,
+    onPendingDelete: (Long) -> Unit,
+    onSeeAllPacks: () -> Unit,
+    onAddPack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val spacing = MaterialTheme.synapse.spacing
 
     Row(
-        modifier              = modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(horizontal = spacing.screen),
         horizontalArrangement = Arrangement.spacedBy(spacing.screen),
     ) {
         SummaryPanel(
-            uiState         = uiState,
+            uiState = uiState,
             onStartStudying = onStartStudying,
-            onSeeAllPacks   = onSeeAllPacks,
-            modifier        = Modifier
+            onSeeAllPacks = onSeeAllPacks,
+            modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
         )
 
         // ── Right: Pack grid ──────────────────────────────────────────
         PackGrid(
-            packs            = uiState.packs,
-            listState        = listState,
+            packs = uiState.packs,
+            listState = listState,
             openSwipedPackId = openSwipedPackId,
-            onPackTapped     = onPackTapped,
-            onEditPack       = onEditPack,
-            onExportPack     = onExportPack,
-            onSwipeOpen      = onSwipeOpen,
-            onSwipeClose     = onSwipeClose,
-            onPendingDelete  = onPendingDelete,
-            onAddPack        = onAddPack,
-            modifier         = Modifier
+            onPackTapped = onPackTapped,
+            onEditPack = onEditPack,
+            onExportPack = onExportPack,
+            onSwipeOpen = onSwipeOpen,
+            onSwipeClose = onSwipeClose,
+            onPendingDelete = onPendingDelete,
+            onAddPack = onAddPack,
+            modifier = Modifier
                 .weight(2f)
                 .fillMaxHeight(),
         )
@@ -332,39 +348,37 @@ private fun LandscapeLayout(
 
 @Composable
 private fun SummaryPanel(
-    uiState         : DashboardUiState,
-    onStartStudying : () -> Unit,
-    onSeeAllPacks   : () -> Unit,
-    modifier        : Modifier = Modifier,
+    uiState: DashboardUiState,
+    onStartStudying: () -> Unit,
+    onSeeAllPacks: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val spacing = MaterialTheme.synapse.spacing
 
     Column(
-        modifier              = modifier
+        modifier = modifier
             .verticalScroll(rememberScrollState())
             .padding(top = spacing.screenContentTop, bottom = spacing.screenContentBottom),
-        verticalArrangement   = Arrangement.spacedBy(spacing.listItemGap),
+        verticalArrangement = Arrangement.spacedBy(spacing.listItemGap),
     ) {
         DailyGoalCard(
-            todayStudied    = uiState.todayStudied,
-            dailyGoal       = uiState.dailyGoal,
-            streakDays      = uiState.streakDays,
-            totalDue        = uiState.totalDue,
+            todayStudied = uiState.todayStudied,
+            dailyGoal = uiState.dailyGoal,
+            streakDays = uiState.streakDays,
+            totalDue = uiState.totalDue,
             onStartStudying = onStartStudying,
         )
-        StatsRow(
-            streak           = uiState.streakDays,
-            accuracyPercent  = uiState.accuracyPercent,
-            accuracyDelta    = uiState.accuracyDelta,
-            accuracyDeltaRes = uiState.accuracyDeltaRes,
-            timeMinutes      = uiState.timeStudiedMinutes,
+        DashboardKpiCard(
+            streakDays = uiState.streakDays,
+            accuracyPercent = uiState.accuracyPercent,
+            masteredCards = uiState.masteredCardsCount,
         )
         SectionHeader(
-            title      = stringResource(
+            title = stringResource(
                 if (uiState.totalPackCount > 0) R.string.section_jump_back_in
                 else R.string.dashboard_empty_section_title,
             ),
-            onSeeAll   = onSeeAllPacks,
+            onSeeAll = onSeeAllPacks,
             showSeeAll = uiState.totalPackCount > 0,
         )
     }
@@ -372,57 +386,59 @@ private fun SummaryPanel(
 
 @Composable
 private fun PackGrid(
-    packs            : List<PackDisplayItem>,
-    listState        : LazyGridState,
-    openSwipedPackId : Long?,
-    onPackTapped     : (Long) -> Unit,
-    onEditPack       : (Long) -> Unit,
-    onExportPack     : (Long) -> Unit,
-    onSwipeOpen      : (Long) -> Unit,
-    onSwipeClose     : (Long) -> Unit,
-    onPendingDelete  : (Long) -> Unit,
-    onAddPack        : () -> Unit,
-    modifier         : Modifier = Modifier,
+    packs: List<PackDisplayItem>,
+    listState: LazyGridState,
+    openSwipedPackId: Long?,
+    onPackTapped: (Long) -> Unit,
+    onEditPack: (Long) -> Unit,
+    onExportPack: (Long) -> Unit,
+    onSwipeOpen: (Long) -> Unit,
+    onSwipeClose: (Long) -> Unit,
+    onPendingDelete: (Long) -> Unit,
+    onAddPack: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val spacing = MaterialTheme.synapse.spacing
 
     if (packs.isEmpty()) {
         Box(
             modifier = modifier.padding(
-                top    = spacing.screenContentTop,
+                top = spacing.screenContentTop,
                 bottom = spacing.screenContentBottom,
             ),
         ) {
             EmptyPacksState(
                 onAddPack = onAddPack,
-                modifier  = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         return
     }
 
     LazyVerticalGrid(
-        columns               = GridCells.Adaptive(minSize = 180.dp),
-        state                 = listState,
-        contentPadding        = PaddingValues(
-            top    = spacing.screenContentTop,
+        columns = GridCells.Adaptive(minSize = 180.dp),
+        state = listState,
+        contentPadding = PaddingValues(
+            top = spacing.screenContentTop,
             bottom = spacing.screenContentBottom,
         ),
-        verticalArrangement   = Arrangement.spacedBy(spacing.listItemGap),
-        horizontalArrangement = Arrangement.spacedBy(spacing.s12),
-        modifier              = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier,
     ) {
         items(packs, key = { it.id }) { pack ->
             PackCard(
-                pack             = pack,
+                pack = pack,
                 openSwipedPackId = openSwipedPackId,
-                onPackTapped     = onPackTapped,
-                onEditPack       = onEditPack,
-                onExportPack     = onExportPack,
-                onSwipeOpen      = onSwipeOpen,
-                onSwipeClose     = onSwipeClose,
-                onPendingDelete  = onPendingDelete,
-                modifier         = Modifier.fillMaxWidth().animateItem(),
+                onPackTapped = onPackTapped,
+                onEditPack = onEditPack,
+                onExportPack = onExportPack,
+                onSwipeOpen = onSwipeOpen,
+                onSwipeClose = onSwipeClose,
+                onPendingDelete = onPendingDelete,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItem(),
             )
         }
     }
@@ -430,33 +446,31 @@ private fun PackGrid(
 
 @Composable
 private fun PackCard(
-    pack             : PackDisplayItem,
-    openSwipedPackId : Long?,
-    onPackTapped     : (Long) -> Unit,
-    onEditPack       : (Long) -> Unit,
-    onExportPack     : (Long) -> Unit,
-    onSwipeOpen      : (Long) -> Unit,
-    onSwipeClose     : (Long) -> Unit,
-    onPendingDelete  : (Long) -> Unit,
-    modifier         : Modifier = Modifier,
+    pack: PackDisplayItem,
+    openSwipedPackId: Long?,
+    onPackTapped: (Long) -> Unit,
+    onEditPack: (Long) -> Unit,
+    onExportPack: (Long) -> Unit,
+    onSwipeOpen: (Long) -> Unit,
+    onSwipeClose: (Long) -> Unit,
+    onPendingDelete: (Long) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val actions = remember(pack.id) {
-        buildPackCardActions(
-            onEdit   = { onEditPack(pack.id) },
-            onExport = { onExportPack(pack.id) },
-            onDelete = { onPendingDelete(pack.id) },
-        )
-    }
+    val actions = buildPackCardActions(
+        onEdit = { onEditPack(pack.id) },
+        onExport = { onExportPack(pack.id) },
+        onDelete = { onPendingDelete(pack.id) },
+    )
     GridPackCard(
-        pack               = pack,
-        animDelayMs        = 0,
-        onClick            = { onPackTapped(pack.id) },
-        actions            = actions,
-        isSwiped           = openSwipedPackId == pack.id,
-        onSwipeOpen        = { onSwipeOpen(pack.id) },
-        onSwipeClose       = { onSwipeClose(pack.id) },
+        pack = pack,
+        animDelayMs = 0,
+        onClick = { onPackTapped(pack.id) },
+        actions = actions,
+        isSwiped = openSwipedPackId == pack.id,
+        onSwipeOpen = { onSwipeOpen(pack.id) },
+        onSwipeClose = { onSwipeClose(pack.id) },
         enableSwipeActions = true,
-        modifier           = modifier,
+        modifier = modifier,
     )
 }
 
@@ -470,51 +484,51 @@ private fun PackCard(
 private fun DashboardScreenPortraitPreview() {
     SynapseTheme {
         PortraitLayout(
-            uiState          = DashboardUiState(isLoading = false),
-            listState        = rememberLazyGridState(),
+            uiState = DashboardUiState(isLoading = false),
+            listState = rememberLazyGridState(),
             openSwipedPackId = null,
-            onStartStudying  = {},
-            onPackTapped     = {},
-            onEditPack       = {},
-            onExportPack     = {},
-            onSwipeOpen      = {},
-            onSwipeClose     = {},
-            onPendingDelete  = {},
-            onSeeAllPacks    = {},
-            onAddPack        = {},
+            onStartStudying = {},
+            onPackTapped = {},
+            onEditPack = {},
+            onExportPack = {},
+            onSwipeOpen = {},
+            onSwipeClose = {},
+            onPendingDelete = {},
+            onSeeAllPacks = {},
+            onAddPack = {},
         )
     }
 }
 
 @Preview(
-    name        = "Landscape · Light",
+    name = "Landscape · Light",
     showBackground = true,
-    widthDp     = 800,
-    heightDp    = 400,
+    widthDp = 800,
+    heightDp = 400,
 )
 @Preview(
-    name        = "Landscape · Dark",
-    uiMode      = Configuration.UI_MODE_NIGHT_YES,
+    name = "Landscape · Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true,
-    widthDp     = 800,
-    heightDp    = 400,
+    widthDp = 800,
+    heightDp = 400,
 )
 @Composable
 private fun DashboardScreenLandscapePreview() {
     SynapseTheme {
         LandscapeLayout(
-            uiState          = DashboardUiState(isLoading = false),
-            listState        = rememberLazyGridState(),
+            uiState = DashboardUiState(isLoading = false),
+            listState = rememberLazyGridState(),
             openSwipedPackId = null,
-            onStartStudying  = {},
-            onPackTapped     = {},
-            onEditPack       = {},
-            onExportPack     = {},
-            onSwipeOpen      = {},
-            onSwipeClose     = {},
-            onPendingDelete  = {},
-            onSeeAllPacks    = {},
-            onAddPack        = {},
+            onStartStudying = {},
+            onPackTapped = {},
+            onEditPack = {},
+            onExportPack = {},
+            onSwipeOpen = {},
+            onSwipeClose = {},
+            onPendingDelete = {},
+            onSeeAllPacks = {},
+            onAddPack = {},
         )
     }
 }
