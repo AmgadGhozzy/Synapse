@@ -258,6 +258,7 @@ private fun IconAndCategoryRow(
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
     ) {
         // Emoji container — tinted bg + subtle accent border
         Box(

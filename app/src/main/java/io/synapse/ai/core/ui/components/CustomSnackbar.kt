@@ -210,17 +210,17 @@ private fun ModernSnackbar(
 
     val (containerColor, contentColor, icon) = when (type) {
         SnackbarType.SUCCESS -> Triple(
-            semantic.successContainer,
+            semantic.onSuccess,
             semantic.success,
             Icons.Filled.CheckCircle
         )
         SnackbarType.ERROR -> Triple(
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer,
+            semantic.onError,
+            semantic.error,
             Icons.Filled.Error
         )
         SnackbarType.INFO -> Triple(
-            semantic.accentContainer,
+            semantic.onAccent,
             semantic.accent,
             Icons.Filled.Info
         )

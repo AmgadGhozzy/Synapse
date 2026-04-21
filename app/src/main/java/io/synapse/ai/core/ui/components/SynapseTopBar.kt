@@ -59,7 +59,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
@@ -316,6 +315,7 @@ private fun GoProButton(
         }
     }
 }
+
 @Composable
 fun UnlockAIButton(
     isPremium: Boolean,
@@ -334,7 +334,7 @@ fun UnlockAIButton(
     )
     val pillLabel = if (isPremium) stringResource(R.string.go_pro_label_premium)
     else stringResource(R.string.go_pro_label)
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(18.adp)
 
     val baseColor = if (isPremium) MaterialTheme.synapse.semantic.gold else MaterialTheme.synapse.semantic.accent
 
@@ -343,8 +343,13 @@ fun UnlockAIButton(
             .clip(shape)
             .background(baseColor.copy(alpha = 0.12f))
             .border(
-                width = 1.dp,
-                color = baseColor.copy(alpha = 0.20f),
+                width = 1.adp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        baseColor.copy(alpha = 0.5f),
+                        baseColor.copy(alpha = 0.15f)
+                    )
+                ),
                 shape = shape
             )
             .clickable(
