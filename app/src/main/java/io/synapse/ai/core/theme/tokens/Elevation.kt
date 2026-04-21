@@ -33,8 +33,7 @@ data class ShadowTokens(
     val errorGlow: ShadowSpec,
 
     // CTA
-    val ctaDark: ShadowSpec,
-    val ctaLight: ShadowSpec,
+    val cta: ShadowSpec,
 )
 
 fun buildAdaptiveShadowTokens(
@@ -117,20 +116,12 @@ fun buildAdaptiveShadowTokens(
                 offset = DpOffset(0.dp, dp(2f))
             ),
 
-            ctaDark = ShadowSpec(
+            cta = ShadowSpec(
                 elevation = dp(8f),
                 radius = dp(32f),
                 color = ctaColor,
                 alpha = 0.24f,
                 offset = DpOffset(0.dp, dp(8f))
-            ),
-
-            ctaLight = ShadowSpec(
-                elevation = dp(6f),
-                radius = dp(24f),
-                color = ctaColor,
-                alpha = 0.16f,
-                offset = DpOffset(0.dp, dp(6f))
             )
         )
     } else {
@@ -201,19 +192,11 @@ fun buildAdaptiveShadowTokens(
                 offset = DpOffset(0.dp, dp(2f))
             ),
 
-            ctaDark = ShadowSpec(
+            cta = ShadowSpec(
                 elevation = dp(8f),
                 radius = dp(28f),
                 color = ctaColor,
                 alpha = 0.20f,
-                offset = DpOffset(0.dp, dp(8f))
-            ),
-
-            ctaLight = ShadowSpec(
-                elevation = dp(8f),
-                radius = dp(24f),
-                color = ctaColor,
-                alpha = 0.14f,
                 offset = DpOffset(0.dp, dp(8f))
             )
         )

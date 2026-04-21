@@ -6,6 +6,7 @@ import io.synapse.ai.core.theme.Emerald600
 import io.synapse.ai.core.theme.Indigo600
 import io.synapse.ai.core.theme.Orange400
 import io.synapse.ai.core.theme.Orange500
+import io.synapse.ai.core.theme.Red500
 import io.synapse.ai.core.theme.Red600
 import io.synapse.ai.core.theme.Slate100
 import io.synapse.ai.core.theme.Slate200
@@ -14,9 +15,7 @@ import io.synapse.ai.core.theme.Slate50
 import io.synapse.ai.core.theme.Slate600
 import io.synapse.ai.core.theme.Slate900
 import io.synapse.ai.core.theme.Slate950
-import io.synapse.ai.core.theme.SynapseCardDark
-import io.synapse.ai.core.theme.SynapseDeepDark
-import io.synapse.ai.core.theme.SynapseSurfaceDark
+import io.synapse.ai.core.theme.SynapseElevatedDark
 import io.synapse.ai.core.theme.Violet500
 import io.synapse.ai.core.theme.White
 
@@ -51,7 +50,7 @@ object BrandColors {
     val ErrorLight = Red600
     val OnErrorLight = White
 
-    val ErrorDark = Red600
+    val ErrorDark = Red500
     val OnErrorDark = White
 
     // Light surfaces
@@ -60,9 +59,9 @@ object BrandColors {
     val NeutralLightSurfaceLow = Slate100
 
     // Dark surfaces
-    val NeutralDarkBg = SynapseDeepDark
-    val NeutralDarkSurface = SynapseSurfaceDark
-    val NeutralDarkSurfaceLow = SynapseCardDark
+    val NeutralDarkBg = Slate950
+    val NeutralDarkSurface = Slate900
+    val NeutralDarkSurfaceLow = SynapseElevatedDark
 
     // Text
     val OnLight = Slate900

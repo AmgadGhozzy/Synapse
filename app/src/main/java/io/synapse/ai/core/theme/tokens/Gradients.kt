@@ -8,16 +8,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RadialGradientShader
 import androidx.compose.ui.graphics.ShaderBrush
 import io.synapse.ai.core.theme.Amber400
-import io.synapse.ai.core.theme.Amber800
+import io.synapse.ai.core.theme.Amber500
 import io.synapse.ai.core.theme.Emerald500
 import io.synapse.ai.core.theme.Emerald600
 import io.synapse.ai.core.theme.Indigo50
 import io.synapse.ai.core.theme.Indigo500
 import io.synapse.ai.core.theme.Indigo600
+import io.synapse.ai.core.theme.Indigo700
 import io.synapse.ai.core.theme.Indigo950
 import io.synapse.ai.core.theme.Orange400
 import io.synapse.ai.core.theme.Orange50
-import io.synapse.ai.core.theme.Orange900
+import io.synapse.ai.core.theme.Orange600
 import io.synapse.ai.core.theme.Slate200
 import io.synapse.ai.core.theme.Slate50
 import io.synapse.ai.core.theme.StreakBackgroundDeep
@@ -25,7 +26,6 @@ import io.synapse.ai.core.theme.StreakSurfaceDark
 import io.synapse.ai.core.theme.Transparent
 import io.synapse.ai.core.theme.Violet400
 import io.synapse.ai.core.theme.Violet500
-import io.synapse.ai.core.theme.Violet600
 import io.synapse.ai.core.theme.White
 import io.synapse.ai.core.theme.Yellow100
 
@@ -51,8 +51,9 @@ private object LightGradients {
 
     val accent = Brush.linearGradient(
         colors = listOf(
-            Violet600,
-            Indigo600
+            Indigo600,
+            Indigo500,
+            Violet400,
         )
     )
 
@@ -110,13 +111,14 @@ private object DarkGradients {
 
     val accent = Brush.linearGradient(
         colors = listOf(
-            Violet500,
-            Violet400
+            Indigo700,
+            Indigo600,
+            Violet500
         )
     )
 
     val premium = Brush.linearGradient(
-        colors = listOf(Amber800, Orange900)
+        colors = listOf(Amber500, Orange600)
     )
     val streakHero = Brush.linearGradient(
         colors = listOf(StreakBackgroundDeep, StreakSurfaceDark, StreakBackgroundDeep)

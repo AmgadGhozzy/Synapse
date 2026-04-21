@@ -132,13 +132,6 @@ object TypeScale {
         letterSpacing = 0.5.sp,
     )
 }
-
-enum class FontStyles(val title: String) {
-    Default("Default"),
-    INTER("Inter"),
-    CAIRO("Cairo"),
-}
-
 private inline fun safeFontFamily(create: () -> FontFamily): FontFamily = try {
     create()
 } catch (_: Throwable) {
