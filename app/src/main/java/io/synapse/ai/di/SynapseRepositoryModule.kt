@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import io.synapse.ai.data.repo.AIRepositoryImpl
 import io.synapse.ai.data.repo.AuthRepositoryImpl
+import io.synapse.ai.data.repo.BillingRepositoryImpl
 import io.synapse.ai.data.repo.LocalDataRepository
 import io.synapse.ai.data.repo.PackRepositoryImpl
 import io.synapse.ai.data.repo.PremiumRepositoryImpl
@@ -15,6 +16,7 @@ import io.synapse.ai.data.repo.RemoteConfigImpl
 import io.synapse.ai.data.repo.SessionRepositoryImpl
 import io.synapse.ai.domain.repo.IAIRepository
 import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.domain.repo.IBillingRepository
 import io.synapse.ai.domain.repo.ILocalDataRepository
 import io.synapse.ai.domain.repo.IPackRepository
 import io.synapse.ai.domain.repo.IPremiumRepository
@@ -58,4 +60,7 @@ abstract class SynapseRepositoryModule {
 
     @Binds @Singleton
     abstract fun bindRemoteConfig(impl: RemoteConfigImpl): IRemoteConfig
+
+    @Binds @Singleton
+    abstract fun bindBillingRepository(impl: BillingRepositoryImpl): IBillingRepository
 }

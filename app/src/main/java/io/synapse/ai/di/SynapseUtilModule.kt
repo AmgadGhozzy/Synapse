@@ -12,7 +12,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.synapse.ai.data.repo.EntitlementCache
+import io.synapse.ai.data.repo.PremiumPreferences
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -23,7 +23,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object SynapseUtilModule {
 
-    // ── Study Settings DataStore (existing) ───────────────────────
     @Provides
     @Singleton
     @Named("study_settings")
@@ -35,11 +34,11 @@ object SynapseUtilModule {
 
     @Provides
     @Singleton
-    @Named("entitlement")
-    fun provideEntitlementDataStore(
+    @Named("gold")
+    fun providePremiumDataStore(
         @ApplicationContext context: Context,
     ): DataStore<Preferences> = PreferenceDataStoreFactory.create(
-        produceFile = { context.preferencesDataStoreFile("entitlement") },
+        produceFile = { context.preferencesDataStoreFile("gold") },
     )
 
     @Provides
@@ -51,21 +50,18 @@ object SynapseUtilModule {
         produceFile = { context.preferencesDataStoreFile("app_settings") },
     )
 
-    // ── EntitlementCache ──────────────────────────────────────────
     @Provides
     @Singleton
-    fun provideEntitlementCache(
-        @Named("entitlement") dataStore: DataStore<Preferences>,
-    ): EntitlementCache = EntitlementCache(dataStore)
+    fun providePremiumPreferences(
+        @Named("gold") dataStore: DataStore<Preferences>,
+    ): PremiumPreferences = PremiumPreferences(dataStore)
 
-    // ── WorkManager ───────────────────────────────────────────────
     @Provides
     @Singleton
     fun provideWorkManager(
         @ApplicationContext context: Context,
     ): WorkManager = WorkManager.getInstance(context)
 
-    // ── Dispatchers ───────────────────────────────────────────────
     @Provides
     @Singleton
     fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
