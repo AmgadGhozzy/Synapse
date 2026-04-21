@@ -38,67 +38,62 @@ import io.synapse.ai.core.theme.tokens.toShadow
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DashboardFab(
-    isLocked  : Boolean,
+    isLocked: Boolean,
     isExpanded: Boolean,
-    isVisible : Boolean,
-    onClick   : () -> Unit,
-    modifier  : Modifier = Modifier,
+    isVisible: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val tokens     = MaterialTheme.synapse
-    val gradientBg = tokens.gradients.primary
-    val lockedBg   = tokens.gradients.gold
-    val fabShape   = MaterialTheme.shapes.large
-
-    val shadowColor = if (isLocked) tokens.semantic.gold
-    else MaterialTheme.colorScheme.primary
+    val tokens = MaterialTheme.synapse
+    val fabShape = MaterialTheme.shapes.large
 
     AnimatedVisibility(
-        visible  = isVisible,
+        visible = isVisible,
         modifier = modifier,
-        enter    = fadeIn(
+        enter = fadeIn(
             animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         ) + scaleIn(
-            initialScale  = 0.65f,
+            initialScale = 0.65f,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness    = Spring.StiffnessMediumLow,
+                stiffness = Spring.StiffnessMediumLow,
             ),
         ) + slideInVertically(
             initialOffsetY = { it / 3 },
-            animationSpec  = spring(
+            animationSpec = spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness    = Spring.StiffnessMediumLow,
+                stiffness = Spring.StiffnessMediumLow,
             ),
         ),
-        exit     = fadeOut(
+        exit = fadeOut(
             animationSpec = tween(200),
         ) + scaleOut(
-            targetScale   = 0.80f,
+            targetScale = 0.80f,
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness    = Spring.StiffnessMedium,
+                stiffness = Spring.StiffnessMedium,
             ),
         ) + slideOutVertically(
             targetOffsetY = { it / 3 },
             animationSpec = spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness    = Spring.StiffnessMedium,
+                stiffness = Spring.StiffnessMedium,
             ),
         ),
     ) {
         Box(
             modifier = Modifier
                 .dropShadow(
-                    shape  = fabShape,
-                    shadow = tokens.shadows.medium.toShadow(customColor = shadowColor),
+                    shape = fabShape,
+                    shadow = tokens.shadows.medium.toShadow(),
                 )
                 .clip(fabShape)
-                .background(if (isLocked) lockedBg else gradientBg),
+                .background(MaterialTheme.colorScheme.surface),
         ) {
             ExtendedFloatingActionButton(
                 text = {
                     Text(
-                        text  = stringResource(
+                        text = stringResource(
                             if (isLocked) R.string.go_pro_label else R.string.fab_new_pack,
                         ),
                         style = MaterialTheme.typography.titleMedium.copy(
@@ -108,22 +103,22 @@ fun DashboardFab(
                 },
                 icon = {
                     Icon(
-                        painter            = painterResource(
+                        painter = painterResource(
                             if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus,
                         ),
                         contentDescription = stringResource(
                             if (isLocked) R.string.fab_upgrade_description
-                            else          R.string.fab_new_pack_description,
+                            else R.string.fab_new_pack_description,
                         ),
-                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
+                        modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
                     )
                 },
-                onClick        = onClick,
-                expanded       = isExpanded,
+                onClick = onClick,
+                expanded = isExpanded,
                 containerColor = Color.Transparent,
-                contentColor   = Color.White.copy(alpha = 0.9f),
-                shape          = fabShape,
-                elevation      = FloatingActionButtonDefaults.elevation(
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                shape = fabShape,
+                elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.adp,
                     pressedElevation = 0.adp,
                     focusedElevation = 0.adp,
@@ -135,7 +130,7 @@ fun DashboardFab(
 }
 
 @Preview(name = "Light — Normal", showBackground = true)
-@Preview(name = "Dark — Normal",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Dark — Normal", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun DashboardFabNormalPreview() {
     SynapseTheme {
@@ -144,7 +139,7 @@ private fun DashboardFabNormalPreview() {
 }
 
 @Preview(name = "Light — Locked", showBackground = true)
-@Preview(name = "Dark — Locked",  uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Dark — Locked", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun DashboardFabLockedPreview() {
     SynapseTheme {

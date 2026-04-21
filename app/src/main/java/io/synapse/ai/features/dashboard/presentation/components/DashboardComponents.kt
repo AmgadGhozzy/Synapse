@@ -1,8 +1,8 @@
 package io.synapse.ai.features.dashboard.presentation.components
 
-import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Card
@@ -36,66 +38,70 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
-import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.core.ui.components.PrimaryGradientButton
+import io.synapse.ai.core.ui.utils.animatedDashedBorder
 import io.synapse.ai.core.ui.utils.localized
 
 @Immutable
 private data class StatChipData(
-    val labelRes   : Int,
-    val value      : String,
-    val subLabel   : String,
+    val labelRes: Int,
+    val value: String,
+    val subLabel: String,
     val accentColor: Color,
-    val bgColor    : Color,
-    val iconRes    : Int,
+    val bgColor: Color,
+    val borderColor: Color,
+    val iconRes: Int,
 )
 
 @Composable
 fun StatsRow(
-    streak          : Int,
-    accuracyPercent : Int,
-    accuracyDelta   : Int?,
+    streak: Int,
+    accuracyPercent: Int,
+    accuracyDelta: Int?,
     accuracyDeltaRes: Int?,
-    timeMinutes     : Int,
-    modifier        : Modifier = Modifier,
+    timeMinutes: Int,
+    modifier: Modifier = Modifier,
 ) {
-    val tokens      = MaterialTheme.synapse
-    val levelColors = tokens.levelColors
+    val tokens = MaterialTheme.synapse
+    val semantic = tokens.semantic
 
     val chips = listOf(
         StatChipData(
-            labelRes    = R.string.stat_streak_label,
-            value       = streak.localized(),
-            subLabel    = pluralStringResource(R.plurals.streak_days_noun, streak),
-            accentColor = levelColors.gold.accentColor,
-            bgColor     = levelColors.gold.bgColor,
-            iconRes     = R.drawable.ic_zap,
+            labelRes = R.string.stat_streak_label,
+            value = streak.localized(),
+            subLabel = pluralStringResource(R.plurals.streak_days_noun, streak),
+            accentColor = semantic.gold,
+            bgColor = semantic.goldBg,
+            borderColor = semantic.goldBorder,
+            iconRes = R.drawable.ic_zap,
         ),
         StatChipData(
-            labelRes    = R.string.stat_accuracy_label,
-            value       = "${accuracyPercent.localized()}${stringResource(R.string.percent_mark)}",
-            subLabel    = if (accuracyDelta != null) {
+            labelRes = R.string.stat_accuracy_label,
+            value = "${accuracyPercent.localized()}${stringResource(R.string.percent_mark)}",
+            subLabel = if (accuracyDelta != null) {
                 stringResource(R.string.stats_card_retention_delta, accuracyDelta)
             } else {
                 accuracyDeltaRes?.let { stringResource(it) } ?: ""
             },
-            accentColor = levelColors.success.accentColor,
-            bgColor     = levelColors.success.bgColor,
-            iconRes     = R.drawable.ic_target,
+            accentColor = semantic.success,
+            bgColor = semantic.successBg,
+            borderColor = semantic.successBorder,
+            iconRes = R.drawable.ic_target,
         ),
         StatChipData(
-            labelRes    = R.string.stat_time_label,
-            value       = stringResource(R.string.stat_time_value, timeMinutes),
-            subLabel    = stringResource(R.string.stat_time_sub),
-            accentColor = levelColors.accent.accentColor,
-            bgColor     = levelColors.accent.bgColor,
-            iconRes     = R.drawable.ic_clock,
+            labelRes = R.string.stat_time_label,
+            value = stringResource(R.string.stat_time_value, timeMinutes),
+            subLabel = stringResource(R.string.stat_time_sub),
+            accentColor = semantic.accent,
+            bgColor = semantic.accentBg,
+            borderColor = semantic.accentBorder,
+            iconRes = R.drawable.ic_clock,
         ),
     )
 
@@ -108,13 +114,8 @@ fun StatsRow(
     ) {
         chips.forEach { chip ->
             StatChip(
-                label       = stringResource(chip.labelRes),
-                value       = chip.value,
-                subLabel    = chip.subLabel,
-                accentColor = chip.accentColor,
-                bgColor     = chip.bgColor,
-                iconRes     = chip.iconRes,
-                modifier    = Modifier
+                data = chip,
+                modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight(),
             )
@@ -124,90 +125,67 @@ fun StatsRow(
 
 @Composable
 private fun StatChip(
-    label      : String,
-    value      : String,
-    subLabel   : String,
-    accentColor: Color,
-    bgColor    : Color,
-    iconRes    : Int,
-    modifier   : Modifier = Modifier,
+    data: StatChipData,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
-    val shape  = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.large
 
     Card(
         modifier = modifier.dropShadow(
-            shape  = shape,
-            shadow = tokens.shadows.subtle.toShadow(customColor = accentColor),
+            shape = shape,
+            shadow = tokens.shadows.subtle.toShadow(customColor = data.accentColor),
         ),
-        shape    = shape,
-        colors   = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.5f)),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = data.bgColor),
+        border = BorderStroke(1.dp, data.borderColor)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top =  tokens.spacing.s2)
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface)
-                .background(bgColor),
+                .padding(
+                    horizontal = tokens.spacing.s12,
+                    vertical = tokens.spacing.s12,
+                ),
+            verticalArrangement = Arrangement.spacedBy(tokens.spacing.s4),
         ) {
-
-            // ── Content ───────────────────────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        horizontal = tokens.spacing.s12,
-                        vertical   = tokens.spacing.s12,
-                    ),
-                verticalArrangement = Arrangement.spacedBy(tokens.spacing.s4),
+            // Icon + label
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s6),
             ) {
-
-                // Icon + label
-                Row(
-                    verticalAlignment    = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s6),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(MaterialTheme.synapse.spacing.icon_xl)
-                            .clip(MaterialTheme.shapes.small)
-                            .background(accentColor.copy(alpha = 0.14f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter           = painterResource(iconRes),
-                            contentDescription = null,
-                            tint              = accentColor,
-                            modifier          = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
-                        )
-                    }
-                    Text(
-                        text     = label,
-                        style    = MaterialTheme.typography.labelSmall,
-                        color    = accentColor,
-                        maxLines = 1,
-                    )
-                }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Value
-                Text(
-                    text       = value,
-                    style      = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                    color      = MaterialTheme.colorScheme.onSurface,
-                    maxLines   = 1,
+                Icon(
+                    painter = painterResource(data.iconRes),
+                    contentDescription = null,
+                    tint = data.accentColor,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
 
-                // Sub-label
                 Text(
-                    text     = subLabel,
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(data.labelRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = data.accentColor,
                     maxLines = 1,
                 )
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Value
+            Text(
+                text = data.value,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+            )
+
+            // Sub-label
+            Text(
+                text = data.subLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -218,163 +196,198 @@ private fun StatChip(
 
 @Composable
 fun SectionHeader(
-    title      : String,
-    onSeeAll   : () -> Unit,
-    modifier   : Modifier = Modifier,
-    showSeeAll : Boolean = true,
+    title: String,
+    onSeeAll: () -> Unit,
+    modifier: Modifier = Modifier,
+    showSeeAll: Boolean = true,
 ) {
     val spacing = MaterialTheme.synapse.spacing
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                start = spacing.s6,
-                end   = spacing.s4,
-            ),
+            .padding(start = spacing.s6, end = spacing.s4),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment     = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text       = title,
-            style      = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-            color      = MaterialTheme.colorScheme.onBackground
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
         )
 
         if (showSeeAll) {
             TextButton(onClick = onSeeAll) {
                 Text(
-                    text       = stringResource(R.string.action_see_all).uppercase(),
-                    style      = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color      = MaterialTheme.colorScheme.primary,
+                    text = stringResource(R.string.action_see_all).uppercase(),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(Modifier.width(2.dp))
                 Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
             }
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EmptyPacksState
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun EmptyPacksState(
     onAddPack: () -> Unit,
-    modifier : Modifier = Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
+    val shape = MaterialTheme.shapes.large
 
-    Surface(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f),
-                shape = MaterialTheme.shapes.large,
+            .clickable { onAddPack() }
+            .clip(shape)
+            .animatedDashedBorder(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                shape = shape
+            )
+            .padding(horizontal = tokens.spacing.s20, vertical = 24.adp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+
+        Box(
+            modifier = Modifier
+                .size(56.adp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_file_plus),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.adp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(tokens.spacing.s16))
+
+        Text(
+            text = stringResource(R.string.dashboard_empty_title),
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.25).sp
             ),
-        shape    = MaterialTheme.shapes.large,
-        color    = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(modifier = Modifier.height(tokens.spacing.s4))
+
+        Text(
+            text = stringResource(R.string.dashboard_empty_body),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = tokens.spacing.s8)
+        )
+
+    }
+}
+
+@Composable
+fun DashboardKpiCard(
+    streakDays: Int,
+    accuracyPercent: Int,
+    masteredCards: Int,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    val tokens = MaterialTheme.synapse
+    val semantic = tokens.semantic
+    val shape = MaterialTheme.shapes.large
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .dropShadow(shape = shape, shadow = tokens.shadows.subtle.toShadow()),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = cs.surface)
     ) {
         Column(
-            modifier            = Modifier
-                .fillMaxWidth()
-                .padding(tokens.spacing.s20),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(tokens.spacing.s14),
+            modifier = Modifier.padding(
+                horizontal = tokens.spacing.s16,
+                vertical = tokens.spacing.s14
+            )
         ) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s12),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s8),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.adp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter            = painterResource(R.drawable.ic_file_plus),
-                        contentDescription = null,
-                        tint               = MaterialTheme.colorScheme.primary,
-                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
-                    )
-                }
-
-                Text(
-                    text       = stringResource(R.string.dashboard_empty_title),
-                    style      = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                    color      = MaterialTheme.colorScheme.onSurface,
+                KpiChip(
+                    value = streakDays.localized(),
+                    label = stringResource(R.string.dashboard_kpi_streak),
+                    valueColor = semantic.gold,
+                    bgColor = semantic.goldBg,
+                    modifier = Modifier.weight(1f),
+                )
+                KpiChip(
+                    value = stringResource(R.string.profile_lifetime_pct_format, accuracyPercent),
+                    label = stringResource(R.string.dashboard_kpi_accuracy),
+                    valueColor = semantic.success,
+                    bgColor = semantic.successBg,
+                    modifier = Modifier.weight(1f),
+                )
+                KpiChip(
+                    value = masteredCards.localized(),
+                    label = stringResource(R.string.dashboard_kpi_mastered),
+                    valueColor = semantic.primary,
+                    bgColor = semantic.primaryBg,
+                    modifier = Modifier.weight(1f),
                 )
             }
-
-            Text(
-                text  = stringResource(R.string.dashboard_empty_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            PrimaryGradientButton(
-                text    = stringResource(R.string.dashboard_empty_cta),
-                iconRes = R.drawable.ic_file_plus,
-                enabled = true,
-                onClick = onAddPack,
-            )
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Previews
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Preview(name = "Stats Row · Light", showBackground = true)
-@Preview(name = "Stats Row · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
-private fun StatsRowPreview() {
-    SynapseTheme {
-        StatsRow(
-            streak          = 7,
-            accuracyPercent = 78,
-            accuracyDelta   = 4,
-            accuracyDeltaRes = R.string.stats_card_this_week,
-            timeMinutes     = 18,
-            modifier        = Modifier.padding(
-                horizontal = MaterialTheme.synapse.spacing.screen,
-                vertical   = MaterialTheme.synapse.spacing.s4,
-            ),
-        )
-    }
-}
-
-@Preview(name = "Section Header · Light", showBackground = true)
-@Preview(name = "Section Header · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun SectionHeaderPreview() {
-    SynapseTheme {
-        SectionHeader(
-            title    = "Jump Back In",
-            onSeeAll = {},
-            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen),
-        )
-    }
-}
-
-@Preview(name = "Empty Packs · Light", showBackground = true)
-@Preview(name = "Empty Packs · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
-@Composable
-private fun EmptyPacksPreview() {
-    SynapseTheme {
-        EmptyPacksState(
-            onAddPack = {},
-            modifier  = Modifier.padding(MaterialTheme.synapse.spacing.screen),
-        )
+private fun KpiChip(
+    value: String,
+    label: String,
+    valueColor: Color,
+    bgColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.adp),
+        color = bgColor
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 10.adp, horizontal = 6.adp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = valueColor,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(3.adp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = cs.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+            )
+        }
     }
 }

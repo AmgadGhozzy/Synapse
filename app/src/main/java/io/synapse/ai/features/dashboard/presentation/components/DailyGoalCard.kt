@@ -5,7 +5,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,13 +32,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
@@ -87,14 +86,14 @@ fun DailyGoalCard(
     val tokens = MaterialTheme.synapse
 
     CardShell(
-        color = MaterialTheme.colorScheme.primary,
+        color = MaterialTheme.colorScheme.onPrimary,
         bgGrad = tokens.gradients.primary,
         modifier = modifier,
     ) {
         Column(
             modifier = Modifier
                 .padding(horizontal = tokens.spacing.s24)
-                .padding(top = tokens.spacing.s24, bottom = tokens.spacing.s20),
+                .padding(top = tokens.spacing.s24, bottom = tokens.spacing.s16),
         ) {
 
             // ── Top row: goal info + ring ─────────────────────────────
@@ -116,7 +115,7 @@ fun DailyGoalCard(
                     // Progress bar
                     GoalProgressBar(progress = animatedProgress)
 
-                    Spacer(Modifier.height(tokens.spacing.listItemGap))
+                    Spacer(Modifier.height(tokens.spacing.s12))
 
 
                 }
@@ -135,7 +134,7 @@ fun DailyGoalCard(
                 streakDays = streakDays,
                 totalDue = totalDue,
             )
-            Spacer(Modifier.height(tokens.spacing.s16))
+            Spacer(Modifier.height(tokens.spacing.s12))
 
             CtaButton(
                 ctaText = ctaText,
@@ -222,9 +221,9 @@ private fun GoalProgressBar(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.6f),
-                            Color.White.copy(alpha = 0.7f),
-                            Color.White.copy(alpha = 0.6f)
+                            Color.White.copy(alpha = 0.8f),
+                            Color.White.copy(alpha = 0.85f),
+                            Color.White.copy(alpha = 0.8f)
                         )
                     )
                 ),
@@ -240,7 +239,7 @@ private fun GoalStatChips(
     Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6)) {
         HeroStatChip(
             label = pluralStringResource(R.plurals.cards_due, totalDue, totalDue),
-            emphasis = false,
+            emphasis = true,
             icon = {
                 Icon(
                     painter = painterResource(R.drawable.ic_clock),
@@ -252,7 +251,7 @@ private fun GoalStatChips(
         )
         HeroStatChip(
             label = pluralStringResource(R.plurals.streak_days, streakDays, streakDays),
-            emphasis = true,
+            emphasis = false,
             icon = {
                 Icon(
                     painter = painterResource(R.drawable.ic_zap),
@@ -275,6 +274,10 @@ private fun CtaButton(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+    val buttonBgColor = if (isDark) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f)
+    val contentColor = Color.White.copy(alpha = 0.9f)
 
     Surface(
         onClick = onClick,
@@ -282,45 +285,40 @@ private fun CtaButton(
             .fillMaxWidth()
             .dropShadow(
                 shape = MaterialTheme.shapes.large,
-                shadow = tokens.shadows.medium.toShadow(
-                    customColor = Color.White,
-                    customAlpha = 0.10f,
+                shadow = tokens.shadows.strong.toShadow(
+                    customColor = MaterialTheme.colorScheme.primary,
                 ),
             ),
         shape = MaterialTheme.shapes.large,
-        color = Color.White.copy(alpha = 0.20f),
-        contentColor = Color.White.copy(alpha = 0.92f),
+        color = buttonBgColor,
+        contentColor = contentColor,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = tokens.spacing.s14),
+                .padding(vertical = tokens.spacing.s16),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Leading balancing spacer
             Spacer(Modifier.weight(1f))
 
-            // Centered CTA label + arrow
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s6),
             ) {
                 Text(
                     text = ctaText,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.asp
                     ),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(16.adp)
-                        .shake(),
+                    modifier = Modifier.size(16.adp).shake(),
                 )
             }
 
-            // ETA badge
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterEnd,
@@ -328,6 +326,7 @@ private fun CtaButton(
                 if (totalDue > 0) {
                     CtaEtaBadge(
                         etaText = etaLabel(totalDue),
+                        contentColor = contentColor,
                         modifier = Modifier.padding(end = tokens.spacing.s14),
                     )
                 }
@@ -339,13 +338,14 @@ private fun CtaButton(
 @Composable
 private fun CtaEtaBadge(
     etaText: String,
+    contentColor: Color,
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
     Row(
         modifier = modifier
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.15f))
+            .background(contentColor.copy(alpha = 0.10f))
             .padding(horizontal = tokens.spacing.s8, vertical = tokens.spacing.s3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s3),
@@ -353,13 +353,13 @@ private fun CtaEtaBadge(
         Icon(
             painter = painterResource(R.drawable.ic_clock),
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.70f),
+            tint = contentColor.copy(alpha = 0.80f),
             modifier = Modifier.size(12.adp),
         )
         Text(
             text = etaText,
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.75f),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = contentColor,
         )
     }
 }
@@ -375,14 +375,6 @@ private fun HeroStatChip(
         modifier = Modifier
             .clip(CircleShape)
             .background(Color.White.copy(alpha = if (emphasis) 0.12f else 0.08f))
-            .then(
-                if (emphasis) Modifier.border(
-                    1.dp,
-                    tokens.semantic.gold.copy(alpha = 0.35f),
-                    CircleShape
-                )
-                else Modifier
-            )
             .padding(horizontal = tokens.spacing.s10, vertical = tokens.spacing.s4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(tokens.spacing.s4),
@@ -393,7 +385,7 @@ private fun HeroStatChip(
             style = MaterialTheme.typography.labelLarge.copy(
                 fontWeight = if (emphasis) FontWeight.SemiBold else FontWeight.Normal,
             ),
-            color = if (emphasis) tokens.semantic.gold else Color.White.copy(alpha = 0.88f),
+            color = if (emphasis) Color.White.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.75f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
