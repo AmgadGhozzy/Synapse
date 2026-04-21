@@ -1,6 +1,7 @@
 package io.synapse.ai.features.premium.presentation.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -12,9 +13,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,7 +48,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,17 +55,17 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.rememberLottieComposition
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.LocalGradientTokens
-import io.synapse.ai.core.theme.White
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.features.premium.presentation.state.PremiumPlanUiModel
 import io.synapse.ai.features.premium.presentation.state.ProFeatureUiModel
@@ -79,8 +81,8 @@ fun HeroSection(
     val gradients = LocalGradientTokens.current
     val pulseTransition = rememberInfiniteTransition()
     val pulseAlpha by pulseTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.3f,
+        initialValue  = 1f,
+        targetValue   = 0.3f,
         animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse)
     )
 
@@ -88,21 +90,20 @@ fun HeroSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxWidth()
-            .padding(
-                top = MaterialTheme.synapse.spacing.s4,
-                bottom = MaterialTheme.synapse.spacing.s20
-            ),
+            .padding(top = MaterialTheme.synapse.spacing.s4, bottom = MaterialTheme.synapse.spacing.s20),
     ) {
-
         AppIconDisplay()
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
         ) {
             Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.displayLarge.copy(brush = gradients.accent, fontWeight = FontWeight.ExtraBold),
+                text  = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displayLarge.copy(
+                    brush      = gradients.accent,
+                    fontWeight = FontWeight.ExtraBold,
+                ),
                 textAlign = TextAlign.Center,
             )
             ProBadgeChip()
@@ -111,17 +112,18 @@ fun HeroSection(
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
 
         Text(
-            text = stringResource(R.string.premium_tagline),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            text      = stringResource(R.string.premium_tagline),
+            style     = MaterialTheme.typography.bodySmall,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s32),
+            modifier  = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s32),
         )
 
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
+        // Pulsing trial badge pill
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
             modifier = Modifier
                 .clip(MaterialTheme.synapse.radius.pill)
@@ -133,7 +135,7 @@ fun HeroSection(
                 )
                 .padding(
                     horizontal = MaterialTheme.synapse.spacing.s16,
-                    vertical = MaterialTheme.synapse.spacing.s6
+                    vertical   = MaterialTheme.synapse.spacing.s6,
                 ),
         ) {
             Box(
@@ -143,7 +145,7 @@ fun HeroSection(
                     .background(MaterialTheme.colorScheme.tertiary.copy(alpha = pulseAlpha)),
             )
             Text(
-                text = stringResource(R.string.premium_trial_badge, trialDays),
+                text  = stringResource(R.string.premium_trial_badge, trialDays),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.tertiary,
             )
@@ -151,11 +153,11 @@ fun HeroSection(
     }
 }
 
+
 @Composable
 fun ProBadgeChip(modifier: Modifier = Modifier) {
-
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
         modifier = modifier
             .padding(top = MaterialTheme.synapse.spacing.s12)
@@ -164,7 +166,7 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
                 Brush.linearGradient(
                     colors = listOf(
                         MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.22f),
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f),
                     )
                 )
             )
@@ -175,23 +177,24 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
             )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s12,
-                vertical = MaterialTheme.synapse.spacing.s8
+                vertical   = MaterialTheme.synapse.spacing.s8,
             ),
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_crown),
+            painter            = painterResource(R.drawable.ic_crown),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+            tint               = MaterialTheme.colorScheme.tertiary,
+            modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
         )
         Text(
-            text = stringResource(R.string.premium_pro_label),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.tertiary,
-            modifier = Modifier.wrapContentSize(Alignment.Center).alignByBaseline()
+            text     = stringResource(R.string.premium_pro_label),
+            style    = MaterialTheme.typography.titleSmall,
+            color    = MaterialTheme.colorScheme.tertiary,
+            modifier = Modifier.wrapContentSize(Alignment.Center).alignByBaseline(),
         )
     }
 }
+
 
 @Composable
 internal fun PremiumFeaturesCard(
@@ -202,11 +205,11 @@ internal fun PremiumFeaturesCard(
         modifier = modifier
             .fillMaxWidth()
             .dropShadow(
-                shape = MaterialTheme.shapes.large,
-                shadow = MaterialTheme.synapse.shadows.subtle.toShadow()
+                shape  = MaterialTheme.shapes.large,
+                shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
             )
             .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
     ) {
         features.forEachIndexed { index, feature ->
             PremiumFeatureRow(feature = feature)
@@ -220,7 +223,7 @@ internal fun PremiumFeaturesCard(
                                 colors = listOf(
                                     Color.Transparent,
                                     MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
-                                    Color.Transparent
+                                    Color.Transparent,
                                 )
                             )
                         )
@@ -230,15 +233,16 @@ internal fun PremiumFeaturesCard(
     }
 }
 
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun PremiumFeatureRow(
-    feature: ProFeatureUiModel,
-    modifier: Modifier = Modifier,
+    feature  : ProFeatureUiModel,
+    modifier : Modifier = Modifier,
 ) {
     val featureColor = feature.colorRole.toColor()
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s14),
         modifier = modifier
             .fillMaxWidth()
@@ -253,232 +257,258 @@ internal fun PremiumFeatureRow(
                 .background(featureColor.copy(alpha = 0.15f)),
         ) {
             Icon(
-                painter = painterResource(iconKeyToDrawableRes(feature.iconKey)),
+                painter            = painterResource(iconKeyToDrawableRes(feature.iconKey)),
                 contentDescription = null,
-                tint = featureColor,
-                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
+                tint               = featureColor,
+                modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
             )
         }
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = feature.label,
+                text  = feature.label,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = feature.sublabel,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text     = feature.sublabel,
+                style    = MaterialTheme.typography.labelMedium,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s2),
             )
         }
 
+        // Same CheckIndicator as PlanCard for visual consistency
         CheckIndicator(
-            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-            borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-            iconTint = MaterialTheme.colorScheme.primary
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.80f),
+            borderColor     = MaterialTheme.colorScheme.primary.copy(alpha = 0.40f),
+            iconTint        = MaterialTheme.colorScheme.primary,
         )
     }
 }
+
+
+@Composable
+fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text     = text,
+        style    = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+        color    = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(end = 2.adp, bottom = 12.adp),
+    )
+}
+
 
 @Composable
 fun PlansRow(
-    products: List<PremiumPlanUiModel>,
-    selectedSkuId: String,
-    onPlanSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
+    plans          : List<PremiumPlanUiModel>,
+    selectedPlanId : String,
+    onPlanSelected : (String) -> Unit,
+    modifier       : Modifier = Modifier,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
+        horizontalArrangement = Arrangement.spacedBy(12.adp),
         modifier = modifier.fillMaxWidth(),
     ) {
-        products.forEach { product ->
+        plans.forEach { plan ->
             PlanCard(
-                plan = product,
-                isSelected = product.skuId == selectedSkuId,
-                onSelect = { onPlanSelected(product.skuId) },
-                modifier = Modifier.weight(1f),
+                plan       = plan,
+                isSelected = selectedPlanId == plan.skuId,
+                onSelect   = { onPlanSelected(plan.skuId) },
+                modifier   = Modifier.weight(1f),
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-internal fun CheckIndicator(
-    backgroundColor: Color,
-    borderColor: Color,
-    iconTint: Color,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .padding(20.adp)
-            .size(MaterialTheme.synapse.spacing.icon_lg)
-            .clip(MaterialShapes.Cookie7Sided.toShape())
-            .background(backgroundColor)
-            .border(
-                width = 1.adp,
-                color = borderColor,
-                shape = MaterialShapes.Cookie7Sided.toShape(),
-            ),
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_check),
-            contentDescription = null,
-            tint = iconTint,
-            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
-        )
-    }
-}
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PlanCard(
-    plan: PremiumPlanUiModel,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier,
+    plan       : PremiumPlanUiModel,
+    isSelected : Boolean,
+    onSelect   : () -> Unit,
+    modifier   : Modifier = Modifier,
 ) {
     val gradients  = MaterialTheme.synapse.gradients
+    val spacing    = MaterialTheme.synapse.spacing
     val isGradient = isSelected && plan.isHighlighted
+    val hasBadge   = plan.badgeLabel != null
 
-    val cardBg: Brush = if (isGradient) {
-        gradients.accent
-    } else {
-        Brush.linearGradient(
-            colors = listOf(
-                MaterialTheme.colorScheme.background.copy(alpha = if (isSelected) 0.95f else 0.6f),
-                MaterialTheme.colorScheme.surface.copy(alpha = if (isSelected) 0.95f else 0.6f),
+    // ── Card surface brush ────────────────────────────────────────────────────
+    val cardBg: Brush = if (isGradient) gradients.accent
+    else Brush.linearGradient(
+        colors = listOf(
+            MaterialTheme.colorScheme.surface.copy(alpha = if (isSelected) 0.95f else 0.60f),
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isSelected) 0.95f else 0.60f),
+        )
+    )
+
+    // ── Border ────────────────────────────────────────────────────────────────
+    val borderBrush: Brush = when {
+        isGradient -> Brush.linearGradient(
+            listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.08f))
+        )
+        isSelected -> Brush.linearGradient(
+            listOf(
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.50f),
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+            )
+        )
+        else       -> Brush.linearGradient(
+            listOf(
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f),
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.08f),
             )
         )
     }
+    val borderWidth = if (isSelected) 1.5.adp else 1.adp
 
-    val borderColor = when {
-        isGradient -> Color.White.copy(alpha = 0.28f)
-        isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
-        else       -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    // ── Text color roles ──────────────────────────────────────────────────────
+    val onCard      = if (isGradient) Color.White else MaterialTheme.colorScheme.onSurface
+    val onCardMid   = when {
+        isGradient -> Color.White.copy(alpha = 0.80f)
+        isSelected -> MaterialTheme.colorScheme.onSurface
+        else       -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val borderWidth = if (isSelected) 2.adp else 1.adp
+    val onCardFaint = if (isGradient) Color.White.copy(alpha = 0.52f)
+    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f)
 
-    val onCard     = if (isGradient) Color.White else MaterialTheme.colorScheme.onSurface
-    val onCardMid  = if (isGradient) Color.White.copy(alpha = 0.75f)
-    else if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
-    else MaterialTheme.colorScheme.onSurfaceVariant
-    val onCardFaint = if (isGradient) Color.White.copy(alpha = 0.55f)
-    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
-
+    val shape  = MaterialTheme.shapes.extraLarge
     val shadow = if (isGradient) MaterialTheme.synapse.shadows.strong.toShadow()
     else MaterialTheme.synapse.shadows.subtle.toShadow()
-    val shape  = MaterialTheme.shapes.large
 
-    Box(
-        modifier = modifier
-            .dropShadow(shape = shape, shadow = shadow)
-            .clip(shape)
-            .background(cardBg)
-            .border(width = borderWidth, color = borderColor, shape = shape)
-            .clickable(onClick = onSelect),
-    ) {
-        // Shimmer on highlighted selected card
-        if (isGradient) {
-            Box(modifier = Modifier.matchParentSize().clipToBounds()) {
-                ShimmerSweep(durationMs = 2_800, delayMs = 1_600)
+    // Outer Box is NOT clipped — badge overflows upward
+    Box(modifier = modifier) {
+
+        // ── Clipped card surface ──────────────────────────────────────────────
+        Box(
+            modifier = Modifier                      // intentional: fresh Modifier, not outer `modifier`
+                .fillMaxWidth()
+                .padding(top = 11.adp)
+                .dropShadow(shape = shape, shadow = shadow)
+                .clip(shape)
+                .background(cardBg)
+                .border(borderWidth, brush = borderBrush, shape = shape)
+                .clickable(onClick = onSelect),
+        ) {
+            // Diagonal shimmer — only on gradient-selected card
+            if (isGradient) {
+                Box(modifier = Modifier.matchParentSize().clipToBounds()) {
+                    ShimmerSweep(durationMs = 2_800, delayMs = 1_600)
+                }
+            }
+
+            // Content column
+            Column(
+                modifier = Modifier.padding(
+                    start  = spacing.s16,
+                    end    = spacing.s16,
+                    top    = spacing.s14,
+                    bottom = spacing.s16,
+                ),
+            ) {
+                Spacer(Modifier.height(spacing.s12))
+                // Period label — "YEARLY · Best Value" or "Monthly"
+                Text(
+                    text  = if (plan.isHighlighted) {
+                        stringResource(R.string.premium_plan_label_best, plan.title.resolve().uppercase())
+                    } else {
+                        plan.title.resolve()
+                    },
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    color = onCardMid,
+                )
+
+                Spacer(Modifier.height(spacing.s6))
+
+                // Main price + abbreviated period — baseline aligned
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text       = plan.mainPrice,
+                        style      = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        color      = onCard,
+                    )
+                    Text(
+                        text     = plan.periodDisplay.resolve(),  // "/YR" or "/MO" from strings.xml
+                        style    = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color    = onCardMid,
+                        modifier = Modifier.padding(start = spacing.s2, bottom = spacing.s4),
+                    )
+                }
+
+                // Original (pre-discount) price — strikethrough
+                plan.originalPrice?.let { original ->
+                    Spacer(Modifier.height(spacing.s2))
+                    Text(
+                        text  = original,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            textDecoration = TextDecoration.LineThrough,
+                        ),
+                        color = onCardFaint,
+                    )
+                }
+
+                // Sub-price — monthly equivalent for annual plan ("$4.99/mo")
+                plan.subPrice?.let { sub ->
+                    Spacer(Modifier.height(spacing.s3))
+                    Text(
+                        text  = sub.resolve(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = onCardMid,
+                    )
+                }
+
+                Spacer(Modifier.height(spacing.s10))
+
+                // Billing note
+                Text(
+                    text  = plan.noteDisplay.resolve(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = onCardFaint,
+                )
+
+                // Space to avoid overlapping the top-end check indicator
+                Spacer(Modifier.height(spacing.s24))
+            }
+
+            // ── Selection indicator — TOP-END ─────────────────────────────────
+            if (isSelected) {
+                CheckIndicator(
+                    backgroundColor = if (isGradient) Color.White.copy(alpha = 0.26f)
+                    else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
+                    borderColor     = if (isGradient) Color.White.copy(alpha = 0.45f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.40f),
+                    iconTint        = if (isGradient) Color.White
+                    else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.BottomEnd),
+                )
             }
         }
 
-        Column(modifier = Modifier.padding(horizontal = 20.adp, vertical = 18.adp)) {
-
-            // ── Period label ───────────────────────────────────────────────
-            val labelText = if (plan.isHighlighted) {
-                stringResource(R.string.premium_plan_label_best, plan.title.resolve())
-            } else {
-                plan.title.resolve().uppercase()
-            }
-            Text(
-                text  = labelText,
-                style = MaterialTheme.typography.labelMedium,
-                color = onCardMid,
-            )
-
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s6))
-
-            // ── Main price + period label ──────────────────────────────────
-            // "$59.99  /year"  — period is smaller, baseline-aligned
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text  = plan.mainPrice,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = onCard,
-                )
-                Text(
-                    text  = plan.periodDisplay.resolve(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = onCardMid,
-                    modifier = Modifier.padding(start = 2.adp, bottom = 3.adp),
-                )
-            }
-
-            // ── Sub price — monthly equivalent for annual plans ────────────
-            // "$4.99/mo"
-            plan.subPrice?.let { subPriceUiText ->
-                Spacer(Modifier.height(1.adp))
-                Text(
-                    text  = subPriceUiText.resolve(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = onCardMid,
-                )
-            }
-
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s4))
-
-            // ── Billing note — full disclosure ─────────────────────────────
-            // "Billed annually. Cancel anytime via Google Play."
-            Text(
-                text  = plan.noteDisplay.resolve(),
-                style = MaterialTheme.typography.labelSmall,
-                color = onCardFaint,
-            )
-        }
-
-        // ── Savings badge ──────────────────────────────────────────────────
-        // "SAVE 50%" — top-right corner
-        plan.badgeLabel?.let { badgeLabelUiText ->
+        // Savings badge — top corner
+        plan.badgeLabel?.let { badge ->
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 12.adp, end = 12.adp)
+                    .align(Alignment.TopCenter)
                     .clip(MaterialTheme.synapse.radius.pill)
-                    .background(MaterialTheme.synapse.gradients.gold)
-                    .padding(horizontal = 8.adp, vertical = 3.adp),
+                    .background(gradients.premium)
+                    .padding(horizontal = spacing.s12, vertical = 3.adp),
             ) {
                 Text(
-                    text  = badgeLabelUiText.resolve(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isGradient) Color.White else Color.White.copy(alpha = 0.92f),
+                    text  = badge.resolve(),
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight    = FontWeight.ExtraBold,
+                        letterSpacing = 0.04.asp,
+                    ),
+                    color = Color.White,
                 )
             }
-        }
-
-        // ── Selection check indicator ──────────────────────────────────────
-        if (isSelected) {
-            CheckIndicator(
-                backgroundColor = if (isGradient) Color.White.copy(alpha = 0.26f)
-                else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-                borderColor     = if (isGradient) Color.White.copy(alpha = 0.45f)
-                else MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                iconTint        = if (isGradient) Color.White else MaterialTheme.colorScheme.primary,
-                modifier        = Modifier.align(Alignment.BottomEnd),
-            )
         }
     }
 }
 
-// ── CtaSection ────────────────────────────────────────────────────────────────
-// Adds trial info line + auto-renew disclosure below the CTA button.
 
 @Composable
 fun CtaSection(
@@ -491,146 +521,125 @@ fun CtaSection(
     onDismiss     : () -> Unit,
     modifier      : Modifier = Modifier,
 ) {
-    val selectedProduct = products.find { it.skuId == selectedSkuId }
-    
+    val spacing         = MaterialTheme.synapse.spacing
+    val selectedProduct = remember(selectedSkuId, products) { products.find { it.skuId == selectedSkuId } }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxWidth(),
+        modifier            = modifier.fillMaxWidth(),
     ) {
-        // ── Primary CTA ────────────────────────────────────────────────────
         PremiumCtaButton(
             trialDays    = trialDays,
             isPurchasing = isPurchasing,
             onClick      = onStartTrial,
         )
 
-        // ── Trial info + auto-renew disclosure ─────────────────────────────
-        // Google Play compliance: must show price, billing cycle, auto-renew,
-        // and cancellation method near the subscribe button.
-        val trialInfo = selectedProduct?.trialInfo
-        if (trialInfo != null) {
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
+        // trial info + auto-renew disclosure
+        selectedProduct?.trialInfo?.let { trialInfo ->
+            Spacer(Modifier.height(spacing.s8))
             Text(
                 text      = trialInfo.resolve(),
                 style     = MaterialTheme.typography.labelSmall,
                 color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                 textAlign = TextAlign.Center,
-                modifier  = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s16),
+                modifier  = Modifier.padding(horizontal = spacing.s16),
             )
         }
 
-        // ── Social proof ───────────────────────────────────────────────────
-        socialProof?.let {
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-            SocialProofRow(socialProof = it)
+        socialProof?.let { proof ->
+            Spacer(Modifier.height(spacing.s12))
+            SocialProofRow(socialProof = proof)
         }
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
-
-        // ── Trust line ─────────────────────────────────────────────────────
+        Spacer(Modifier.height(spacing.s10))
         TrustLine()
 
-        // ── Skip ───────────────────────────────────────────────────────────
         Text(
             text      = stringResource(R.string.premium_cta_skip),
             style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
             textAlign = TextAlign.Center,
             modifier  = Modifier
                 .clickable(onClick = onDismiss)
-                .padding(
-                    vertical   = MaterialTheme.synapse.spacing.s10,
-                    horizontal = MaterialTheme.synapse.spacing.s16
-                ),
+                .padding(vertical = spacing.s10, horizontal = spacing.s16),
         )
     }
 }
+
+
 @Composable
 internal fun PremiumCtaButton(
-    trialDays: Int,
-    isPurchasing: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    trialDays    : Int,
+    isPurchasing : Boolean,
+    onClick      : () -> Unit,
+    modifier     : Modifier = Modifier,
 ) {
-    val gradients = MaterialTheme.synapse.gradients
-    val shape = MaterialTheme.shapes.medium
-    val ctaShadow = MaterialTheme.synapse.shadows.strong.toShadow()
+    val shape   = MaterialTheme.shapes.medium
+    val ctaDesc = stringResource(R.string.premium_cta_start_trial, trialDays)
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(shape = shape, shadow = ctaShadow)
-            .height(68.adp)
+            .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.strong.toShadow())
+            .height(60.adp)
             .clip(shape)
-            .background(gradients.primary)
+            .background(MaterialTheme.synapse.gradients.primary)
             .clickable(enabled = !isPurchasing, onClick = onClick)
-            .semantics { contentDescription = "Start trial" },
+            .semantics { contentDescription = ctaDesc },
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .clipToBounds()
-        ) {
+        Box(modifier = Modifier.matchParentSize().clipToBounds()) {
             ShimmerSweep(durationMs = 2_600, delayMs = 1_200)
         }
 
         if (isPurchasing) {
             LottieAnimation(
-                composition = rememberLottieComposition(
-                    LottieCompositionSpec.RawRes(R.raw.dot_loading)
-                ).value,
-                iterations = LottieConstants.IterateForever,
+                composition  = rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.dot_loading)).value,
+                iterations   = LottieConstants.IterateForever,
                 contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth(0.35f)
-                    .blur(0.5.adp),
-                speed = 0.8f
+                modifier     = Modifier.fillMaxWidth(0.35f).blur(0.5.adp),
+                speed        = 0.8f,
             )
         } else {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.adp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_gem),
+                    painter            = painterResource(R.drawable.ic_gem),
                     contentDescription = null,
-                    tint = Color.White.copy(0.9f),
-                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+                    tint               = Color.White.copy(alpha = 0.90f),
+                    modifier           = Modifier.size(18.adp),
                 )
                 Text(
-                    text = stringResource(R.string.premium_cta_start_trial, trialDays),
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    color = Color.White.copy(0.9f),
+                    text  = stringResource(R.string.premium_cta_start_trial, trialDays),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White.copy(alpha = 0.90f),
                 )
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
-                    tint = Color.White.copy(0.9f),
-                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+                    tint               = Color.White.copy(alpha = 0.90f),
+                    modifier           = Modifier.size(14.adp),
                 )
             }
         }
     }
 }
 
+
 @Composable
 fun SocialProofRow(
-    socialProof: SocialProofData,
-    modifier: Modifier = Modifier,
+    socialProof : SocialProofData,
+    modifier    : Modifier = Modifier,
 ) {
-    val initials = socialProof.avatarInitials
-    val countLabel = socialProof.userCountLabel
-
-    val avatarStep = 32.adp - 12.adp
-    val stackWidth = remember(initials.size) {
-        32.dp + avatarStep * (initials.size - 1)
-    }
+    val spacing    = MaterialTheme.synapse.spacing
+    val initials   = socialProof.avatarInitials
+    val avatarSize = 28.adp
+    val overlap    = 14.adp
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
@@ -641,69 +650,58 @@ fun SocialProofRow(
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
                 shape = MaterialTheme.shapes.large,
             )
-            .padding(
-                horizontal = MaterialTheme.synapse.spacing.s16,
-                vertical = MaterialTheme.synapse.spacing.s12
-            ),
+            .padding(horizontal = spacing.s16, vertical = spacing.s12),
     ) {
-        // ── Avatar stack ──────────────────────────────────────────────────────
         Box(
             modifier = Modifier
-                .width(stackWidth)
-                .height(32.adp),
+                .width(avatarSize + overlap * (initials.size - 1))
+                .height(avatarSize),
         ) {
             initials.forEachIndexed { index, initial ->
                 val hue = 240f + index * 22f
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .offset(x = avatarStep * index)
-                        .size(32.adp)
+                        .offset(x = overlap * index)
+                        .size(avatarSize)
                         .clip(CircleShape)
                         .background(
                             Brush.linearGradient(
                                 colors = listOf(
-                                    Color.hsl(hue, 0.6f, 0.50f),
-                                    Color.hsl(hue + 20f, 0.7f, 0.60f),
+                                    Color.hsl(hue, 0.60f, 0.50f),
+                                    Color.hsl(hue + 20f, 0.70f, 0.60f),
                                 )
                             )
                         )
-                        .border(
-                            width = 2.adp,
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = CircleShape,
-                        ),
+                        .border(width = 2.adp, color = MaterialTheme.colorScheme.surface, shape = CircleShape),
                 ) {
                     Text(
-                        text = initial,
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = White,
+                        text  = initial.take(1).uppercase(),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
                     )
                 }
             }
         }
 
-        Spacer(Modifier.width(MaterialTheme.synapse.spacing.s12))
+        Spacer(Modifier.width(spacing.s12))
 
-        // ── Stars + copy ──────────────────────────────────────────────────────
-        Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s2)) {
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.s2)) {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(2.adp),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.s2),
+                verticalAlignment     = Alignment.CenterVertically,
             ) {
                 repeat(5) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_star_fill),
+                        painter            = painterResource(R.drawable.ic_star_fill),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
+                        tint               = MaterialTheme.colorScheme.tertiary,
+                        modifier           = Modifier.size(10.adp),
                     )
                 }
             }
             Text(
-                text = stringResource(R.string.premium_social_proof, countLabel),
+                text  = stringResource(R.string.premium_social_proof, socialProof.userCountLabel),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -711,76 +709,104 @@ fun SocialProofRow(
     }
 }
 
+
 @Composable
 fun TrustLine(modifier: Modifier = Modifier) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
-        modifier = modifier,
+        modifier              = modifier,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_lock),
+            painter            = painterResource(R.drawable.ic_lock),
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
-            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
+            tint               = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+            modifier           = Modifier.size(12.adp),
         )
         Text(
-            text = stringResource(R.string.premium_trust_line),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
+            text      = stringResource(R.string.premium_trust_line),
+            style     = MaterialTheme.typography.labelMedium,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
             textAlign = TextAlign.Center,
         )
     }
 }
 
+
 @Composable
-internal fun SectionLabel(
-    text: String,
-    modifier: Modifier = Modifier,
+internal fun CheckIndicator(
+    backgroundColor : Color,
+    borderColor     : Color,
+    iconTint        : Color,
+    modifier        : Modifier = Modifier,
 ) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-        modifier = modifier.padding(start = MaterialTheme.synapse.spacing.s12),
-    )
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .padding(MaterialTheme.synapse.spacing.s14)
+            .size(24.adp)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .border(width = 1.adp, color = borderColor, shape = CircleShape),
+    ) {
+        Icon(
+            painter            = painterResource(R.drawable.ic_check),
+            contentDescription = null,
+            tint               = iconTint,
+            modifier           = Modifier.size(12.adp),
+        )
+    }
 }
+
 
 @Composable
 internal fun ShimmerSweep(
-    modifier: Modifier = Modifier,
-    durationMs: Int = 2_600,
-    delayMs: Int = 1_200,
+    durationMs : Int = 2_600,
+    delayMs    : Int = 1_200,
 ) {
     val transition = rememberInfiniteTransition()
-    val offset by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
+    val progress by transition.animateFloat(
+        initialValue  = -0.5f,
+        targetValue   = 1.5f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMs, easing = FastOutSlowInEasing, delayMillis = delayMs),
+            animation  = tween(durationMs, delayMs, LinearEasing),
             repeatMode = RepeatMode.Restart,
+    )
+
+    )
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val shimmerBandWidth = maxWidth / 3
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(shimmerBandWidth)
+                .offset(x = maxWidth * progress)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.20f),
+                            Color.Transparent,
+                        )
+                    )
+                ),
         )
-    )
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .graphicsLayer { translationX = offset * size.width }
-            .background(MaterialTheme.synapse.gradients.shimmer),
-    )
+    }
 }
+
 
 @Composable
 internal fun AmbientOrb(
-    color: Color,
-    size: Dp,
-    modifier: Modifier = Modifier,
+    color    : Color,
+    size     : Dp,
+    modifier : Modifier = Modifier,
 ) {
     Spacer(
         modifier = modifier
             .size(size)
             .drawBehind {
                 drawCircle(
-                    brush = Brush.radialGradient(
+                    brush  = Brush.radialGradient(
                         colors = listOf(color, Color.Transparent),
                         center = center,
                         radius = this.size.minDimension / 2f,
@@ -790,11 +816,12 @@ internal fun AmbientOrb(
     )
 }
 
+
 @Composable
 fun PremiumErrorContent(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier,
+    message  : String,
+    onRetry  : () -> Unit,
+    modifier : Modifier = Modifier,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -804,9 +831,9 @@ fun PremiumErrorContent(
             .padding(MaterialTheme.synapse.spacing.s24),
     ) {
         Text(
-            text = message,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.error,
+            text      = message,
+            style     = MaterialTheme.typography.titleSmall,
+            color     = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
@@ -816,26 +843,20 @@ fun PremiumErrorContent(
 
 @Composable
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-internal fun AppIconDisplay(
-    modifier: Modifier = Modifier,
-) {
-    val glowTransition = rememberInfiniteTransition()
+internal fun AppIconDisplay(modifier: Modifier = Modifier) {
+    val glowTransition = rememberInfiniteTransition(label = "iconGlow")
     val glowAlpha by glowTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 0.7f,
+        initialValue  = 0.30f,
+        targetValue   = 0.70f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation  = tween(2_000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         )
     )
 
     val shape = MaterialShapes.Cookie9Sided.toShape()
 
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier,
-    ) {
-        // ── Animated glow orb behind the icon ──────────────────────────
+    Box(contentAlignment = Alignment.Center, modifier = modifier) {
         Box(
             modifier = Modifier
                 .size(148.adp)
@@ -848,7 +869,7 @@ internal fun AppIconDisplay(
                             Color.Transparent,
                         )
                     )
-                )
+                ),
         )
 
         Box(
@@ -857,22 +878,16 @@ internal fun AppIconDisplay(
                 .size(124.adp)
                 .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.strong.toShadow())
                 .clip(shape)
-                .border(width = 3.adp, brush = MaterialTheme.synapse.gradients.gold, shape = shape),
+                .border(width = 3.adp, brush = MaterialTheme.synapse.gradients.premium, shape = shape),
         ) {
-            // ── App icon fills the shaped container ───────────────────
             Image(
-                painter = painterResource(R.drawable.ic_launcher),
+                painter          = painterResource(R.drawable.ic_launcher),
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
+                contentScale     = ContentScale.Crop,
+                modifier         = Modifier.fillMaxSize(),
             )
-
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .clipToBounds(),
-            ) {
-                ShimmerSweep(durationMs = 3000, delayMs = 0)
+            Box(modifier = Modifier.matchParentSize().clipToBounds()) {
+                ShimmerSweep(durationMs = 3_000, delayMs = 0)
             }
         }
     }
