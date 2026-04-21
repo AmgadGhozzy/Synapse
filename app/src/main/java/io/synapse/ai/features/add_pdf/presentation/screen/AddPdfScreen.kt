@@ -50,6 +50,7 @@ import io.synapse.ai.features.add_pdf.presentation.components.AddPdfHeader
 import io.synapse.ai.features.add_pdf.presentation.components.ConfigureStep
 import io.synapse.ai.features.add_pdf.presentation.components.DoneStep
 import io.synapse.ai.features.add_pdf.presentation.components.GeneratingStep
+import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
 import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
 import io.synapse.ai.features.add_pdf.presentation.components.StepIndicator
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
@@ -61,16 +62,18 @@ import io.synapse.ai.features.add_pdf.presentation.viewmodel.AddPdfViewModel
 
 @Composable
 fun AddPdfScreen(
-    onNavigateBack     : () -> Unit,
-    onNavigateToSession: (Long) -> Unit,
-    onNavigateToPremium: () -> Unit,
-    viewModel          : AddPdfViewModel = hiltViewModel(),
+    onNavigateBack      : () -> Unit,
+    onNavigateToSession : (Long) -> Unit,
+    onNavigateToPremium : () -> Unit,
+    onNavigateToDashboard: () -> Unit,
+    viewModel           : AddPdfViewModel = hiltViewModel(),
 ) {
     val uiState            by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val scrollState        = rememberScrollState()
     var showLanguagePicker by remember { mutableStateOf(false) }
     val context            = LocalContext.current
+    val selectedLanguage   = LANGUAGES.find { it.code == uiState.language } ?: LANGUAGES[0]
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -101,7 +104,7 @@ fun AddPdfScreen(
             when (effect) {
                 is UiEffect.Navigate     -> onNavigateToSession(uiState.packId)
                 is UiEffect.NavigateBack -> onNavigateBack()
-                is UiEffect.ShowToast    -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.ShowToast    -> snackbarController.showToast(effect.type, effect.text.asString(context))
 
                 is UiEffect.ShowUpgradePrompt -> {
                     val feature = effect.feature.asString(context)
@@ -191,8 +194,7 @@ fun AddPdfScreen(
                         slideInHorizontally  { -it } + fadeIn() togetherWith
                                 slideOutHorizontally { it } + fadeOut()
                     }
-                },
-                label = "wizard_step",
+                }
             ) { step ->
                 when (step) {
                     AddPdfStep.SELECT_PDF -> UploadStep(
@@ -214,6 +216,7 @@ fun AddPdfScreen(
                         onTypeToggle          = { viewModel.onEvent(AddPdfUiEvent.QuestionTypeToggled(it)) },
                         onFocusNotesChange    = { viewModel.onEvent(AddPdfUiEvent.FocusNotesChanged(it)) },
                         onLanguageClick       = { showLanguagePicker = true },
+                        onNavigateToPremium    = onNavigateToPremium,
                         onGenerate            = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
                     )
 
@@ -225,12 +228,13 @@ fun AddPdfScreen(
                     )
 
                     AddPdfStep.DONE -> DoneStep(
-                        packName           = uiState.packTitle,
-                        questionCount      = uiState.questionCount,
-                        language           = getLanguageLabelByCode(uiState.language),
+                        packName            = uiState.packTitle,
+                        sourceDescription  = uiState.sourceDescription,
+                        questionCount     = uiState.questionCount,
+                        language          = selectedLanguage,
                         generatedQuestions = uiState.generatedQuestions,
-                        onStartStudying    = { onNavigateToSession(uiState.packId) },
-                        onBackToDashboard  = onNavigateBack,
+                        onStartStudying   = { onNavigateToSession(uiState.packId) },
+                        onBackToDashboard = onNavigateToDashboard,
                     )
                 }
             }

@@ -11,15 +11,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.core.ui.state.toUiModel
 import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.DailyLimitException
-import io.synapse.ai.data.repo.GenerationFailedException
 import io.synapse.ai.domain.model.GeneratedPackResult
 import io.synapse.ai.domain.model.GenerationConfig
-import io.synapse.ai.domain.model.PackModel
+import io.synapse.ai.domain.model.GenerationError
 import io.synapse.ai.domain.model.QuestionType
 import io.synapse.ai.domain.model.SourceType
 import io.synapse.ai.domain.repo.IAIRepository
@@ -288,10 +287,6 @@ class AddPdfViewModel @Inject constructor(
             }
 
             try {
-                val userId = withContext(ioDispatcher) {
-                    runCatching { authRepo.currentUserId() }.getOrNull()
-                } ?: ""
-
                 val config = GenerationConfig(
                     sourceType    = sourceType,
                     questionTypes = state.selectedTypes.toList(),
@@ -299,8 +294,6 @@ class AddPdfViewModel @Inject constructor(
                     difficulty    = state.difficulty,
                     language      = state.language,
                     thinking      = state.thinkingEnabled && !state.isThinkingLocked,
-                    userId        = userId,
-                    hintTone      = state.focusNotes.takeIf { it.isNotBlank() },
                 )
 
                 val result = withContext(ioDispatcher) {
@@ -313,7 +306,7 @@ class AddPdfViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { generated ->
                         generatedResult = generated
-                        savePack(sourceType)
+                        savePack()
                     },
                     onFailure = { error ->
                         handleGenerationError(error)
@@ -334,31 +327,41 @@ class AddPdfViewModel @Inject constructor(
     }
 
     private fun handleGenerationError(error: Throwable) {
-        val msg = when {
+        val msg = when (error) {
 
-            // HTTP 429 — user has hit their daily generation limit.
-            // Show upgrade prompt + contextual message (not a generic snackbar).
-            error is DailyLimitException -> {
+            // ── HTTP 429 — user hit daily pack or token limit ──────────
+            is GenerationError.QuotaExceeded -> {
                 _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_daily_limit)))
                 UiText.Raw(R.string.add_pdf_error_daily_limit)
             }
 
-            // HTTP 400 — malformed request (missing field, invalid source type, etc).
-            error is GenerationFailedException && error.httpStatus == 400 ->
-                UiText.Raw(R.string.add_pdf_error_invalid_request)
-
-            // Vertex AI service unavailable.
-            error.message?.contains("AI service error", ignoreCase = true) == true ->
-                UiText.Raw(R.string.add_pdf_error_ai_service)
-
-            // Any other limit/upgrade message embedded in error text.
-            error.message?.contains("upgrade", ignoreCase = true) == true ||
-                    error.message?.contains("limit",   ignoreCase = true) == true -> {
+            // ── HTTP 400 CONTENT_TOO_LONG — source text exceeds limit ─
+            is GenerationError.ContentTooLong -> {
                 _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_ai_generation)))
-                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message ?: "")
+                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
             }
 
-            else -> UiText.Raw(R.string.add_pdf_error_generation_failed, error.message ?: "")
+            // ── HTTP 400 PDF_TOO_LARGE — PDF file exceeds limit ───────
+            is GenerationError.FileTooLarge -> {
+                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
+                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
+            }
+
+            // ── HTTP 401 — authentication failure ─────────────────────
+            is GenerationError.AuthenticationFailed ->
+                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
+
+            // ── HTTP 400 — malformed request ──────────────────────────
+            is GenerationError.InvalidRequest ->
+                UiText.Raw(R.string.add_pdf_error_invalid_request)
+
+            // ── HTTP 5xx — server / AI service error ──────────────────
+            is GenerationError.ServerError ->
+                UiText.Raw(R.string.add_pdf_error_ai_service)
+
+            // ── Unknown / catch-all ───────────────────────────────────
+            else ->
+                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message ?: "")
         }
 
         _uiState.update {
@@ -423,9 +426,12 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    // ── Save generated pack to Room ───────────────────────────────────────
+    // ── Save generated pack to Room (offline cache) ───────────────────────
+    //
+    // The backend has already persisted the pack and questions to Supabase.
+    // This method caches them locally in Room for offline-first access.
 
-    private fun savePack(sourceType: SourceType) {
+    private fun savePack() {
         val state  = _uiState.value
         val result = generatedResult ?: run {
             _uiState.update {
@@ -441,16 +447,10 @@ class AddPdfViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val saved = withContext(ioDispatcher) {
-                    val pack = PackModel(
-                        id         = result.pack.id,
-                        title      = result.pack.title.ifBlank { state.packTitle },
-                        sourceType = sourceType,
-                        createdAt  = System.currentTimeMillis(),
-                        note       = result.pack.note,
-                        category   = result.pack.category,
-                        emoji      = result.pack.emoji,
-                        color      = result.pack.color,
-                        language   = result.pack.language.ifBlank { state.language },
+                    // Apply defensive fallbacks to the server-provided pack.
+                    val pack = result.pack.copy(
+                        title    = result.pack.title.ifBlank { state.packTitle },
+                        language = result.pack.language.ifBlank { state.language },
                     )
                     val localPackId = packRepo.createPack(pack)
                     val questions   = result.questions.map { it.copy(packId = localPackId) }
@@ -458,19 +458,28 @@ class AddPdfViewModel @Inject constructor(
                     Triple(localPackId, pack.title, questions.map { it.toUiModel() })
                 }
 
-                Log.d(TAG, "Saved packId=${saved.first} | ${saved.third.size} questions")
+Log.d(TAG, "Saved packId=${saved.first} | ${saved.third.size} questions")
+
+                val sourceDesc = when (state.sourceTab) {
+                    SourceTab.FILE -> state.fileName ?: "PDF"
+                    SourceTab.TEXT -> "Text"
+                    SourceTab.WEB -> state.webUrl.takeLast(30)
+                    SourceTab.YOUTUBE -> "YouTube"
+                }
 
                 _uiState.update {
                     it.copy(
                         step               = AddPdfStep.DONE,
                         isLoading          = false,
                         packId             = saved.first,
+                        packUuid           = result.pack.uuid,
                         packTitle          = saved.second,
                         generatedQuestions = saved.third,
+                        sourceDescription  = sourceDesc,
                     )
                 }
 
-                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.add_pdf_pack_created)))
+                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.add_pdf_pack_created), ToastType.SUCCESS))
                 checkPackLimit()
 
             } catch (e: Exception) {
@@ -530,7 +539,7 @@ class AddPdfViewModel @Inject constructor(
                 _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false) }
             }
             AddPdfStep.DONE -> {
-                _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Library.route))
+                _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Dashboard.route))
             }
         }
     }
@@ -549,7 +558,6 @@ class AddPdfViewModel @Inject constructor(
             // Auto-detect if it's a YouTube URL.
             val isYouTube = YOUTUBE_PATTERN.containsMatchIn(cleanedUrl)
 
-            // Switch to the appropriate tab based on the detected URL type.
             val detectedTab = if (isYouTube) SourceTab.YOUTUBE else SourceTab.WEB
 
             state.copy(

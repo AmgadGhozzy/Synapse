@@ -59,8 +59,11 @@ data class AddPdfUiState(
     val isThinkingLocked: Boolean = false,
 
     // ── Generation / Done ─────────────────────────────────────────
+    val sourceDescription: String = "",
     val generationProgress: Float = 0f,
     val packId: Long = 0L,
+    /** Supabase packs.id (UUID) — available after successful generation. */
+    val packUuid: String? = null,
     val generatedQuestions: List<QuestionUiModel> = emptyList(),
 
     // ── UI meta ───────────────────────────────────────────────────
@@ -69,7 +72,7 @@ data class AddPdfUiState(
     val isPackLimitReached: Boolean = false,
     val isOcrFeatureLocked: Boolean = false,
 
-    /** True when the signed-in user has an active pro / premium status. */
+    /** True when the signed-in user has an active pro / gold status. */
     val isPro: Boolean = false,
 
     val maxPages: Int = 20,
