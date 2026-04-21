@@ -14,9 +14,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -39,7 +38,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.BuildConfig
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.synapse
-import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SynapseTopBar
 import io.synapse.ai.core.ui.state.UiEffect
@@ -107,23 +105,21 @@ private fun SynapseShell(
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        modifier = Modifier.fillMaxSize().safeDrawingPadding(),
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.synapse.gradients.page)
+                .systemBarsPadding()
                 .padding(innerPadding)
-
+                .background(MaterialTheme.synapse.gradients.page)
         ) {
             SynapseNavGraph(
                 navController = appState.navController,
                 onboardingDone = onboardingDone,
                 rootViewModel = rootViewModel,
                 modifier = Modifier
-                    .padding(bottom = if (BuildConfig.DEBUG) 18.adp else 0.adp)
-                    .padding(top = if (BuildConfig.DEBUG) 48.adp else 0.adp)
             )
 
             // Bottom nav
@@ -132,7 +128,6 @@ private fun SynapseShell(
                 enter = BarEnter,
                 exit = BarExit,
                 modifier = Modifier
-                    .navigationBarsPadding()
                     .align(Alignment.BottomCenter),
             ) {
                 BottomBar(
@@ -152,21 +147,23 @@ private fun SynapseShell(
                 val density = LocalDensity.current
 
                 Box {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(with(density) { topBarHeightPx.toDp() })
-                            .matchParentSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    colorStops = arrayOf(
-                                        0.0f to MaterialTheme.colorScheme.background,
-                                        0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
-                                        1.0f to Color.Transparent,
+
+                    if (!BuildConfig.DEBUG)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(with(density) { topBarHeightPx.toDp() })
+                                .matchParentSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colorStops = arrayOf(
+                                            0.0f to MaterialTheme.colorScheme.background,
+                                            0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+                                            1.0f to Color.Transparent,
+                                        )
                                     )
-                                )
-                            ),
-                    )
+                                ),
+                        )
 
                     SynapseTopBar(
                         title = stringResource(appState.currentScreen.titleRes),
@@ -190,8 +187,7 @@ private fun SynapseShell(
                                 launchSingleTop = true
                             }
                         },
-                        modifier = Modifier
-                            .onSizeChanged { topBarHeightPx = it.height }
+                        modifier = Modifier.onSizeChanged { topBarHeightPx = it.height }
                     )
                 }
             }

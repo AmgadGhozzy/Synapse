@@ -55,7 +55,7 @@ sealed class SynapseScreen(
     )
 
     data object Premium : SynapseScreen(
-        route       = "synapse/premium",
+        route       = "synapse/gold",
         titleRes    = R.string.synapse_screen_premium,
         subtitleRes = R.string.synapse_subtitle_premium,
     )
@@ -127,7 +127,7 @@ data class BarConfig(
                 route.startsWith(SynapseScreen.About.route)          -> NONE
                 route.startsWith("synapse/quiz")                      -> NONE
                 route.startsWith(SynapseScreen.SessionSummary.route) -> NONE
-                route == SynapseScreen.Profile.route                  -> TOP_ONLY
+                route == SynapseScreen.Profile.route                  -> NONE
                 else                                                   -> BOTH
             }
         }

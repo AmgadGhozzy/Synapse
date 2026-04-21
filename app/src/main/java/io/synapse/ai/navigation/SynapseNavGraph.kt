@@ -200,6 +200,10 @@ fun SynapseNavGraph(
                     navController.popBackStack()
                     navController.navigate(SynapseScreen.Premium.route)
                 },
+                onNavigateToDashboard = {
+                    navController.popBackStack()
+                    navController.navigate(SynapseScreen.Dashboard.route)
+                },
             )
         }
 
