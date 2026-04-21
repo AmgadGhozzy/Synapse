@@ -17,3 +17,10 @@ local.properties
 !/.kotlin/
 !/.agent/
 !/.kotlin/
+!/gradle/gradle-daemon-jvm.properties
+!/.gradle-user-home/wrapper/
+
+!/.gradle-user-home/
+!/.gradle-local/wrapper/
+
+!/.gradle-local/

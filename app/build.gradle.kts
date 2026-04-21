@@ -28,8 +28,8 @@ android {
         applicationId = "io.synapse.ai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 63
-        versionName = "2.1.3"
+        versionCode = 66
+        versionName = "2.1.6"
         ndk {
             abiFilters.add("arm64-v8a")
             abiFilters.add("arm-v7a")
@@ -144,6 +144,8 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
+    // Google Play Billing
+    implementation(libs.billing.ktx)
 
     // Android Jetpack
     api(libs.androidx.core.ktx)

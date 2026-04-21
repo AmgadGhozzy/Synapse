@@ -1,8 +1,15 @@
 [versions]
 agp = "8.13.2"
-composeBom = "2026.03.00"
+billing = "8.3.0"
+
+composeBom = "2026.03.01"
 composeCompiler = "2.3.20"
-composeAnimation = "1.10.5"
+composeAnimation = "1.11.0-beta02"
+composeMaterial3 = "1.5.0-alpha16"
+konfettiCompose = "2.0.5"
+ktorClientOkhttp = "3.1.3"
+materialIconsCoreAndroid = "1.7.8"
+
 coreKtx = "1.15.0"
 espressoCore = "3.6.1"
 fragmentKtx = "1.8.6"
@@ -24,11 +31,8 @@ converterMoshi = "2.11.0"
 roomRuntime = "2.8.4"
 exifinterface = "1.3.7"
 coilCompose = "2.7.0"
-composeMaterial3 = "1.5.0-alpha15"
-materialIconsCoreAndroid = "1.7.8"
 lottieCompose = "6.6.2"
 accompanistPermissions = "0.37.0"
-playServicesAds = "23.6.0"
 datastore = "1.1.2"
 kotlinxSerializationJson = "1.8.0"
 datastorePreferences = "1.1.2"
@@ -37,6 +41,7 @@ credentials = "1.3.0"
 googleid = "1.1.1"
 appcompat = "1.7.0"
 
+textRecognition = "16.0.1"
 vico = "3.0.2"
 
 hilt = "2.57.1"
@@ -47,8 +52,7 @@ navigationCompose = "2.7.0"
 loggingInterceptor = "5.0.0-alpha.16"
 translate = "17.0.3"
 kotlinxCoroutinesPlayServices = "1.8.0"
-aboutlibrariesCore = "11.2.3"
-aboutlibrariesCompose = "11.2.3"
+aboutLibraries = "14.0.1"
 coreSplashscreen = "1.2.0-beta02"
 media3Exoplayer = "1.7.1"
 firebaseCrashlyticsBuildtools = "3.0.6"
@@ -56,6 +60,10 @@ material3WindowSizeClass = "1.4.0"
 supabase = "3.4.1"
 workmanager = "2.9.0"
 hilt-work = "1.2.0"
+animation = "1.11.0-alpha06"
+junit = "4.13.2"
+activityCompose = "1.13.0"
+composeBomVersion = "2024.09.00"
 
 
 [libraries]
@@ -74,8 +82,11 @@ hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", ve
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 # Networking
+konfetti-compose = { module = "nl.dionsegijn:konfetti-compose", version.ref = "konfettiCompose" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktorClientOkhttp" }
 m3color = { module = "com.github.Kyant0:m3color", version.ref = "m3color" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-sse = { group = "com.squareup.okhttp3", name = "okhttp-sse", version.ref = "okhttp" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
@@ -89,7 +100,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 
 # Compose
 compose-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "composeAnimation" }
-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-bom = { group = "androidx.compose", name = "compose-bom-alpha", version.ref = "composeBom" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "composeMaterial3" }
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -112,17 +123,15 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-material-icons-core-android = { group = "androidx.compose.material", name = "material-icons-core-android", version.ref = "materialIconsCoreAndroid" }
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottieCompose" }
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissions" }
-play-services-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playServicesAds" }
 androidx-datastore = { group = "androidx.datastore", name = "datastore", version.ref = "datastore" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
+text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "textRecognition" }
 translate = { group = "com.google.mlkit", name = "translate", version.ref = "translate" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
-aboutlibraries-core = { group = "com.mikepenz", name = "aboutlibraries-core", version.ref = "aboutlibrariesCore" }
-aboutlibraries-compose = { group = "com.mikepenz", name = "aboutlibraries-compose", version.ref = "aboutlibrariesCompose" }
 vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
 
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
@@ -145,10 +154,26 @@ supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgre
 supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt", version.ref = "supabase" }
 supabase-functions = { group = "io.github.jan-tennert.supabase", name = "functions-kt", version.ref = "supabase" }
 
+# Google Play Billing
+billing-client = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
+billing-ktx = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
+
 # WorkManager
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
 hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-work" }
+androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
+
+
+
+# Core module (required for accessing library data)
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
+# Compose UI modules (choose one or both)
+aboutlibraries-compose-core = { module = "com.mikepenz:aboutlibraries-compose-core", version.ref = "aboutLibraries" } # Common compose core
+aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBomVersion" }      # Material 3 UI
 
 [plugins]
 
