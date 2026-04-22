@@ -210,23 +210,23 @@ private fun ModernSnackbar(
 
     val (containerColor, contentColor, icon) = when (type) {
         SnackbarType.SUCCESS -> Triple(
-            semantic.onSuccess,
             semantic.success,
+            semantic.onSuccess,
             Icons.Filled.CheckCircle
         )
         SnackbarType.ERROR -> Triple(
-            semantic.onError,
             semantic.error,
+            semantic.onError,
             Icons.Filled.Error
         )
         SnackbarType.INFO -> Triple(
-            semantic.onAccent,
             semantic.accent,
+            semantic.onAccent,
             Icons.Filled.Info
         )
         SnackbarType.DEFAULT -> Triple(
-            MaterialTheme.colorScheme.inverseSurface,
             MaterialTheme.colorScheme.inverseOnSurface,
+            MaterialTheme.colorScheme.inverseSurface,
             null
         )
     }
@@ -259,7 +259,7 @@ private fun ModernSnackbar(
         },
         containerColor = containerColor,
         contentColor = contentColor,
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         actionContentColor = contentColor
     ) {
         Row(

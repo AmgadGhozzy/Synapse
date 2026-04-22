@@ -36,12 +36,12 @@ fun SynapseSwitch(
         colors = SwitchDefaults.colors(
             checkedThumbColor = Color.White.copy(alpha = 0.9f),
             checkedTrackColor = MaterialTheme.colorScheme.primary,
-            checkedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            checkedIconColor = Color.Black,
             checkedBorderColor = Color.Transparent,
 
             uncheckedThumbColor = MaterialTheme.colorScheme.outline,
             uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-            uncheckedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            uncheckedIconColor = Color.Black,
             uncheckedBorderColor = Color.Transparent,
         ),
     )

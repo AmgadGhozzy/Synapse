@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +54,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -81,7 +82,7 @@ fun SynapseTopBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .systemBarsPadding()
+            .semantics { heading() }
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s24,
                 vertical = MaterialTheme.synapse.spacing.s8,
@@ -334,9 +335,9 @@ fun UnlockAIButton(
     )
     val pillLabel = if (isPremium) stringResource(R.string.go_pro_label_premium)
     else stringResource(R.string.go_pro_label)
-    val shape = RoundedCornerShape(18.adp)
+    val shape = RoundedCornerShape(16.adp)
 
-    val baseColor = if (isPremium) MaterialTheme.synapse.semantic.gold else MaterialTheme.synapse.semantic.accent
+    val baseColor = if (isPremium) MaterialTheme.synapse.semantic.gold else MaterialTheme.synapse.semantic.primary
 
     Box(
         modifier = modifier
