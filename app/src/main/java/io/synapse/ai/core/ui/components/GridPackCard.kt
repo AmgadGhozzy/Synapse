@@ -413,10 +413,10 @@ private fun MetaRow(
             horizontalArrangement = Arrangement.spacedBy(sp.s6),
         ) {
             if (hasDue) {
-                DueBadge(dueCards = dueCards, goldColor = goldColor, goldBgColor = goldBgColor)
+                DueBadge(dueCards, goldColor, goldBgColor)
             }
             if (streakDays > 0) {
-                StreakChip(streakDays = streakDays, goldColor = goldColor)
+                StreakChip(streakDays, goldColor)
             }
         }
     }
@@ -482,16 +482,14 @@ private fun ContinueButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // ✅ الحل: إذا كان هناك مراجعة، نستخدم خلفية شفافة بنسبة 15% من لون المادة
-    // والنص يكون بنفس لون المادة (Accent). هذا يريح العين في الدارك مود ويعطي فخامة مذهلة.
-    val buttonBg = if (hasDue) colorSet.accent.copy(alpha = 0.15f) else Color.Transparent
+    val buttonBg = if (hasDue) colorSet.border.copy(alpha = 0.05f) else Color.Transparent
     val buttonBorder = if (hasDue) Color.Transparent else colorSet.border
-    val textColor = colorSet.accent // النص دائماً يأخذ لون المادة المبهج
+    val textColor = colorSet.accent
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(36.adp)
+            .height(42.adp)
             .clip(MaterialTheme.shapes.large)
             .background(buttonBg)
             .border(

@@ -70,7 +70,7 @@ fun buildCardColorSet(hex: String): CardColorSet {
     val accent = parseColorSafe(hex, fallbackColor)
 
     return CardColorSet(
-        accent = accent.copy(alpha = 0.85f),
+        accent = accent,
         bg = accent.copy(alpha = 0.10f),
         border = accent.copy(alpha = 0.15f),
     )

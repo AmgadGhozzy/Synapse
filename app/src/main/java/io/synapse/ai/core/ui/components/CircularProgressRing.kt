@@ -22,14 +22,13 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.nativePaint
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
@@ -46,7 +45,6 @@ fun CircularProgressRing(
     strokeWidthDp: Dp = 8.adp,
     glowEnabled: Boolean = true,
 ) {
-    val isDarkTheme = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val resolvedTrackColor = trackColor ?: MaterialTheme.colorScheme.surfaceVariant
 
     val animatedProgress by animateFloatAsState(
@@ -69,7 +67,7 @@ fun CircularProgressRing(
             val sweepAngle = 360f * animatedProgress
 
             val glowPaint = if (glowEnabled) Paint().also { p ->
-                p.asFrameworkPaint().apply {
+                p.nativePaint.apply {
                     isAntiAlias  = true
                     style        = android.graphics.Paint.Style.STROKE
                     strokeWidth  = strokePx
@@ -114,7 +112,7 @@ fun CircularProgressRing(
 
                     // ── Progress arc ────────────────────────────────────────
                     drawArc(
-                        color      = progressColor,
+                        color      = progressColor.copy(alpha = 0.8f),
                         startAngle = -90f,
                         sweepAngle = sweepAngle,
                         useCenter  = false,
@@ -142,7 +140,7 @@ fun CircularProgressRing(
                     lineHeight = fontSize * 0.8f,
                     letterSpacing = 0.2.asp,
                     fontWeight = FontWeight.Bold,
-                    color      = progressColor.copy(alpha = 0.6f),
+                    color      = progressColor.copy(alpha = 0.8f),
                 )
             }
         }
@@ -157,12 +155,12 @@ private fun CircularProgressRingPreview() {
         Box(contentAlignment = Alignment.Center) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.adp),
             ) {
-                CircularProgressRing(progress = 0.78f, progressColor = MaterialTheme.colorScheme.primary, label = "DUE", modifier = Modifier.size(64.dp))
-                CircularProgressRing(progress = 0.45f, progressColor = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(64.dp))
-                CircularProgressRing(progress = 1f,    progressColor = MaterialTheme.colorScheme.secondary, label = "DONE", modifier = Modifier.size(64.dp))
-                CircularProgressRing(progress = 0.60f, progressColor = MaterialTheme.colorScheme.error, modifier = Modifier.size(64.dp))
+                CircularProgressRing(progress = 0.78f, progressColor = MaterialTheme.colorScheme.primary, label = "DUE", modifier = Modifier.size(64.adp))
+                CircularProgressRing(progress = 0.45f, progressColor = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(64.adp))
+                CircularProgressRing(progress = 1f,    progressColor = MaterialTheme.colorScheme.secondary, label = "DONE", modifier = Modifier.size(64.adp))
+                CircularProgressRing(progress = 0.60f, progressColor = MaterialTheme.colorScheme.error, modifier = Modifier.size(64.adp))
             }
         }
     }
