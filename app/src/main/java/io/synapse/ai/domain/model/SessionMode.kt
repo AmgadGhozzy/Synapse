@@ -1,11 +1,12 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 enum class SessionMode {
     MIXED,
     MCQ,
     FLASHCARD,
     TRUE_FALSE,
-    SMART;
+    SMART,
+    DEMO;
 
     companion object {
         fun fromString(value: String): SessionMode =

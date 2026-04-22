@@ -1,4 +1,4 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 /** Immutable snapshot of the current user's authentication state. */
 data class UserState(
@@ -7,5 +7,4 @@ data class UserState(
     val displayName: String? = null,
     val email: String? = null,
     val avatarUrl: String? = null,
-    val isPremium: Boolean = false,
 )
