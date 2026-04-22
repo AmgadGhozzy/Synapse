@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -54,7 +55,7 @@ import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
 import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
 import io.synapse.ai.features.add_pdf.presentation.components.StepIndicator
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
-import io.synapse.ai.features.add_pdf.presentation.components.getLanguageLabelByCode
+import io.synapse.ai.features.add_pdf.presentation.components.label
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
 import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
@@ -159,6 +160,7 @@ fun AddPdfScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .verticalScroll(scrollState)
+                .imePadding()
                 .padding(horizontal = MaterialTheme.synapse.spacing.screen),
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.sectionGap),
         ) {
@@ -223,7 +225,7 @@ fun AddPdfScreen(
                     AddPdfStep.GENERATING -> GeneratingStep(
                         progress         = uiState.generationProgress,
                         questionCount    = uiState.questionCount,
-                        language         = getLanguageLabelByCode(uiState.language),
+                        language         = selectedLanguage.label(),
                         focusNotesActive = uiState.focusNotes.isNotBlank(),
                     )
 
