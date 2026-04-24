@@ -24,8 +24,7 @@
         <activity
             android:name="io.synapse.ai.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.Synapse.Splash"
-            android:windowSoftInputMode="adjustResize">
+            android:theme="@style/Theme.Synapse.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
