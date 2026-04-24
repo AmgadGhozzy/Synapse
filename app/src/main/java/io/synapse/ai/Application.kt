@@ -1,6 +1,9 @@
 package io.synapse.ai
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.StrictMode
 import android.util.Log
 import dagger.hilt.android.EntryPointAccessors
@@ -8,6 +11,7 @@ import dagger.hilt.android.HiltAndroidApp
 import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.data.ConsentRepository
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
+import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.di.NetworkEntryPoint
@@ -15,6 +19,7 @@ import io.synapse.ai.domain.repo.IAuthRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -29,9 +34,11 @@ class Application : Application() {
     @Inject lateinit var appConfigProvider: AppConfigProvider
     @Inject lateinit var authRepo: IAuthRepository
     @Inject lateinit var premiumManager: PremiumManager
+    @Inject lateinit var soundManager: SoundManager
 
     override fun onCreate() {
         super.onCreate()
+        createNotificationChannels()
         initializeTracking()
         bootstrapAuth()
         initializePremium()
@@ -39,10 +46,30 @@ class Application : Application() {
 
         applicationScope.launch {
             appConfigProvider.fetchAndActivate()
+            premiumManager.reEvaluateReviewerMode()
         }
 
         if (BuildConfig.DEBUG) {
             enableStrictMode()
+        }
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        soundManager.release()
+    }
+
+    private fun createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_REMINDERS,
+                "Study Reminders",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Get notified about study reminders and daily goals"
+            }
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.createNotificationChannel(channel)
         }
     }
 
@@ -98,7 +125,10 @@ class Application : Application() {
      */
     private fun observeConsentChanges() {
         applicationScope.launch {
-            consentRepository.consent.collect { consent ->
+            // S-2 FIX: The current consent value was already consumed by consent.first()
+            // in initializeTracking(). Without drop(1), the flow re-emits that same
+            // cached value immediately, calling updateConsent() twice on startup.
+            consentRepository.consent.drop(1).collect { consent ->
                 trackingManager.updateConsent(consent)
             }
         }
@@ -149,5 +179,6 @@ class Application : Application() {
 
     companion object {
         private const val TAG = "SynapseApp"
+        const val CHANNEL_REMINDERS = "study_reminders"
     }
 }

@@ -11,7 +11,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.LimitedFontScale
 import io.synapse.ai.core.theme.SynapseTheme
-import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.features.premium.presentation.viewmodel.EntitlementViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.StudySettingsViewModel
 import io.synapse.ai.ui.SynapseApp
@@ -24,12 +24,10 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var soundManager: SoundManager
 
-    @Inject
-    lateinit var premiumManager: PremiumManager
-
     private val rootViewModel: RootViewModel by viewModels()
     private val profileViewModel: ProfileViewModel by viewModels()
     private val studySettingsViewModel: StudySettingsViewModel by viewModels()
+    private val entitlementViewModel: EntitlementViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +54,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        premiumManager.verifyWithServer()
+        entitlementViewModel.onResume()
     }
 
     companion object {
