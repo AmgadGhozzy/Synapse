@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.components.DeletePackDialog
 import io.synapse.ai.core.ui.components.GridPackCard
 import io.synapse.ai.core.ui.components.SnackbarHost
@@ -223,21 +224,30 @@ private fun PortraitLayout(
         else R.string.dashboard_empty_section_title,
     )
 
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 180.dp),
-        state = listState,
-        contentPadding = PaddingValues(
-            start = spacing.screen,
-            end = spacing.screen,
-            top = spacing.screenContentTop,
-            bottom = spacing.screenContentBottom,
-        ),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxSize(),
-    ) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val adaptiveMinSize = remember(maxWidth) {
+            when {
+                maxWidth < 400.dp -> 160
+                maxWidth < 600.dp -> 180
+                else -> 200
+            }
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = adaptiveMinSize.adp),
+            state = listState,
+            contentPadding = PaddingValues(
+                start = spacing.screen,
+                end = spacing.screen,
+                top = spacing.screenContentTop,
+                bottom = spacing.screenContentBottom,
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.adp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
 
         // ── Daily Goal Card ───────────────────────────────────────────
-        item(span = { GridItemSpan(maxLineSpan) }) {
+        item(key = "daily_goal", span = { GridItemSpan(maxLineSpan) }) {
             DailyGoalCard(
                 todayStudied = uiState.todayStudied,
                 dailyGoal = uiState.dailyGoal,
@@ -248,7 +258,7 @@ private fun PortraitLayout(
         }
 
         // ── KPI Card ─────────────────────────────────────────────────
-        item(span = { GridItemSpan(maxLineSpan) }) {
+        item(key = "kpi_card", span = { GridItemSpan(maxLineSpan) }) {
             DashboardKpiCard(
                 streakDays = uiState.streakDays,
                 accuracyPercent = uiState.accuracyPercent,
@@ -260,7 +270,7 @@ private fun PortraitLayout(
         }
 
         // ── Section header ────────────────────────────────────────────
-        item(span = { GridItemSpan(maxLineSpan) }) {
+        item(key = "section_header", span = { GridItemSpan(maxLineSpan) }) {
             SectionHeader(
                 title = sectionTitle,
                 onSeeAll = onSeeAllPacks,
@@ -270,7 +280,7 @@ private fun PortraitLayout(
         }
 
         if (uiState.packs.isEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            item(key = "empty_state", span = { GridItemSpan(maxLineSpan) }) {
                 EmptyPacksState(onAddPack = onAddPack)
             }
         } else {
@@ -291,6 +301,7 @@ private fun PortraitLayout(
                 )
             }
         }
+    }
     }
 }
 
@@ -416,14 +427,14 @@ private fun PackGrid(
     }
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 180.dp),
+        columns = GridCells.Adaptive(minSize = 180.adp),
         state = listState,
         contentPadding = PaddingValues(
             top = spacing.screenContentTop,
             bottom = spacing.screenContentBottom,
         ),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.s8),
+        horizontalArrangement = Arrangement.spacedBy(spacing.s8),
         modifier = modifier,
     ) {
         items(packs, key = { it.id }) { pack ->
