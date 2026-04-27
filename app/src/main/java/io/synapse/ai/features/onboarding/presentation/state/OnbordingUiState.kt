@@ -1,8 +1,8 @@
-package com.venom.synapse.features.onboarding.presentation.state
+package io.synapse.ai.features.onboarding.presentation.state
 
 import androidx.compose.runtime.Immutable
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.state.UiText
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.UiText
 
 
 @Immutable
@@ -47,8 +47,6 @@ data class OnboardingUiState(
 ) {
     val isLastStep: Boolean get() = steps.isNotEmpty() && currentStep == steps.lastIndex
     val currentStepData: OnboardingStepData? get() = steps.getOrNull(currentStep)
-
-
 }
 
 @Immutable
@@ -56,4 +54,3 @@ sealed interface OnboardingEvent {
     data object Complete : OnboardingEvent
     data class ShowError(val message: UiText) : OnboardingEvent
 }
-

@@ -1,15 +1,17 @@
-package com.venom.synapse.features.onboarding.presentation.viewmodel
+package io.synapse.ai.features.onboarding.presentation.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.venom.data.repo.SettingsRepository
-import com.venom.synapse.R
-import com.venom.synapse.core.ui.state.UiText
-import com.venom.synapse.domain.repo.IAuthRepository
-import com.venom.synapse.features.onboarding.presentation.state.OnboardingEvent
-import com.venom.synapse.features.onboarding.presentation.state.OnboardingUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.UiEffect
+import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.AppConfigProvider
+import io.synapse.ai.data.repo.AppSettingsRepository
+import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.features.onboarding.presentation.state.OnboardingEvent
+import io.synapse.ai.features.onboarding.presentation.state.OnboardingUiState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -24,8 +26,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository,
+    private val settingsRepository: AppSettingsRepository,
     private val authRepo: IAuthRepository,
+    private val appConfigProvider: AppConfigProvider,
 ) : ViewModel() {
 
     private val _currentStep = MutableStateFlow(0)
@@ -40,6 +43,9 @@ class OnboardingViewModel @Inject constructor(
 
     private val _events = MutableSharedFlow<OnboardingEvent>()
     val events: SharedFlow<OnboardingEvent> = _events.asSharedFlow()
+
+    private val _uiEffects = MutableSharedFlow<UiEffect>()
+    val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
     fun onNext() {
         _currentStep.update { step ->
@@ -69,9 +75,21 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
+    fun onTermsTapped() {
+        viewModelScope.launch {
+            _uiEffects.emit(UiEffect.OpenExternal(appConfigProvider.appTerms))
+        }
+    }
+
+    fun onPrivacyTapped() {
+        viewModelScope.launch {
+            _uiEffects.emit(UiEffect.OpenExternal(appConfigProvider.appPrivacy))
+        }
+    }
+
     private fun complete() {
         viewModelScope.launch {
-            settingsRepository.markFirstLaunchComplete()
+            settingsRepository.setFirstLaunchComplete()
             _events.emit(OnboardingEvent.Complete)
         }
     }
