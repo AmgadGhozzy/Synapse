@@ -2,7 +2,6 @@ package io.synapse.ai.features.add_pdf.presentation.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import android.util.Base64
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.lifecycle.SavedStateHandle
@@ -16,11 +15,13 @@ import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.core.ui.state.toUiModel
 import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.domain.model.GeneratedPackResult
 import io.synapse.ai.domain.model.GenerationConfig
 import io.synapse.ai.domain.model.GenerationError
+import io.synapse.ai.domain.model.GenerationStreamEvent
+import io.synapse.ai.domain.model.PackModel
 import io.synapse.ai.domain.model.QuestionType
 import io.synapse.ai.domain.model.SourceType
+import io.synapse.ai.domain.model.toQuestionModel
 import io.synapse.ai.domain.repo.IAIRepository
 import io.synapse.ai.domain.repo.IAuthRepository
 import io.synapse.ai.domain.repo.IPackRepository
@@ -42,6 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,34 +52,37 @@ import javax.inject.Inject
 @HiltViewModel
 class AddPdfViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val aiRepo      : IAIRepository,
-    private val packRepo    : IPackRepository,
+    private val aiRepo: IAIRepository,
+    private val packRepo: IPackRepository,
     private val questionRepo: IQuestionRepository,
-    private val authRepo    : IAuthRepository,
-    private val appConfig   : AppConfigProvider,
-    savedStateHandle        : SavedStateHandle,
+    private val authRepo: IAuthRepository,
+    private val appConfig: AppConfigProvider,
+    savedStateHandle: SavedStateHandle,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
-    private val initialSourceTab = when (savedStateHandle.get<String>(SynapseScreen.AddPdf.ARG_SOURCE)) {
-        SynapseScreen.AddPdf.SOURCE_TEXT -> SourceTab.TEXT
-        else                             -> SourceTab.FILE
-    }
+    private val initialSourceTab =
+        when (savedStateHandle.get<String>(SynapseScreen.AddPdf.ARG_SOURCE)) {
+            SynapseScreen.AddPdf.SOURCE_TEXT -> SourceTab.TEXT
+            else -> SourceTab.FILE
+        }
 
-    private val _uiState   = MutableStateFlow(AddPdfUiState(sourceTab = initialSourceTab))
+    private val _uiState = MutableStateFlow(AddPdfUiState(sourceTab = initialSourceTab))
     val uiState: StateFlow<AddPdfUiState> = _uiState.asStateFlow()
 
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
-    private var generationJob  : Job? = null
-    private var generatedResult: GeneratedPackResult? = null
+    private var generationJob: Job? = null
+    private var messageRotationJob: Job? = null
+    private var packLimitJob: Job? = null
 
     init {
         observePremiumConfig()
         checkPackLimit()
     }
 
+    // ── Premium config observer ───────────────────────────────────────────
     private fun observePremiumConfig() {
         viewModelScope.launch {
             combine(
@@ -87,13 +92,7 @@ class AddPdfViewModel @Inject constructor(
                 appConfig.ocrMaxPagesFlow,
                 appConfig.addPdfMaxFileSizeMbFlow,
             ) { isPremium, isOcrLocked, isThinkingLocked, maxPages, maxFileSize ->
-                PremiumConfig(
-                    isPremium = isPremium,
-                    isOcrLocked = isOcrLocked,
-                    isThinkingLocked = isThinkingLocked,
-                    maxPages = maxPages,
-                    maxFileSizeMb = maxFileSize,
-                )
+                PremiumConfig(isPremium, isOcrLocked, isThinkingLocked, maxPages, maxFileSize)
             }.collect { config ->
                 _uiState.update {
                     it.copy(
@@ -128,51 +127,30 @@ class AddPdfViewModel @Inject constructor(
             is AddPdfUiEvent.LanguageSelected     -> updateLanguage(event.languageCode)
             is AddPdfUiEvent.ThinkingToggled      -> toggleThinking()
             is AddPdfUiEvent.GeneratePack         -> generateQuestions()
+            is AddPdfUiEvent.StartStudyEarly      -> startStudyEarly()
         }
     }
 
     // ── Source tab ────────────────────────────────────────────────────────
-    private fun updateSourceTab(tab: SourceTab) {
+    private fun updateSourceTab(tab: SourceTab) =
         _uiState.update { it.copy(sourceTab = tab, error = null) }
-    }
 
-    // ── File (PDF) selection ──────────────────────────────────────────────
+    // ── File (PDF) ────────────────────────────────────────────────────────
     private fun onFileSelected(uri: String, fileName: String, sizeMb: Float) {
-        // Reject non-PDF files immediately.
         if (!fileName.endsWith(".pdf", ignoreCase = true)) {
-            _uiState.update {
-                it.copy(error = UiText.Raw(R.string.add_pdf_error_unsupported_file_type))
-            }
+            _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_unsupported_file_type)) }
             return
         }
-
-        // Reject files that exceed the user's plan limit.
         if (sizeMb > _uiState.value.maxFileSizeMb) {
-            // Show upgrade paywall instead of just error
             _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
             _uiState.update {
-                it.copy(
-                    error = UiText.Raw(
-                        R.string.add_pdf_error_file_too_large,
-                        sizeMb,
-                        _uiState.value.maxFileSizeMb,
-                    )
-                )
+                it.copy(error = UiText.Raw(R.string.add_pdf_error_file_too_large, sizeMb, appConfig.proMaxFileSizeMb))
             }
             return
         }
-
         _uiState.update {
-            it.copy(
-                fileUri       = uri,
-                fileName      = fileName,
-                fileSizeMb    = sizeMb,
-                extractedText = null,
-                error         = null,
-            )
+            it.copy(fileUri = uri, fileName = fileName, fileSizeMb = sizeMb, extractedText = null, error = null)
         }
-
-        // Native Gemini PDF flow: skip local extraction, go straight to Configure.
         continueToConfig()
     }
 
@@ -192,101 +170,134 @@ class AddPdfViewModel @Inject constructor(
 
     // ── OCR toggle ────────────────────────────────────────────────────────
     private fun toggleOcr() {
-        val state = _uiState.value
-        if (state.isOcrFeatureLocked) {
-            // Show upgrade prompt instead of toggling.
+        if (_uiState.value.isOcrFeatureLocked) {
             _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_pro_ocr)))
             return
         }
-        _uiState.update {
-            it.copy(
-                ocrEnabled    = !it.ocrEnabled,
-                extractedText = null
+        _uiState.update { it.copy(ocrEnabled = !it.ocrEnabled, extractedText = null) }
+    }
+
+    // ── Text / URL updates ────────────────────────────────────────────────
+    private fun updatePasteText(text: String) =
+        _uiState.update { it.copy(pasteText = text, error = null) }
+
+    private fun updateWebUrl(url: String) {
+        // Strip accidental whitespace / pasted multi-word content
+        val cleaned = url.trim().split(Regex("\\s+")).firstOrNull() ?: ""
+        _uiState.update { state ->
+            val isYouTube = YOUTUBE_PATTERN.containsMatchIn(cleaned)
+            state.copy(
+                webUrl    = cleaned,
+                sourceTab = if (isYouTube) SourceTab.YOUTUBE else SourceTab.WEB,
+                error     = null,
             )
         }
     }
 
-    // ── Thinking toggle ───────────────────────────────────────────────────
-    private fun toggleThinking() {
-        val state = _uiState.value
+    private fun onWebTabLockedClicked() =
+        _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_web_youtube_import)))
 
-        if (state.isThinkingLocked) {
+    // ── Configure fields ──────────────────────────────────────────────────
+    private fun updateQuestionCount(count: Int) = _uiState.update { it.copy(questionCount = count.coerceIn(3, 50)) }
+    private fun updateLanguage(code: String)    = _uiState.update { it.copy(language = code) }
+    private fun updateFocusNotes(notes: String) = _uiState.update { it.copy(focusNotes = notes) }
+    private fun updateDifficulty(d: String)     = _uiState.update { it.copy(difficulty = d) }
+    private fun clearError()                    = _uiState.update { it.copy(error = null) }
+
+    private fun toggleQuestionType(type: QuestionType) {
+        _uiState.update { state ->
+            val current = state.selectedTypes
+            val updated = if (type in current && current.size > 1) current - type else current + type
+            state.copy(selectedTypes = updated)
+        }
+    }
+
+    private fun toggleThinking() {
+        if (_uiState.value.isThinkingLocked) {
             _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_deep_thinking)))
             return
         }
         _uiState.update { it.copy(thinkingEnabled = !it.thinkingEnabled) }
     }
 
-    // ── Continue to configure ─────────────────────────────────────────────
+    // ── Continue to Configure ─────────────────────────────────────────────
     private fun continueToConfig() {
         if (_uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
-
         val state = _uiState.value
         when (state.sourceTab) {
-
             SourceTab.FILE -> {
                 if (state.fileUri != null) {
                     _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, error = null) }
                 } else {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_no_content)) }
+                    toast(UiText.Raw(R.string.add_pdf_error_no_content), ToastType.ERROR)
                 }
             }
-
             SourceTab.TEXT -> {
-                val text = state.pasteText.trim()
-                if (text.length < 10) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_paste_more_text)) }
-                    return
-                }
-                _uiState.update {
-                    it.copy(extractedText = text, packTitle = "", step = AddPdfStep.CONFIGURE, error = null)
+                if (state.pasteText.trim().length < 10) {
+                    toast(UiText.Raw(R.string.add_pdf_error_paste_more_text), ToastType.ERROR)
+                } else {
+                    _uiState.update {
+                        it.copy(extractedText = state.pasteText.trim(), packTitle = "", step = AddPdfStep.CONFIGURE, error = null)
+                    }
                 }
             }
-
             SourceTab.WEB, SourceTab.YOUTUBE -> {
-                val url = state.webUrl.trim()
-                if (url.isBlank()) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_empty_url)) }
-                    return
+                if (state.webUrl.isBlank()) {
+                    toast(UiText.Raw(R.string.add_pdf_error_empty_url), ToastType.ERROR)
+                } else {
+                    _uiState.update { it.copy(packTitle = "", step = AddPdfStep.CONFIGURE, error = null) }
                 }
-                _uiState.update { it.copy(packTitle = "", step = AddPdfStep.CONFIGURE, error = null) }
             }
         }
     }
 
-    // ── Generation ────────────────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════════════════
+    // GENERATION — SSE Streaming
+    // ══════════════════════════════════════════════════════════════════════
+
     private fun generateQuestions() {
         if (_uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
-
         val state = _uiState.value
 
-        // Resolve the (source string, SourceType) pair — returns null on validation failure.
-        val (source, sourceType) = resolveSource(state) ?: return
-
         _uiState.update {
-            it.copy(step = AddPdfStep.GENERATING, isLoading = true, generationProgress = 0f, error = null)
+            it.copy(
+                step                   = AddPdfStep.GENERATING,
+                isLoading              = true,
+                generationProgress     = 0f,
+                error                  = null,
+                questionsCompleted     = 0,
+                questionsExpected      = state.questionCount,
+                conceptsFound          = 0,
+                streamStage            = PROGRESS_MESSAGES.first(),
+                streamPackTitle        = "",
+                streamPackEmoji        = "",
+                streamPackColor        = "",
+                canStartEarly          = false,
+                generatingInBackground = false,
+                packId                 = 0L,
+                packUuid               = null,
+            )
         }
+
+        startMessageRotation()
 
         generationJob?.cancel()
         generationJob = viewModelScope.launch {
-
-            // Fake progress ticks while waiting for the edge function.
-            val progressJob = launch {
-                var p = 0f
-                while (p < 0.85f) {
-                    delay(600)
-                    p = (p + 0.04f).coerceAtMost(0.85f)
-                    _uiState.update { it.copy(generationProgress = p) }
-                }
-            }
-
             try {
+                val resolved = withContext(ioDispatcher) { resolveSource(state) }
+                if (resolved == null) {
+                    stopMessageRotation()
+                    _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f) }
+                    return@launch
+                }
+                val (source, sourceType) = resolved
+
                 val config = GenerationConfig(
                     sourceType    = sourceType,
                     questionTypes = state.selectedTypes.toList(),
@@ -294,322 +305,378 @@ class AddPdfViewModel @Inject constructor(
                     difficulty    = state.difficulty,
                     language      = state.language,
                     thinking      = state.thinkingEnabled && !state.isThinkingLocked,
+                    instructions  = state.focusNotes.takeIf { it.isNotBlank() },
                 )
 
-                val result = withContext(ioDispatcher) {
-                    aiRepo.generatePack(source = source, generationConfig = config)
-                }
-
-                progressJob.cancel()
-                _uiState.update { it.copy(generationProgress = 1f) }
-
-                result.fold(
-                    onSuccess = { generated ->
-                        generatedResult = generated
-                        savePack()
-                    },
-                    onFailure = { error ->
-                        handleGenerationError(error)
-                    },
-                )
+                aiRepo.generatePackStream(source = source, generationConfig = config)
+                    .collect { event -> handleStreamEvent(event, sourceType, state) }
 
             } catch (e: CancellationException) {
-                progressJob.cancel()
-                _uiState.update {
-                    it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f)
-                }
+                stopMessageRotation()
+                _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f) }
                 throw e
+            } catch (e: GenerationError) {
+                stopMessageRotation()
+                handleGenerationError(e)
             } catch (e: Exception) {
-                progressJob.cancel()
+                stopMessageRotation()
                 handleGenerationError(e)
             }
         }
     }
 
-    private fun handleGenerationError(error: Throwable) {
-        val msg = when (error) {
+    /**
+     * Dispatches each SSE event to the appropriate handler.
+     * Suspended so DB writes happen inline without extra job overhead.
+     */
+    private suspend fun handleStreamEvent(
+        event: GenerationStreamEvent,
+        sourceType: SourceType,
+        originalState: AddPdfUiState,
+    ) {
+        when (event) {
 
-            // ── HTTP 429 — user hit daily pack or token limit ──────────
-            is GenerationError.QuotaExceeded -> {
+            // ── pack_meta: create pack row in Room immediately ─────────────
+            is GenerationStreamEvent.PackMeta -> {
+                stopMessageRotation() // server messages take over
+
+                val pack = PackModel(
+                    title         = event.title.ifBlank { originalState.packTitle },
+                    sourceType    = sourceType,
+                    createdAt     = System.currentTimeMillis(),
+                    note          = event.description ?: "",
+                    sourceSummary = event.sourceSummary,
+                    category      = event.category,
+                    emoji         = event.emoji,
+                    color         = event.color,
+                    language      = event.language?.ifBlank { originalState.language } ?: originalState.language,
+                    uuid          = event.packId,
+                    difficulty    = event.difficulty,
+                    questionCount = event.expectedCount,
+                )
+                val localPackId = withContext(ioDispatcher) { packRepo.createPack(pack) }
+
+                _uiState.update {
+                    it.copy(
+                        packId             = localPackId,
+                        packUuid           = event.packId,
+                        streamPackTitle    = pack.title,
+                        streamPackEmoji    = pack.emoji ?: "",
+                        streamPackColor    = pack.color ?: "",
+                        conceptsFound      = event.conceptsFound,
+                        questionsExpected  = event.expectedCount,
+                        streamStage        = "Extracted ${event.conceptsFound} concepts — building questions…",
+                        generationProgress = 0.12f,
+                    )
+                }
+            }
+
+            // ── question: save to Room + update live counter ───────────────
+            is GenerationStreamEvent.Question -> {
+                val packId = _uiState.value.packId
+                if (packId > 0) {
+                    val model = event.toQuestionModel(packId)
+                    withContext(ioDispatcher) { questionRepo.insertQuestions(listOf(model)) }
+                }
+
+                _uiState.update { current ->
+                    val done     = current.questionsCompleted + 1
+                    val expected = current.questionsExpected.coerceAtLeast(1)
+                    val canStart = !current.generatingInBackground &&
+                            done >= (expected * EARLY_START_THRESHOLD).toInt().coerceAtLeast(1)
+                    current.copy(
+                        questionsCompleted = done,
+                        canStartEarly      = canStart,
+                    )
+                }
+            }
+
+            // ── progress: server-driven progress bar + stage label ─────────
+            is GenerationStreamEvent.Progress -> {
+                _uiState.update {
+                    it.copy(
+                        generationProgress = event.percent / 100f,
+                        streamStage        = event.message.ifBlank { it.streamStage },
+                        conceptsFound      = event.conceptsFound.takeIf { c -> c > 0 } ?: it.conceptsFound,
+                    )
+                }
+            }
+
+            // ── done: finalize Room pack, transition to Done step ──────────
+            is GenerationStreamEvent.Done -> {
+                stopMessageRotation()
+
+                val currentState = _uiState.value
+                val finalCount   = event.total
+
+                // Always update the pack's question_count in Room
+                if (currentState.packId > 0) {
+                    withContext(ioDispatcher) {
+                        packRepo.updateQuestionCount(currentState.packId, finalCount)
+                    }
+                }
+
+                checkPackLimit()
+
+                // FIX: resolve common values once — shared by both branches
+                val sourceDesc = when (currentState.sourceTab) {
+                    SourceTab.FILE    -> currentState.fileName ?: "PDF"
+                    SourceTab.TEXT    -> "Text"
+                    SourceTab.WEB     -> currentState.webUrl.takeLast(30)
+                    SourceTab.YOUTUBE -> "YouTube"
+                }
+                val uiQuestions = withContext(ioDispatcher) {
+                    questionRepo.getDueQuestions(currentState.packId, limit = 10).map { it.toUiModel() }
+                }
+
+                if (!currentState.generatingInBackground) {
+                    // User is still on generating screen → transition to Done
+                    _uiState.update {
+                        it.copy(
+                            step               = AddPdfStep.DONE,
+                            isLoading          = false,
+                            packTitle          = it.streamPackTitle,
+                            sourceDescription  = sourceDesc,
+                            generatedQuestions = uiQuestions,
+                            generationProgress = 1f,
+                            streamStage        = "Pack ready!",
+                        )
+                    }
+                    toast(UiText.Raw(R.string.add_pdf_pack_created), ToastType.SUCCESS)
+                } else {
+                    // User navigated away — silently complete in background
+                    _uiState.update {
+                        it.copy(
+                            step                   = AddPdfStep.DONE,
+                            isLoading              = false,
+                            generatingInBackground = false,
+                            generationProgress     = 1f,
+                            packTitle              = it.streamPackTitle,
+                            sourceDescription      = sourceDesc,
+                            generatedQuestions     = uiQuestions,
+                            streamStage            = "Pack ready!",
+                        )
+                    }
+                    Log.d(TAG, "Background generation complete — $finalCount questions saved")
+                }
+            }
+
+            // ── error: partial recovery or full failure ────────────────────
+            is GenerationStreamEvent.Error -> {
+                stopMessageRotation()
+                Log.w(TAG, "Stream error [${event.code}] recoverable=${event.recoverable}: ${event.message}")
+
+                if (event.recoverable && _uiState.value.questionsCompleted > 0) {
+                    // Partial but usable result — let user continue
+                    val currentState = _uiState.value
+                    if (!currentState.generatingInBackground) {
+                        toast(UiText.Raw(R.string.add_pdf_pack_created), ToastType.SUCCESS)
+                    }
+                    val uiQuestions = withContext(ioDispatcher) {
+                        questionRepo.getDueQuestions(currentState.packId, limit = 10).map { it.toUiModel() }
+                    }
+                    _uiState.update {
+                        it.copy(
+                            step                   = AddPdfStep.DONE,
+                            isLoading              = false,
+                            generatingInBackground = false,
+                            generatedQuestions     = uiQuestions,
+                            generationProgress     = it.questionsCompleted / it.questionsExpected.coerceAtLeast(1).toFloat(),
+                        )
+                    }
+                } else {
+                    handleGenerationError(GenerationError.ServerError(event.message))
+                }
+            }
+        }
+    }
+
+    /**
+     * User taps "Start Now". Navigate to study screen immediately.
+     * Generation continues in background, saving remaining questions to Room.
+     */
+    private fun startStudyEarly() {
+        val packId = _uiState.value.packId
+        if (packId <= 0) return
+        _uiState.update { it.copy(generatingInBackground = true, canStartEarly = false) }
+        _uiEffects.tryEmit(UiEffect.Navigate(packId.toString()))
+    }
+
+    /**
+     * Rotates through contextual messages locally while waiting for server events.
+     * Stops as soon as server starts sending real progress/question events.
+     */
+    private fun startMessageRotation() {
+        stopMessageRotation()
+        messageRotationJob = viewModelScope.launch {
+            val messages = if (_uiState.value.isPro) PRO_PROGRESS_MESSAGES else PROGRESS_MESSAGES
+            var idx = 0
+            while (true) {
+                delay(MESSAGE_ROTATION_MS)
+                if (_uiState.value.questionsCompleted == 0 && _uiState.value.conceptsFound == 0) {
+                    _uiState.update { it.copy(streamStage = messages[idx % messages.size]) }
+                    idx++
+                }
+            }
+        }
+    }
+
+    private fun stopMessageRotation() {
+        messageRotationJob?.cancel()
+        messageRotationJob = null
+    }
+
+    // ── Error handler ─────────────────────────────────────────────────────
+    private fun handleGenerationError(error: Throwable) {
+        val msg: UiText = when (error) {
+            is GenerationError.NetworkError         -> UiText.Raw(R.string.error_network)
+            is GenerationError.QuotaExceeded        -> {
                 _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_daily_limit)))
                 UiText.Raw(R.string.add_pdf_error_daily_limit)
             }
-
-            // ── HTTP 400 CONTENT_TOO_LONG — source text exceeds limit ─
-            is GenerationError.ContentTooLong -> {
+            is GenerationError.ContentTooLong       -> {
                 _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_ai_generation)))
-                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
-            }
-
-            // ── HTTP 400 PDF_TOO_LARGE — PDF file exceeds limit ───────
-            is GenerationError.FileTooLarge -> {
-                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
-                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
-            }
-
-            // ── HTTP 401 — authentication failure ─────────────────────
-            is GenerationError.AuthenticationFailed ->
-                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message)
-
-            // ── HTTP 400 — malformed request ──────────────────────────
-            is GenerationError.InvalidRequest ->
                 UiText.Raw(R.string.add_pdf_error_invalid_request)
-
-            // ── HTTP 5xx — server / AI service error ──────────────────
-            is GenerationError.ServerError ->
-                UiText.Raw(R.string.add_pdf_error_ai_service)
-
-            // ── Unknown / catch-all ───────────────────────────────────
-            else ->
-                UiText.Raw(R.string.add_pdf_error_generation_failed, error.message ?: "")
+            }
+            is GenerationError.FileTooLarge         -> {
+                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
+                UiText.Raw(R.string.add_pdf_error_invalid_request)
+            }
+            is GenerationError.AuthenticationFailed -> UiText.Raw(R.string.add_pdf_error_ai_service)
+            is GenerationError.InvalidRequest       -> UiText.Raw(R.string.add_pdf_error_invalid_request)
+            is GenerationError.ServerError          -> UiText.Raw(R.string.add_pdf_error_ai_service)
+            else                                    -> UiText.Raw(R.string.add_pdf_error_ai_service)
         }
 
-        _uiState.update {
-            it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f, error = msg)
+        if (error !is GenerationError.NetworkError && error !is GenerationError.QuotaExceeded) {
+            Log.e(TAG, "Generation error [${error::class.simpleName}]: ${error.message}", error)
+        } else {
+            Log.w(TAG, "Generation error [${error::class.simpleName}]: ${error.message}")
+        }
+
+        toast(msg, ToastType.ERROR)
+
+        if (!_uiState.value.generatingInBackground) {
+            _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f, error = null) }
+        } else {
+            // Unrecoverable error during background generation — fetch what we have and show DONE
+            viewModelScope.launch(ioDispatcher) {
+                val packId     = _uiState.value.packId
+                val uiQuestions = if (packId > 0) {
+                    questionRepo.getDueQuestions(packId, limit = 10).map { it.toUiModel() }
+                } else emptyList()
+
+                _uiState.update {
+                    it.copy(
+                        step                   = AddPdfStep.DONE,
+                        isLoading              = false,
+                        generatingInBackground = false,
+                        generatedQuestions     = uiQuestions,
+                    )
+                }
+            }
         }
     }
 
     // ── Source resolution ─────────────────────────────────────────────────
     private fun resolveSource(state: AddPdfUiState): Pair<String, SourceType>? {
         return when (state.sourceTab) {
-
             SourceTab.FILE -> {
                 val uri = state.fileUri ?: run {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_no_content)) }
+                    toast(UiText.Raw(R.string.add_pdf_error_no_content), ToastType.ERROR)
                     return null
                 }
                 val base64 = readFileBytes(uri).map { bytes ->
-                    Base64.encodeToString(bytes, Base64.NO_WRAP)
+                    android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
                 }.getOrElse { e ->
-                    _uiState.update {
-                        it.copy(error = UiText.Raw(R.string.add_pdf_error_extraction_failed, e.message ?: ""))
-                    }
+                    Log.e(TAG, "resolveSource: Failed to read file", e)
+                    toast(UiText.Raw(R.string.add_pdf_error_extraction_failed, e.message ?: ""), ToastType.ERROR)
                     return null
                 }
                 Pair(base64, SourceType.PDF)
             }
-
             SourceTab.TEXT -> {
                 val text = state.pasteText.trim()
                 if (text.isBlank()) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_no_content)) }
+                    toast(UiText.Raw(R.string.add_pdf_error_no_content), ToastType.ERROR)
                     return null
                 }
                 Pair(text, SourceType.TEXT)
             }
-
             SourceTab.WEB -> {
                 val url = state.webUrl.trim()
-                if (url.isBlank()) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_empty_url)) }
-                    return null
-                }
-                if (!url.startsWith("http://") && !url.startsWith("https://")) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_invalid_url)) }
-                    return null
+                if (url.isBlank()) { toast(UiText.Raw(R.string.add_pdf_error_empty_url), ToastType.ERROR); return null }
+                if (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true)) {
+                    toast(UiText.Raw(R.string.add_pdf_error_invalid_url), ToastType.ERROR); return null
                 }
                 Pair(url, SourceType.URL)
             }
-
             SourceTab.YOUTUBE -> {
                 val url = state.webUrl.trim()
-                if (url.isBlank()) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_empty_url)) }
-                    return null
-                }
+                if (url.isBlank()) { toast(UiText.Raw(R.string.add_pdf_error_empty_url), ToastType.ERROR); return null }
                 if (!YOUTUBE_PATTERN.containsMatchIn(url)) {
-                    _uiState.update { it.copy(error = UiText.Raw(R.string.add_pdf_error_invalid_youtube_url)) }
-                    return null
+                    toast(UiText.Raw(R.string.add_pdf_error_invalid_youtube_url), ToastType.ERROR); return null
                 }
                 Pair(url, SourceType.YOUTUBE)
             }
         }
     }
 
-    // ── Save generated pack to Room (offline cache) ───────────────────────
-    //
-    // The backend has already persisted the pack and questions to Supabase.
-    // This method caches them locally in Room for offline-first access.
-
-    private fun savePack() {
-        val state  = _uiState.value
-        val result = generatedResult ?: run {
-            _uiState.update {
-                it.copy(
-                    step      = AddPdfStep.CONFIGURE,
-                    isLoading = false,
-                    error     = UiText.Raw(R.string.add_pdf_error_no_generation_result),
-                )
+    // ── Pack limit check ──────────────────────────────────────────────────
+    private fun checkPackLimit() {
+        packLimitJob?.cancel()
+        packLimitJob = viewModelScope.launch {
+            combine(packRepo.observeAllPacks(), appConfig.libraryFreePackLimitFlow) { packs, limit ->
+                packs.size >= limit
             }
-            return
-        }
-
-        viewModelScope.launch {
-            try {
-                val saved = withContext(ioDispatcher) {
-                    // Apply defensive fallbacks to the server-provided pack.
-                    val pack = result.pack.copy(
-                        title    = result.pack.title.ifBlank { state.packTitle },
-                        language = result.pack.language.ifBlank { state.language },
-                    )
-                    val localPackId = packRepo.createPack(pack)
-                    val questions   = result.questions.map { it.copy(packId = localPackId) }
-                    if (questions.isNotEmpty()) questionRepo.insertQuestions(questions)
-                    Triple(localPackId, pack.title, questions.map { it.toUiModel() })
-                }
-
-Log.d(TAG, "Saved packId=${saved.first} | ${saved.third.size} questions")
-
-                val sourceDesc = when (state.sourceTab) {
-                    SourceTab.FILE -> state.fileName ?: "PDF"
-                    SourceTab.TEXT -> "Text"
-                    SourceTab.WEB -> state.webUrl.takeLast(30)
-                    SourceTab.YOUTUBE -> "YouTube"
-                }
-
-                _uiState.update {
-                    it.copy(
-                        step               = AddPdfStep.DONE,
-                        isLoading          = false,
-                        packId             = saved.first,
-                        packUuid           = result.pack.uuid,
-                        packTitle          = saved.second,
-                        generatedQuestions = saved.third,
-                        sourceDescription  = sourceDesc,
-                    )
-                }
-
-                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.add_pdf_pack_created), ToastType.SUCCESS))
-                checkPackLimit()
-
-            } catch (e: Exception) {
-                val isLimitError =
-                    e.message?.contains("FREE_PACK_LIMIT_REACHED", ignoreCase = true) == true ||
-                            e.message?.contains("free plan limit",         ignoreCase = true) == true
-
-                if (isLimitError) {
-                    _uiState.update { it.copy(isPackLimitReached = true, isLoading = false) }
-                    _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            step      = AddPdfStep.CONFIGURE,
-                            isLoading = false,
-                            error     = UiText.Raw(R.string.add_pdf_error_save_failed, e.message ?: ""),
-                        )
+                .distinctUntilChanged() // FIX: only emit when the boolean flips, not on every pack update
+                .collect { isLimitReached ->
+                    _uiState.update { it.copy(isPackLimitReached = isLimitReached) }
+                    if (isLimitReached) {
+                        _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
                     }
                 }
-            }
-        }
-    }
-
-    // ── Pack limit check ──────────────────────────────────────────────────
-
-    private fun checkPackLimit() {
-        viewModelScope.launch {
-            combine(
-                packRepo.observeAllPacks(),
-                appConfig.libraryFreePackLimitFlow,
-            ) { packs, limit ->
-                packs.size >= limit
-            }.collect { isLimitReached ->
-                if (isLimitReached) {
-                    _uiState.update { it.copy(isPackLimitReached = true) }
-                    _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
-                }
-            }
         }
     }
 
     // ── Navigation ────────────────────────────────────────────────────────
-
     private fun goBack() {
         when (_uiState.value.step) {
-            AddPdfStep.SELECT_PDF -> {
-                _uiEffects.tryEmit(UiEffect.NavigateBack)
-            }
-            AddPdfStep.CONFIGURE -> {
-                _uiState.update {
-                    it.copy(step = AddPdfStep.SELECT_PDF, extractedText = null,
-                        extractionProgress = 0f, error = null)
-                }
+            AddPdfStep.SELECT_PDF -> _uiEffects.tryEmit(UiEffect.NavigateBack)
+            AddPdfStep.CONFIGURE  -> _uiState.update {
+                it.copy(step = AddPdfStep.SELECT_PDF, extractedText = null, extractionProgress = 0f, error = null)
             }
             AddPdfStep.GENERATING -> {
                 generationJob?.cancel()
+                stopMessageRotation()
                 _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false) }
             }
-            AddPdfStep.DONE -> {
-                _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Dashboard.route))
-            }
+            AddPdfStep.DONE -> _uiEffects.tryEmit(UiEffect.NavigateBack)
         }
     }
 
-    // ── Simple field updates ──────────────────────────────────────────────
-
-    private fun onWebTabLockedClicked() =
-        _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_web_youtube_import)))
-
-    private fun updatePasteText(text: String)   { _uiState.update { it.copy(pasteText = text, error = null) } }
-    private fun updateWebUrl(url: String) {
-        // Enforce "max one url" by taking the first space-separated token.
-        val cleanedUrl = url.trim().split(Regex("\\s+")).firstOrNull() ?: ""
-
-        _uiState.update { state ->
-            // Auto-detect if it's a YouTube URL.
-            val isYouTube = YOUTUBE_PATTERN.containsMatchIn(cleanedUrl)
-
-            val detectedTab = if (isYouTube) SourceTab.YOUTUBE else SourceTab.WEB
-
-            state.copy(
-                webUrl    = cleanedUrl,
-                sourceTab = detectedTab,
-                error     = null
-            )
-        }
-    }
-    private fun updateQuestionCount(count: Int)  { _uiState.update { it.copy(questionCount = count.coerceIn(3, 50)) } }
-    private fun updateLanguage(code: String)     { _uiState.update { it.copy(language = code) } }
-    private fun updateFocusNotes(notes: String)  { _uiState.update { it.copy(focusNotes = notes) } }
-    private fun updateDifficulty(d: String)      { _uiState.update { it.copy(difficulty = d) } }
-    private fun clearError()                     { _uiState.update { it.copy(error = null) } }
-
-    private fun toggleQuestionType(type: QuestionType) {
-        _uiState.update { state ->
-            val current = state.selectedTypes
-            // Always keep at least one type selected.
-            val updated = if (type in current && current.size > 1) current - type else current + type
-            state.copy(selectedTypes = updated)
-        }
-    }
-
+    // ── Lifecycle ─────────────────────────────────────────────────────────
     override fun onCleared() {
         generationJob?.cancel()
+        stopMessageRotation()
         super.onCleared()
     }
 
     // ── File helpers ──────────────────────────────────────────────────────
-
     private fun readFileBytes(fileUri: String): Result<ByteArray> {
-        val uri = fileUri.toUri()
-        val bytes = readBytes(uri)
-            ?: return Result.failure(IllegalStateException("Cannot open file: $fileUri"))
-        
-        if (bytes.isEmpty()) {
-            return Result.failure(IllegalStateException("PDF file is empty"))
-        }
-        
-        if (!isValidPdf(bytes)) {
-            return Result.failure(IllegalStateException("File is not a valid PDF"))
-        }
-        
+        val uri   = fileUri.toUri()
+        val bytes = readBytes(uri) ?: return Result.failure(IllegalStateException("Cannot open file: $fileUri"))
+        if (bytes.isEmpty()) return Result.failure(IllegalStateException("PDF file is empty"))
+        if (!isValidPdf(bytes)) return Result.failure(IllegalStateException("File is not a valid PDF"))
         return Result.success(bytes)
     }
-    
+
     private fun isValidPdf(bytes: ByteArray): Boolean {
         if (bytes.size < 5) return false
+        // Matches both "%PDF-" and "%PDF " magic bytes
         val header = bytes.sliceArray(0..4)
-        return header.contentEquals(byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x2D)) || // %PDF-
-               header.contentEquals(byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x20))    // %PDF- (with space)
+        return header.contentEquals(byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x2D)) ||
+                header.contentEquals(byteArrayOf(0x25, 0x50, 0x44, 0x46, 0x20))
     }
 
     private fun readBytes(uri: Uri): ByteArray? = try {
@@ -623,21 +690,57 @@ Log.d(TAG, "Saved packId=${saved.first} | ${saved.third.size} questions")
         null
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────
+    private fun toast(text: UiText, type: ToastType) =
+        _uiEffects.tryEmit(UiEffect.ShowToast(text, type))
+
+    // ── Companion ─────────────────────────────────────────────────────────
     private companion object {
         const val TAG = "AddPdfViewModel"
 
+        /** Allow early start when this fraction of questions is ready. */
+        const val EARLY_START_THRESHOLD = 0.30f
+
+        /** How long to wait between local message rotations. */
+        const val MESSAGE_ROTATION_MS = 2_800L
+
+        // FIX: IGNORE_CASE so "HTTP", "Youtube.com", etc. are matched correctly
         val YOUTUBE_PATTERN = Regex(
             "^https?://(www\\.)?youtube\\.com/watch\\?v=[\\w-]{11}" +
-            "|^https?://youtu\\.be/[\\w-]{11}" +
-            "|^https?://(www\\.)?youtube\\.com/shorts/[\\w-]{11}"
+                    "|^https?://youtu\\.be/[\\w-]{11}" +
+                    "|^https?://(www\\.)?youtube\\.com/shorts/[\\w-]{11}",
+            RegexOption.IGNORE_CASE,
+        )
+
+        /** Displayed while waiting for server PackMeta event. */
+        val PROGRESS_MESSAGES = listOf(
+            "Reading your content...",
+            "Understanding the material...",
+            "Extracting key ideas...",
+            "Discovering core concepts...",
+            "Creating smart questions...",
+            "Building accurate answer choices...",
+            "Preparing review cards...",
+            "Designing your revision plan...",
+            "Running final quality checks...",
+        )
+
+        /** Premium version — slightly richer copy for Pro users. */
+        val PRO_PROGRESS_MESSAGES = listOf(
+            "Analyzing your content...",
+            "Extracting the most important points...",
+            "Generating questions tailored to your level...",
+            "Preparing precise answers and distractors...",
+            "Building a smart review strategy...",
+            "Validating final quality...",
         )
 
         private data class PremiumConfig(
-            val isPremium: Boolean,
-            val isOcrLocked: Boolean,
+            val isPremium:        Boolean,
+            val isOcrLocked:      Boolean,
             val isThinkingLocked: Boolean,
-            val maxPages: Int,
-            val maxFileSizeMb: Int,
+            val maxPages:         Int,
+            val maxFileSizeMb:    Int,
         )
     }
 }
