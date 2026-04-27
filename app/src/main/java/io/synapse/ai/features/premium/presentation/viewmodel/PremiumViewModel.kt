@@ -1,0 +1,248 @@
+package io.synapse.ai.features.premium.presentation.viewmodel
+
+import android.app.Activity
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import io.synapse.ai.R
+import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.domain.model.ProductDetails
+import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.domain.repo.IBillingRepository
+import io.synapse.ai.domain.repo.IPremiumRepository
+import io.synapse.ai.domain.repo.ISocialProofRepository
+import io.synapse.ai.features.premium.presentation.state.PremiumEvent
+import io.synapse.ai.features.premium.presentation.state.PremiumUiState
+import io.synapse.ai.features.premium.presentation.state.buildFeatureUiModels
+import io.synapse.ai.features.premium.presentation.state.buildPlanUiModels
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.util.Locale
+import javax.inject.Inject
+
+@HiltViewModel
+class PremiumViewModel @Inject constructor(
+    private val premiumRepository: IPremiumRepository,
+    private val socialProofRepository: ISocialProofRepository,
+    private val billingRepository: IBillingRepository,
+    private val premiumManager: PremiumManager,
+    private val authRepository: IAuthRepository,
+    @ApplicationContext private val appContext: Context,
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow<PremiumUiState>(PremiumUiState.Loading)
+    val uiState: StateFlow<PremiumUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<PremiumEvent>(extraBufferCapacity = 8)
+    val events = _events.asSharedFlow()
+
+    private var cachedProductDetails: Map<String, ProductDetails> = emptyMap()
+
+    init {
+        loadPaywall()
+        observePurchaseResults()
+    }
+
+    private fun observePurchaseResults() {
+        // W-7 FIX: purchaseResults and billingErrors are declared on IBillingRepository.
+        // The previous `is BillingRepositoryImpl` type-check broke the abstraction,
+        // made unit testing impossible, and blocked collection on mocks.
+        viewModelScope.launch {
+            billingRepository.purchaseResults.collect { purchaseResult ->
+                handlePurchaseSuccess(purchaseResult.skuId, purchaseResult.purchaseToken)
+            }
+        }
+        viewModelScope.launch {
+            billingRepository.billingErrors.collect { errorMsg ->
+                _uiState.update { current ->
+                    (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
+                }
+                when (errorMsg) {
+                    "CANCELED" -> { /* User cancelled, no error needed */ }
+                    "ALREADY_OWNED" -> {
+                        premiumManager.verifyWithServer(force = true)
+                        _events.emit(PremiumEvent.PurchaseFailed("You already own this subscription"))
+                    }
+                    else -> _events.emit(PremiumEvent.PurchaseFailed(errorMsg))
+                }
+            }
+        }
+    }
+
+    fun loadPaywall() {
+        viewModelScope.launch {
+            _uiState.value = PremiumUiState.Loading
+
+            // Check if already gold
+            if (premiumManager.isPro.value) {
+                _uiState.value = PremiumUiState.AlreadyPremium
+                return@launch
+            }
+
+            // Parallel: fetch config from Supabase AND connect to Google Play
+            val configDeferred = viewModelScope.async { premiumRepository.loadPaywallConfig() }
+            val socialProofDeferred = viewModelScope.async { socialProofRepository.fetch() }
+
+            // Connect to Google Play
+            runCatching { billingRepository.connect() }
+                .onFailure { e ->
+                    _uiState.value = PremiumUiState.Error("Failed to connect: ${e.message}")
+                    return@launch
+                }
+
+            // Get config result
+            val configResult = configDeferred.await()
+            val config = configResult.getOrElse {
+                _uiState.value = PremiumUiState.Error("Failed to load paywall config")
+                return@launch
+            }
+
+            // Extract SKU IDs from products
+            val skuIds = config.products.map { it.skuId }
+
+            // Query Google Play for localized prices
+            val productDetailsResult = billingRepository.queryProductDetails(skuIds)
+            productDetailsResult.onSuccess { details ->
+                cachedProductDetails = details
+            }
+
+            // Build UI models — all text computed locally from Google Play + strings.xml
+            val isArabic = Locale.getDefault().language == "ar"
+            val planModels = buildPlanUiModels(
+                products = config.products,
+                productDetailsMap = cachedProductDetails,
+                resources = appContext.resources,
+            )
+            val featureModels = buildFeatureUiModels(config.features, isArabic)
+
+            _uiState.value = PremiumUiState.Ready(
+                products = planModels,
+                features = featureModels,
+                selectedSkuId = planModels.firstOrNull { it.isHighlighted }?.skuId
+                    ?: planModels.firstOrNull()?.skuId
+                    ?: "",
+                socialProof = socialProofDeferred.await().getOrNull(),
+            )
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Step 2: User selects a plan
+    // ═══════════════════════════════════════════════════════════════════
+
+    fun selectPlan(skuId: String) {
+        _uiState.update { state ->
+            if (state is PremiumUiState.Ready) {
+                state.copy(selectedSkuId = skuId)
+            } else state
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Step 3: User clicks Subscribe - launch Google Play billing
+    // ═══════════════════════════════════════════════════════════════════
+
+    fun startPurchase(activity: Activity) {
+        val state = _uiState.value as? PremiumUiState.Ready ?: return
+        val skuId = state.selectedSkuId
+
+        val productDetails = cachedProductDetails[skuId]
+        if (productDetails == null) {
+            viewModelScope.launch {
+                _events.emit(PremiumEvent.PurchaseFailed("Product not found"))
+            }
+            return
+        }
+
+        // Check authentication
+        if (!authRepository.isAuthenticated()) {
+            viewModelScope.launch {
+                _events.emit(PremiumEvent.NavigateToProfile)
+                _events.emit(PremiumEvent.RequiresSignIn(UiText.Raw(R.string.premium_sign_in_required)))
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { current ->
+                (current as? PremiumUiState.Ready)?.copy(isPurchasing = true) ?: current
+            }
+
+            val accountId = authRepository.getUserId()
+
+            // Launch billing flow asynchronously
+            launchBillingFlowAsync(activity, productDetails, accountId)
+        }
+    }
+
+    private fun launchBillingFlowAsync(
+        activity: Activity,
+        productDetails: ProductDetails,
+        accountId: String?,
+    ) {
+        viewModelScope.launch {
+            try {
+                // فقط نقوم بفتح نافذة جوجل بلاي.
+                // النتيجة ستذهب تلقائياً إلى observePurchaseResults()
+                billingRepository.launchBillingFlow(activity, productDetails, accountId)
+            } catch (e: Exception) {
+                _uiState.update { current ->
+                    (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
+                }
+                _events.emit(PremiumEvent.PurchaseFailed(e.message ?: "Billing failed"))
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Step 4: Handle purchase success - verify with server
+    // ═══════════════════════════════════════════════════════════════════
+
+    private suspend fun handlePurchaseSuccess(skuId: String, purchaseToken: String) {
+        _uiState.update { current ->
+            (current as? PremiumUiState.Ready)?.copy(isPurchasing = true) ?: current
+        }
+
+        val verifyResult = premiumRepository.verifyPurchaseWithServer(skuId, purchaseToken)
+
+        verifyResult.fold(
+            onSuccess = {
+                premiumManager.verifyWithServerAndWait()
+
+                _uiState.update { current ->
+                    (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
+                }
+                _events.emit(PremiumEvent.PurchaseSuccess(skuId))
+            },
+            onFailure = { error ->
+                _uiState.update { current ->
+                    (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
+                }
+                _events.emit(PremiumEvent.PurchaseFailed(error.message ?: "Verification failed"))
+            }
+        )
+    }
+
+    fun restorePurchases() = premiumManager.verifyWithServer()
+
+    fun dismiss() = viewModelScope.launch { _events.emit(PremiumEvent.Dismissed) }
+
+    fun refresh() {
+        premiumManager.verifyWithServer()
+        loadPaywall()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelScope.launch { billingRepository.disconnect() }
+    }
+}

@@ -89,7 +89,7 @@ fun AlreadyPremiumContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
-                    .background(gradients.gold)
+                    .background(gradients.premium)
                     .clickable { openSubManage() }
                     .padding(vertical = MaterialTheme.synapse.spacing.s16),
                 contentAlignment = Alignment.Center,

@@ -51,11 +51,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -75,16 +73,15 @@ import io.synapse.ai.features.premium.presentation.state.toColor
 
 @Composable
 fun HeroSection(
-    trialDays: Int,
     modifier: Modifier = Modifier,
 ) {
     val gradients = LocalGradientTokens.current
-    val pulseTransition = rememberInfiniteTransition()
-    val pulseAlpha by pulseTransition.animateFloat(
-        initialValue  = 1f,
-        targetValue   = 0.3f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse)
-    )
+//    val pulseTransition = rememberInfiniteTransition()
+//    val pulseAlpha by pulseTransition.animateFloat(
+//        initialValue  = 1f,
+//        targetValue   = 0.3f,
+//        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse)
+//    )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -118,38 +115,38 @@ fun HeroSection(
             textAlign = TextAlign.Center,
             modifier  = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s32),
         )
-
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
-
-        // Pulsing trial badge pill
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
-            modifier = Modifier
-                .clip(MaterialTheme.synapse.radius.pill)
-                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.22f))
-                .border(
-                    width = 1.adp,
-                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.38f),
-                    shape = MaterialTheme.synapse.radius.pill,
-                )
-                .padding(
-                    horizontal = MaterialTheme.synapse.spacing.s16,
-                    vertical   = MaterialTheme.synapse.spacing.s6,
-                ),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(6.adp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = pulseAlpha)),
-            )
-            Text(
-                text  = stringResource(R.string.premium_trial_badge, trialDays),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-        }
+//
+//        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
+//
+//        // Pulsing trial badge pill
+//        Row(
+//            verticalAlignment     = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
+//            modifier = Modifier
+//                .clip(MaterialTheme.synapse.radius.pill)
+//                .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.22f))
+//                .border(
+//                    width = 1.adp,
+//                    color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.38f),
+//                    shape = MaterialTheme.synapse.radius.pill,
+//                )
+//                .padding(
+//                    horizontal = MaterialTheme.synapse.spacing.s16,
+//                    vertical   = MaterialTheme.synapse.spacing.s6,
+//                ),
+//        ) {
+//            Box(
+//                modifier = Modifier
+//                    .size(6.adp)
+//                    .clip(CircleShape)
+//                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = pulseAlpha)),
+//            )
+//            Text(
+//                text  = stringResource(R.string.premium_trial_badge, trialDays),
+//                style = MaterialTheme.typography.labelMedium,
+//                color = MaterialTheme.colorScheme.tertiary,
+//            )
+//        }
     }
 }
 
@@ -177,15 +174,15 @@ fun ProBadgeChip(modifier: Modifier = Modifier) {
             )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s12,
-                vertical   = MaterialTheme.synapse.spacing.s8,
+                vertical   = MaterialTheme.synapse.spacing.s6,
             ),
     ) {
-        Icon(
-            painter            = painterResource(R.drawable.ic_crown),
-            contentDescription = null,
-            tint               = MaterialTheme.colorScheme.tertiary,
-            modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
-        )
+            Icon(
+                painter            = painterResource(R.drawable.ic_crown),
+                contentDescription = stringResource(R.string.pro_badge_label),
+                tint               = MaterialTheme.colorScheme.tertiary,
+                modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+            )
         Text(
             text     = stringResource(R.string.premium_pro_label),
             style    = MaterialTheme.typography.titleSmall,
@@ -206,10 +203,10 @@ internal fun PremiumFeaturesCard(
             .fillMaxWidth()
             .dropShadow(
                 shape  = MaterialTheme.shapes.large,
-                shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
+                shadow = MaterialTheme.synapse.shadows.medium.toShadow(),
             )
             .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
         features.forEachIndexed { index, feature ->
             PremiumFeatureRow(feature = feature)
@@ -258,7 +255,7 @@ internal fun PremiumFeatureRow(
         ) {
             Icon(
                 painter            = painterResource(iconKeyToDrawableRes(feature.iconKey)),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.a11y_feature_icon, feature.label),
                 tint               = featureColor,
                 modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
             )
@@ -269,12 +266,16 @@ internal fun PremiumFeatureRow(
                 text  = feature.label,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text     = feature.sublabel,
                 style    = MaterialTheme.typography.labelMedium,
                 color    = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s2),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -307,7 +308,7 @@ fun PlansRow(
     modifier       : Modifier = Modifier,
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy(12.adp),
+        horizontalArrangement = Arrangement.spacedBy(10.adp),
         modifier = modifier.fillMaxWidth(),
     ) {
         plans.forEach { plan ->
@@ -332,7 +333,6 @@ fun PlanCard(
     val gradients  = MaterialTheme.synapse.gradients
     val spacing    = MaterialTheme.synapse.spacing
     val isGradient = isSelected && plan.isHighlighted
-    val hasBadge   = plan.badgeLabel != null
 
     // ── Card surface brush ────────────────────────────────────────────────────
     val cardBg: Brush = if (isGradient) gradients.accent
@@ -375,14 +375,14 @@ fun PlanCard(
 
     val shape  = MaterialTheme.shapes.extraLarge
     val shadow = if (isGradient) MaterialTheme.synapse.shadows.strong.toShadow()
-    else MaterialTheme.synapse.shadows.subtle.toShadow()
+    else MaterialTheme.synapse.shadows.medium.toShadow()
 
     // Outer Box is NOT clipped — badge overflows upward
     Box(modifier = modifier) {
 
         // ── Clipped card surface ──────────────────────────────────────────────
         Box(
-            modifier = Modifier                      // intentional: fresh Modifier, not outer `modifier`
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 11.adp)
                 .dropShadow(shape = shape, shadow = shadow)
@@ -400,12 +400,7 @@ fun PlanCard(
 
             // Content column
             Column(
-                modifier = Modifier.padding(
-                    start  = spacing.s16,
-                    end    = spacing.s16,
-                    top    = spacing.s14,
-                    bottom = spacing.s16,
-                ),
+                modifier = Modifier.padding(spacing.s14)
             ) {
                 Spacer(Modifier.height(spacing.s12))
                 // Period label — "YEARLY · Best Value" or "Monthly"
@@ -424,36 +419,23 @@ fun PlanCard(
                 // Main price + abbreviated period — baseline aligned
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        text       = plan.mainPrice,
+                        text       = plan.formattedPrice,
                         style      = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Black,
                         color      = onCard,
                     )
                     Text(
-                        text     = plan.periodDisplay.resolve(),  // "/YR" or "/MO" from strings.xml
-                        style    = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        text     = plan.billingPeriodStr.resolve(),  // "/YR" or "/MO" from strings.xml
+                        style    = MaterialTheme.typography.labelMedium,
                         color    = onCardMid,
                         modifier = Modifier.padding(start = spacing.s2, bottom = spacing.s4),
                     )
                 }
 
-                // Original (pre-discount) price — strikethrough
-                plan.originalPrice?.let { original ->
-                    Spacer(Modifier.height(spacing.s2))
-                    Text(
-                        text  = original,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            textDecoration = TextDecoration.LineThrough,
-                        ),
-                        color = onCardFaint,
-                    )
-                }
-
-                // Sub-price — monthly equivalent for annual plan ("$4.99/mo")
-                plan.subPrice?.let { sub ->
+                // Monthly equivalent for annual plan ("$4.99/mo")
+                plan.monthlyEquivalent?.let { sub ->
                     Spacer(Modifier.height(spacing.s3))
                     Text(
-                        text  = sub.resolve(),
+                        text  = sub,
                         style = MaterialTheme.typography.bodySmall,
                         color = onCardMid,
                     )
@@ -468,8 +450,7 @@ fun PlanCard(
                     color = onCardFaint,
                 )
 
-                // Space to avoid overlapping the top-end check indicator
-                Spacer(Modifier.height(spacing.s24))
+                Spacer(Modifier.height(spacing.s28))
             }
 
             // ── Selection indicator — TOP-END ─────────────────────────────────
@@ -486,8 +467,8 @@ fun PlanCard(
             }
         }
 
-        // Savings badge — top corner
-        plan.badgeLabel?.let { badge ->
+        // Savings badge — top corner (dynamically calculated)
+        plan.savingsPercentage?.let { pct ->
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -497,7 +478,7 @@ fun PlanCard(
                     .padding(horizontal = spacing.s12, vertical = 3.adp),
             ) {
                 Text(
-                    text  = badge.resolve(),
+                    text  = stringResource(R.string.plan_badge_save, pct),
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight    = FontWeight.ExtraBold,
                         letterSpacing = 0.04.asp,
@@ -512,7 +493,6 @@ fun PlanCard(
 
 @Composable
 fun CtaSection(
-    trialDays     : Int,
     isPurchasing  : Boolean,
     socialProof   : SocialProofData?,
     selectedSkuId : String,
@@ -529,22 +509,20 @@ fun CtaSection(
         modifier            = modifier.fillMaxWidth(),
     ) {
         PremiumCtaButton(
-            trialDays    = trialDays,
+            freeTrialStr = selectedProduct?.freeTrialStr,
             isPurchasing = isPurchasing,
             onClick      = onStartTrial,
         )
 
-        // trial info + auto-renew disclosure
-        selectedProduct?.trialInfo?.let { trialInfo ->
-            Spacer(Modifier.height(spacing.s8))
-            Text(
-                text      = trialInfo.resolve(),
-                style     = MaterialTheme.typography.labelSmall,
-                color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                textAlign = TextAlign.Center,
-                modifier  = Modifier.padding(horizontal = spacing.s16),
-            )
-        }
+        // billing disclosure note
+        Spacer(Modifier.height(spacing.s8))
+        Text(
+            text      = selectedProduct?.noteDisplay?.resolve() ?: "",
+            style     = MaterialTheme.typography.labelSmall,
+            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+            textAlign = TextAlign.Center,
+            modifier  = Modifier.padding(horizontal = spacing.s16),
+        )
 
         socialProof?.let { proof ->
             Spacer(Modifier.height(spacing.s12))
@@ -569,24 +547,27 @@ fun CtaSection(
 
 @Composable
 internal fun PremiumCtaButton(
-    trialDays    : Int,
+    freeTrialStr: String?,
     isPurchasing : Boolean,
     onClick      : () -> Unit,
     modifier     : Modifier = Modifier,
 ) {
-    val shape   = MaterialTheme.shapes.medium
-    val ctaDesc = stringResource(R.string.premium_cta_start_trial, trialDays)
+    val shape = MaterialTheme.shapes.medium
+    val ctaText = if (!freeTrialStr.isNullOrBlank()) {
+        stringResource(R.string.premium_cta_trial_dynamic, freeTrialStr)
+    } else {
+        stringResource(R.string.premium_cta_subscribe)
+    }
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.strong.toShadow())
+            .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.cta.toShadow())
             .height(60.adp)
             .clip(shape)
             .background(MaterialTheme.synapse.gradients.primary)
             .clickable(enabled = !isPurchasing, onClick = onClick)
-            .semantics { contentDescription = ctaDesc },
     ) {
         Box(modifier = Modifier.matchParentSize().clipToBounds()) {
             ShimmerSweep(durationMs = 2_600, delayMs = 1_200)
@@ -612,13 +593,13 @@ internal fun PremiumCtaButton(
                     modifier           = Modifier.size(18.adp),
                 )
                 Text(
-                    text  = stringResource(R.string.premium_cta_start_trial, trialDays),
+                    text  = ctaText,
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.White.copy(alpha = 0.90f),
                 )
                 Icon(
                     imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.a11y_continue),
                     tint               = Color.White.copy(alpha = 0.90f),
                     modifier           = Modifier.size(14.adp),
                 )
@@ -643,6 +624,7 @@ fun SocialProofRow(
         horizontalArrangement = Arrangement.Center,
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = spacing.s12)
             .clip(MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
             .border(
@@ -701,7 +683,7 @@ fun SocialProofRow(
                 }
             }
             Text(
-                text  = stringResource(R.string.premium_social_proof, socialProof.userCountLabel),
+                text  = stringResource(R.string.premium_social_proof_community),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -751,7 +733,7 @@ internal fun CheckIndicator(
     ) {
         Icon(
             painter            = painterResource(R.drawable.ic_check),
-            contentDescription = null,
+            contentDescription = stringResource(R.string.a11y_included),
             tint               = iconTint,
             modifier           = Modifier.size(12.adp),
         )
@@ -775,20 +757,22 @@ internal fun ShimmerSweep(
 
     )
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val shimmerBandWidth = maxWidth / 3
+        val shimmerBandWidth = remember(maxWidth) { maxWidth / 3 }
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .width(shimmerBandWidth)
                 .offset(x = maxWidth * progress)
                 .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.20f),
-                            Color.Transparent,
+                    remember {
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.20f),
+                                Color.Transparent,
+                            )
                         )
-                    )
+                    }
                 ),
         )
     }

@@ -1,7 +1,6 @@
 package io.synapse.ai.features.premium.presentation.screen
 
 import android.app.Activity
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -133,7 +132,7 @@ private fun PremiumReadyContent(
             size = 280.adp,
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 60.adp, y = (-80).adp),
+                .offset(x = 70.adp, y = (-90).adp),
         )
         AmbientOrb(
             color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f),
@@ -151,14 +150,12 @@ private fun PremiumReadyContent(
             stickyHeader {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.Transparent)
-                        .padding(),
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.CenterEnd,
                 ) {
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(40.adp),
+                        modifier = Modifier.size(48.adp),
                         shape = CircleShape,
                     ) {
                         Icon(
@@ -170,9 +167,9 @@ private fun PremiumReadyContent(
                 }
             }
 
-            item { HeroSection(trialDays = state.trialDays) }
+            item(key = "hero") { HeroSection() }
 
-            item {
+            item(key = "features_label") {
                 SectionLabel(
                     text = stringResource(R.string.premium_section_features),
                     modifier = Modifier.padding(
@@ -182,32 +179,31 @@ private fun PremiumReadyContent(
                 )
             }
 
-            item { PremiumFeaturesCard(features = state.features) }
+            item(key = "features_card") { PremiumFeaturesCard(features = state.features) }
 
-            item {
+            item(key = "plans_label") {
                 SectionLabel(
                     text = stringResource(R.string.premium_section_plans),
                     modifier = Modifier.padding(
-                        top = MaterialTheme.synapse.spacing.s20,
-                        bottom = MaterialTheme.synapse.spacing.s10,
+                        top = MaterialTheme.synapse.spacing.s20
                     ),
                 )
             }
 
-            item {
+            item(key = "plans_row") {
                 PlansRow(
-                    products = state.products,
-                    selectedSkuId = state.selectedSkuId,
+                    plans = state.products,
+                    selectedPlanId = state.selectedSkuId,
                     onPlanSelected = onPlanSelected
                 )
+
             }
 
-            item {
+            item(key = "cta") {
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
                 CtaSection(
-                    trialDays = state.trialDays,
                     isPurchasing = state.isPurchasing,
-                    socialProof = state.socialProof,
+                    socialProof = null,
                     selectedSkuId = state.selectedSkuId,
                     products = state.products,
                     onStartTrial = onStartTrial,
