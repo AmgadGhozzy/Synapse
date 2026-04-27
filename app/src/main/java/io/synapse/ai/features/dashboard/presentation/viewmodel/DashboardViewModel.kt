@@ -22,6 +22,7 @@ import io.synapse.ai.domain.repo.IQuestionRepository
 import io.synapse.ai.domain.repo.ISessionRepository
 import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
 import io.synapse.ai.navigation.SynapseScreen
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -45,7 +46,7 @@ class DashboardViewModel @Inject constructor(
     private val sessionRepo: ISessionRepository,
     private val premiumManager: PremiumManager,
     private val appConfigProvider: AppConfigProvider,
-    @Named("study_settings") private val dataStore: DataStore<Preferences>,
+    @param:Named("study_settings") private val dataStore: DataStore<Preferences>,
     private val quizSessionManager: QuizSessionManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -169,8 +170,8 @@ _uiState.update {
                             masteredCardsCount = masteredCardsCount,
                             totalDue = totalDue,
                             totalCardsCount = totalCardsCount,
-                            packs = displayedPacks,
-                            allPackIds = allDisplayItems.map { it.id },
+                            packs = displayedPacks.toImmutableList(),
+                            allPackIds = allDisplayItems.map { it.id }.toImmutableList(),
                             isPremium = isPremium,
                             isPackLimitReached = isPackLimitReached,
                             totalPackCount = totalPackCount,
