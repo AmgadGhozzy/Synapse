@@ -3,6 +3,7 @@ package io.synapse.ai.features.dashboard.presentation.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +28,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,8 +40,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
@@ -165,7 +172,8 @@ private fun StatChip(
                     text = stringResource(data.labelRes),
                     style = MaterialTheme.typography.labelSmall,
                     color = data.accentColor,
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
 
@@ -184,15 +192,12 @@ private fun StatChip(
                 text = data.subLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SectionHeader
-// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun SectionHeader(
@@ -201,12 +206,12 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
     showSeeAll: Boolean = true,
 ) {
-    val spacing = MaterialTheme.synapse.spacing
 
     Row(
         modifier = modifier
+            .semantics { heading() }
             .fillMaxWidth()
-            .padding(start = spacing.s6, end = spacing.s4),
+            .padding(end = MaterialTheme.synapse.spacing.s6),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -226,7 +231,7 @@ fun SectionHeader(
                     ),
                     color = MaterialTheme.colorScheme.primary,
                 )
-                Spacer(Modifier.width(2.dp))
+                Spacer(Modifier.width(MaterialTheme.synapse.spacing.s4))
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                     contentDescription = null,
@@ -246,10 +251,17 @@ fun EmptyPacksState(
     val tokens = MaterialTheme.synapse
     val shape = MaterialTheme.shapes.large
 
+    val addPackDescription = stringResource(R.string.fab_new_pack_description)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onAddPack() }
+            .semantics { contentDescription = addPackDescription }
+            .minimumInteractiveComponentSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { onAddPack() }
             .clip(shape)
             .animatedDashedBorder(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),

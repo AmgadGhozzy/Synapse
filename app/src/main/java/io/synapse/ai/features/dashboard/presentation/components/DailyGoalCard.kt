@@ -122,11 +122,11 @@ fun DailyGoalCard(
 
                 CircularProgressRing(
                     progress = progress,
-                    progressColor = Color.White.copy(alpha = 0.7f),
+                    progressColor = Color.White,
                     trackColor = Color.White.copy(alpha = 0.15f),
                     strokeWidthDp = 10.adp,
                     fontSize = 28.asp,
-                    modifier = Modifier.size(102.adp),
+                    modifier = Modifier.size(106.adp),
                 )
             }
 
@@ -155,13 +155,13 @@ private fun GoalLabel() {
         Icon(
             painter = painterResource(R.drawable.ic_target),
             contentDescription = null,
-            tint = Color.White.copy(alpha = 0.9f),
+            tint = Color.White,
             modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
         )
         Text(
             text = stringResource(R.string.daily_goal_label),
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White.copy(alpha = 0.9f),
+            color = Color.White,
         )
     }
 }
@@ -277,7 +277,7 @@ private fun CtaButton(
     val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
     val buttonBgColor = if (isDark) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f)
-    val contentColor = Color.White.copy(alpha = 0.9f)
+    val contentColor = Color.White
 
     Surface(
         onClick = onClick,
@@ -353,7 +353,7 @@ private fun CtaEtaBadge(
         Icon(
             painter = painterResource(R.drawable.ic_clock),
             contentDescription = null,
-            tint = contentColor.copy(alpha = 0.80f),
+            tint = contentColor.copy(alpha = 0.9f),
             modifier = Modifier.size(12.adp),
         )
         Text(
