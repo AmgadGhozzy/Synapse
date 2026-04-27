@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
@@ -101,7 +103,7 @@ fun AddPackCell(
             Box(
                 modifier = Modifier
                     .size(36.adp)
-                    .clip(MaterialTheme.synapse.radius.md)
+                    .clip(MaterialTheme.shapes.medium)
                     .background(accentColor.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -109,7 +111,7 @@ fun AddPackCell(
                     painter = painterResource(
                         if (isLocked) R.drawable.ic_lock else R.drawable.ic_plus
                     ),
-                    contentDescription = null,
+                    contentDescription = if (isLocked) stringResource(R.string.a11y_locked) else stringResource(R.string.a11y_add),
                     tint = accentColor,
                     modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
@@ -127,6 +129,8 @@ fun AddPackCell(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = accentColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(2.adp))
                 Text(
@@ -134,6 +138,8 @@ fun AddPackCell(
                     else stringResource(subtitleRes),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -235,7 +241,10 @@ fun FilterTabRow(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
         contentPadding = PaddingValues(end = MaterialTheme.synapse.spacing.s4),
     ) {
-        items(LibraryFilter.entries.size) { i ->
+        items(
+            count = LibraryFilter.entries.size,
+            key = { i -> LibraryFilter.entries[i].name },
+        ) { i ->
             val tab = LibraryFilter.entries[i]
             FilterTab(
                 labelRes = tab.labelRes,
@@ -274,6 +283,7 @@ fun FilterTab(
                 indication = null,
                 onClick = onClick,
             )
+            .minimumInteractiveComponentSize()
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s14,
                 vertical = MaterialTheme.synapse.spacing.s6
@@ -354,7 +364,7 @@ fun PackEmptyState(
     ) {
         Icon(
             painter = painterResource(msg.iconRes),
-            contentDescription = null,
+            contentDescription = stringResource(msg.titleRes),
             modifier = Modifier.size(64.adp),
             tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
         )

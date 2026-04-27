@@ -26,11 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.components.DeletePackDialog
 import io.synapse.ai.core.ui.components.ErrorBanner
 import io.synapse.ai.core.ui.components.GridPackCard
@@ -48,6 +48,7 @@ import io.synapse.ai.features.library.presentation.components.PackEmptyState
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 import io.synapse.ai.features.library.presentation.state.LibraryUiState
 import io.synapse.ai.features.library.presentation.viewmodel.LibraryViewModel
+import kotlinx.collections.immutable.toImmutableList
 
 @Composable
 fun LibraryScreen(
@@ -64,7 +65,7 @@ fun LibraryScreen(
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate -> onNavigate(effect.route)
-                is UiEffect.ShowToast -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.ShowToast -> snackbarController.showToast(effect.type, effect.text.asString(context))
                 is UiEffect.ShowError -> snackbarController.error(effect.text.asString(context))
                 else -> Unit
             }
@@ -75,7 +76,7 @@ fun LibraryScreen(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { snackbarController.SnackbarHost() },
-        containerColor       = Color.Transparent,
+        containerColor = Color.Transparent,
     ) { innerPadding ->
         LibraryContent(
             uiState = uiState,
@@ -132,10 +133,11 @@ private fun LibraryContent(
 
     fun staggerDelay(index: Int) = index.coerceAtMost(5) * 60
 
-    val spacing      = MaterialTheme.synapse.spacing
+    val spacing = MaterialTheme.synapse.spacing
+
 
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 180.dp),
+        columns = GridCells.Adaptive(minSize = 180.adp),
         state = listState,
         contentPadding = PaddingValues(
             start = spacing.screen,
@@ -194,12 +196,14 @@ private fun LibraryContent(
 
         items(displayedPacks, key = { it.id }) { pack ->
             val index = displayedPacks.indexOf(pack)
-            val actions = remember(pack.id, onEditPack, onExportPack, onDeletePack) {
-                buildPackCardActions(
-                    onEdit = { onEditPack(pack.id) },
-                    onExport = { onExportPack(pack.id) },
-                    onDelete = { pendingDeletePackId = pack.id })
-            }
+            val onEditCard = remember(pack.id) { { onEditPack(pack.id) } }
+            val onExportCard = remember(pack.id) { { onExportPack(pack.id) } }
+            val onDeleteCard = remember(pack.id) { { pendingDeletePackId = pack.id } }
+            val actions = buildPackCardActions(
+                onEdit = onEditCard,
+                onExport = onExportCard,
+                onDelete = onDeleteCard
+            )
             GridPackCard(
                 pack = pack,
                 animDelayMs = staggerDelay(index),
@@ -209,7 +213,9 @@ private fun LibraryContent(
                 onSwipeOpen = { openSwipedPackId = pack.id },
                 onSwipeClose = { if (openSwipedPackId == pack.id) openSwipedPackId = null },
                 enableSwipeActions = true,
-                modifier = Modifier.fillMaxWidth().animateItem(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .animateItem(),
             )
         }
 
@@ -231,7 +237,7 @@ private fun LibraryScreenPreview() {
     SynapseTheme {
         LibraryContent(
             uiState = LibraryUiState(
-                packs = PackDisplayItem.Mocks,
+                packs = PackDisplayItem.Mocks.toImmutableList(),
                 searchQuery = "",
                 activeCategory = LibraryUiState.ALL_CATEGORY,
                 availableCategories = listOf("All", "Science", "History", "Law"),
