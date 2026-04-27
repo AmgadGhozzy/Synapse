@@ -1,6 +1,6 @@
-package com.venom.synapse.domain.repo
+package io.synapse.ai.domain.repo
 
-import com.venom.synapse.domain.model.QuestionModel
+import io.synapse.ai.domain.model.QuestionModel
 import kotlinx.coroutines.flow.Flow
 
 interface IQuestionRepository {
@@ -9,4 +9,5 @@ interface IQuestionRepository {
     suspend fun getDueQuestions(packId: Long, limit: Int): List<QuestionModel>
     suspend fun getQuestionById(id: Long): QuestionModel?
     suspend fun countByPack(packId: Long): Int
+    suspend fun getAllQuestionsForExport(): List<QuestionModel>
 }

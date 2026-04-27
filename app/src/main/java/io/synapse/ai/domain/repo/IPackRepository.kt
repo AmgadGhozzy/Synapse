@@ -1,11 +1,13 @@
-package com.venom.synapse.domain.repo
+package io.synapse.ai.domain.repo
 
-import com.venom.synapse.domain.model.PackModel
+import io.synapse.ai.domain.model.PackModel
 import kotlinx.coroutines.flow.Flow
 
 interface IPackRepository {
     fun observeAllPacks(): Flow<List<PackModel>>
     suspend fun createPack(pack: PackModel): Long
     suspend fun getPackById(id: Long): PackModel?
+    suspend fun updateQuestionCount(packId: Long, count: Int)
     suspend fun deletePack(id: Long)
+    suspend fun getAllPacksForExport(): List<PackModel>
 }
