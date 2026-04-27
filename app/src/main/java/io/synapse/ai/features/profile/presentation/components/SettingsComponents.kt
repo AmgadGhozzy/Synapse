@@ -34,11 +34,10 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -52,6 +51,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -72,20 +72,23 @@ fun ProfileSettingsSection(
 ) {
     Column(modifier = modifier) {
         Text(
-            text       = title.uppercase(),
-            style      = MaterialTheme.typography.labelLarge,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color      = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier   = Modifier.padding(start = 4.adp, bottom = 8.adp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .padding(start = 4.adp, bottom = 8.adp)
+                .semantics { heading() },
         )
         Card(
-            modifier  = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
                 .dropShadow(
                     shape = MaterialTheme.shapes.large,
                     shadow = MaterialTheme.synapse.shadows.strong.toShadow(MaterialTheme.colorScheme.surface)
                 ),
-            shape     = MaterialTheme.shapes.large,
-            colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         ) {
             Column { content() }
         }
@@ -98,7 +101,6 @@ fun ProfileSettingsRow(
     subLabel: String,
     iconRes: Int,
     iconTint: Color,
-    iconBg: Color,
     hasDivider: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -111,20 +113,20 @@ fun ProfileSettingsRow(
                 .semantics(mergeDescendants = true) {}
                 .clickable(onClick = onClick)
                 .padding(horizontal = 18.adp, vertical = 16.adp),
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.adp),
         ) {
-            SettingsIconBox(iconRes = iconRes, iconTint = iconTint, iconBg = iconBg)
+            SettingsIconBox(iconRes = iconRes, iconTint = iconTint)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = label,
-                    style      = MaterialTheme.typography.bodyMedium,
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color      = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(1.adp))
                 Text(
-                    text  = subLabel,
+                    text = subLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -141,7 +143,6 @@ fun StepperRow(
     subLabel: String,
     iconRes: Int,
     iconTint: Color,
-    iconBg: Color,
     value: Int,
     unit: String,
     min: Int,
@@ -152,26 +153,28 @@ fun StepperRow(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val labelDesc = label.lowercase()
+
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.adp, vertical = 14.adp),
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.adp),
         ) {
-            SettingsIconBox(iconRes = iconRes, iconTint = iconTint, iconBg = iconBg)
+            SettingsIconBox(iconRes = iconRes, iconTint = iconTint)
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = label,
-                    style      = MaterialTheme.typography.bodyMedium,
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color      = cs.onSurface,
+                    color = cs.onSurface,
                 )
                 Spacer(Modifier.height(1.adp))
                 Text(
-                    text  = subLabel,
+                    text = subLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = cs.onSurfaceVariant,
                 )
@@ -179,13 +182,14 @@ fun StepperRow(
 
             // ── Stepper control ───────────────────────────────────────────────
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.adp),
             ) {
                 StepperButton(
-                    icon    = Icons.Rounded.Remove,
+                    icon = Icons.Rounded.Remove,
                     enabled = value > min,
                     onClick = onDecrement,
+                    contentDescription = stringResource(R.string.a11y_decrement, labelDesc),
                 )
 
                 // Animated value
@@ -198,31 +202,32 @@ fun StepperRow(
                     label = "stepper_value",
                 ) { count ->
                     Row(
-                        modifier               = Modifier.widthIn(min = 44.adp),
-                        verticalAlignment      = Alignment.CenterVertically,
-                        horizontalArrangement  = Arrangement.Center,
+                        modifier = Modifier.widthIn(min = 44.adp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            text       = count.localized(),
-                            style      = MaterialTheme.typography.titleMedium.copy(
+                            text = count.localized(),
+                            style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
                             ),
-                            color      = cs.onSurface,
-                            textAlign  = TextAlign.Center,
+                            color = cs.onSurface,
+                            textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.width(2.adp))
                         Text(
-                            text      = unit,
-                            style     = MaterialTheme.typography.labelSmall,
-                            color     = cs.onSurfaceVariant,
+                            text = unit,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = cs.onSurfaceVariant,
                         )
                     }
                 }
 
                 StepperButton(
-                    icon    = Icons.Rounded.Add,
+                    icon = Icons.Rounded.Add,
                     enabled = value < max,
                     onClick = onIncrement,
+                    contentDescription = stringResource(R.string.a11y_increment, labelDesc),
                 )
             }
         }
@@ -235,11 +240,13 @@ private fun StepperButton(
     icon: ImageVector,
     enabled: Boolean,
     onClick: () -> Unit,
+    contentDescription: String,
 ) {
     val cs = MaterialTheme.colorScheme
     Box(
         modifier = Modifier
-            .size(28.adp)
+            .size(32.adp)
+            .minimumInteractiveComponentSize()
             .clip(RoundedCornerShape(8.adp))
             .background(cs.primaryContainer.copy(alpha = 0.4f))
             .alpha(if (enabled) 1f else 0.38f)
@@ -248,9 +255,11 @@ private fun StepperButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = cs.primary,
-            modifier = Modifier.align(Alignment.Center).size(16.adp)
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(16.adp)
         )
     }
 }
@@ -261,7 +270,6 @@ fun TimeDisplayRow(
     subLabel: String,
     iconRes: Int,
     iconTint: Color,
-    iconBg: Color,
     hour: Int,
     minute: Int,
     onTap: () -> Unit,
@@ -280,20 +288,20 @@ fun TimeDisplayRow(
             .semantics(mergeDescendants = true) {}
             .clickable(onClick = onTap)
             .padding(horizontal = 16.adp, vertical = 14.adp),
-        verticalAlignment     = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.adp),
     ) {
-        SettingsIconBox(iconRes = iconRes, iconTint = iconTint, iconBg = iconBg)
+        SettingsIconBox(iconRes = iconRes, iconTint = iconTint)
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text       = label,
-                style      = MaterialTheme.typography.bodyMedium,
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color      = cs.onSurface,
+                color = cs.onSurface,
             )
             Spacer(Modifier.height(1.adp))
             Text(
-                text  = subLabel,
+                text = subLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = cs.onSurfaceVariant,
             )
@@ -307,11 +315,11 @@ fun TimeDisplayRow(
                 .padding(horizontal = 10.adp, vertical = 5.adp),
         ) {
             Text(
-                text       = timeLabel,
-                style      = MaterialTheme.typography.titleSmall.copy(
+                text = timeLabel,
+                style = MaterialTheme.typography.titleSmall.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
-                color      = cs.primary,
+                color = cs.primary,
             )
         }
     }
@@ -326,14 +334,14 @@ fun ReminderTimePickerDialog(
     onConfirm: (hour: Int, minute: Int) -> Unit,
 ) {
     val state = rememberTimePickerState(
-        initialHour   = initialHour,
+        initialHour = initialHour,
         initialMinute = initialMinute,
     )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text  = stringResource(R.string.settings_reminder_time_picker_title),
+                text = stringResource(R.string.settings_reminder_time_picker_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -357,38 +365,38 @@ fun ClearDataConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val error   = MaterialTheme.colorScheme.error
+    val error = MaterialTheme.colorScheme.error
     val onError = MaterialTheme.colorScheme.onError
 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
             Box(
-                modifier         = Modifier
+                modifier = Modifier
                     .size(48.adp)
                     .clip(RoundedCornerShape(14.adp))
                     .background(error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter            = painterResource(R.drawable.ic_trash_2),
+                    painter = painterResource(R.drawable.ic_trash_2),
                     contentDescription = null,
-                    tint               = error,
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
+                    tint = error,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                 )
             }
         },
         title = {
             Text(
-                text       = stringResource(R.string.settings_clear_data_dialog_title),
-                style      = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.settings_clear_data_dialog_title),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color      = error,
+                color = error,
             )
         },
         text = {
             Text(
-                text  = stringResource(R.string.settings_clear_data_dialog_body),
+                text = stringResource(R.string.settings_clear_data_dialog_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -396,13 +404,13 @@ fun ClearDataConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                colors  = ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor = error,
-                    contentColor   = onError,
+                    contentColor = onError,
                 ),
             ) {
                 Text(
-                    text       = stringResource(R.string.settings_clear_data_dialog_confirm),
+                    text = stringResource(R.string.settings_clear_data_dialog_confirm),
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -421,7 +429,7 @@ fun DeleteAccountConfirmDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    val error   = MaterialTheme.colorScheme.error
+    val error = MaterialTheme.colorScheme.error
     val onError = MaterialTheme.colorScheme.onError
 
     AlertDialog(
@@ -429,34 +437,34 @@ fun DeleteAccountConfirmDialog(
         // ── Icon ─────────────────────────────────────────────────────────────
         icon = {
             Box(
-                modifier         = Modifier
+                modifier = Modifier
                     .size(48.adp)
                     .clip(RoundedCornerShape(14.adp))
                     .background(error.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter            = painterResource(R.drawable.ic_user_x),
+                    painter = painterResource(R.drawable.ic_user_x),
                     contentDescription = null,
-                    tint               = error,
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
+                    tint = error,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                 )
             }
         },
         // ── Title ─────────────────────────────────────────────────────────────
         title = {
             Text(
-                text       = stringResource(R.string.settings_delete_account_dialog_title),
-                style      = MaterialTheme.typography.titleMedium,
+                text = stringResource(R.string.settings_delete_account_dialog_title),
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color      = error,
+                color = error,
             )
         },
         // ── Body ──────────────────────────────────────────────────────────────
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.adp)) {
                 Text(
-                    text  = stringResource(R.string.settings_delete_account_dialog_body),
+                    text = stringResource(R.string.settings_delete_account_dialog_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -470,15 +478,15 @@ fun DeleteAccountConfirmDialog(
                             .padding(horizontal = 12.adp, vertical = 8.adp),
                     ) {
                         Text(
-                            text       = userEmail,
-                            style      = MaterialTheme.typography.labelMedium,
+                            text = userEmail,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color      = error,
+                            color = error,
                         )
                     }
                 }
                 Text(
-                    text  = stringResource(R.string.settings_delete_account_dialog_irreversible),
+                    text = stringResource(R.string.settings_delete_account_dialog_irreversible),
                     style = MaterialTheme.typography.labelSmall,
                     color = error.copy(alpha = 0.7f),
                 )
@@ -488,19 +496,19 @@ fun DeleteAccountConfirmDialog(
         confirmButton = {
             Button(
                 onClick = onConfirm,
-                colors  = ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor = error,
-                    contentColor   = onError,
+                    contentColor = onError,
                 ),
             ) {
                 Icon(
-                    painter            = painterResource(R.drawable.ic_trash_2),
+                    painter = painterResource(R.drawable.ic_trash_2),
                     contentDescription = null,
-                    modifier           = Modifier.size(15.adp),
+                    modifier = Modifier.size(15.adp),
                 )
                 Spacer(Modifier.width(6.adp))
                 Text(
-                    text       = stringResource(R.string.settings_delete_account_dialog_confirm),
+                    text = stringResource(R.string.settings_delete_account_dialog_confirm),
                     fontWeight = FontWeight.SemiBold,
                 )
             }
@@ -523,7 +531,6 @@ fun DestructiveSettingsRow(
     modifier: Modifier = Modifier,
 ) {
     val error = MaterialTheme.colorScheme.error
-    val errorBg = error.copy(alpha = 0.10f)
 
     Column(modifier = modifier) {
         Row(
@@ -532,29 +539,29 @@ fun DestructiveSettingsRow(
                 .semantics(mergeDescendants = true) {}
                 .clickable(onClick = onClick)
                 .padding(horizontal = 16.adp, vertical = 14.adp),
-            verticalAlignment     = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.adp),
         ) {
-            SettingsIconBox(iconRes = iconRes, iconTint = error, iconBg = errorBg)
+            SettingsIconBox(iconRes = iconRes, iconTint = error)
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text       = label,
-                    style      = MaterialTheme.typography.bodyMedium,
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    color      = error,
+                    color = error,
                 )
                 Spacer(Modifier.height(1.adp))
                 Text(
-                    text  = subLabel,
+                    text = subLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = error.copy(alpha = 0.6f),
                 )
             }
             Icon(
-                imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
                 contentDescription = null,
-                tint               = error.copy(alpha = 0.6f),
-                modifier           = Modifier.size(14.adp),
+                tint = error.copy(alpha = 0.6f),
+                modifier = Modifier.size(14.adp),
             )
         }
         if (hasDivider) SettingsDivider()
@@ -562,19 +569,19 @@ fun DestructiveSettingsRow(
 }
 
 @Composable
-private fun SettingsIconBox(iconRes: Int, iconTint: Color, iconBg: Color) {
+private fun SettingsIconBox(iconRes: Int, iconTint: Color) {
     Box(
-        modifier         = Modifier
+        modifier = Modifier
             .size(42.adp)
             .clip(RoundedCornerShape(12.adp))
-            .background(iconBg),
+            .background(iconTint.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter            = painterResource(iconRes),
+            painter = painterResource(iconRes),
             contentDescription = null,
-            tint               = iconTint,
-            modifier           = Modifier.size(20.adp),
+            tint = iconTint,
+            modifier = Modifier.size(20.adp),
         )
     }
 }
@@ -582,52 +589,20 @@ private fun SettingsIconBox(iconRes: Int, iconTint: Color, iconBg: Color) {
 @Composable
 private fun SettingsDivider() {
     HorizontalDivider(
-        modifier  = Modifier.padding(start = 64.adp, end = 16.adp),
+        modifier = Modifier.padding(start = 64.adp, end = 16.adp),
         thickness = 1.adp,
-        color     = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
     )
 }
 
-@Composable
-fun SynapseSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    checkedIconRes: Int? = null,
-    uncheckedIconRes: Int? = null,
-) {
-    val iconRes = if (checked) checkedIconRes else uncheckedIconRes
-    Switch(
-        checked         = checked,
-        onCheckedChange = onCheckedChange,
-        modifier        = modifier,
-        thumbContent    = if (iconRes != null) {
-            {
-                Icon(
-                    painter            = painterResource(iconRes),
-                    contentDescription = null,
-                    modifier           = Modifier.size(12.adp),
-                )
-            }
-        } else null,
-        colors = SwitchDefaults.colors(
-            checkedTrackColor   = MaterialTheme.colorScheme.secondary,
-            checkedThumbColor   = Color.White.copy(0.9f),
-            checkedIconColor    = MaterialTheme.colorScheme.secondary,
-            uncheckedTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
-            uncheckedThumbColor = Color.White.copy(0.9f),
-            uncheckedIconColor  = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-    )
-}
 
 @Composable
 fun ProfileChevron(modifier: Modifier = Modifier) {
     Icon(
-        imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+        imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
         contentDescription = null,
-        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier           = modifier.size(14.adp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.size(14.adp),
     )
 }
 
@@ -647,41 +622,44 @@ fun ProfileSignOutRow(
             .clickable(onClick = onClick)
             .padding(vertical = 16.adp),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment     = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            painter            = painterResource(R.drawable.ic_log_out),
+            painter = painterResource(R.drawable.ic_log_out),
             contentDescription = null,
-            tint               = error,
-            modifier           = Modifier.size(16.adp),
+            tint = error,
+            modifier = Modifier.size(16.adp),
         )
         Spacer(Modifier.width(8.adp))
         Text(
-            text       = stringResource(R.string.profile_sign_out),
-            style      = MaterialTheme.typography.titleSmall.copy(
+            text = stringResource(R.string.profile_sign_out),
+            style = MaterialTheme.typography.titleSmall.copy(
                 fontWeight = FontWeight.SemiBold,
             ),
-            color      = error,
+            color = error,
         )
     }
 }
 
 @Preview(name = "StepperRow · Light", showBackground = true)
-@Preview(name = "StepperRow · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(
+    name = "StepperRow · Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
 @Composable
 private fun StepperRowPreview() {
     SynapseTheme {
         Surface {
             StepperRow(
-                label      = "Daily Goal",
-                subLabel   = "Cards to review each day",
-                iconRes    = R.drawable.ic_target,
-                iconTint   = MaterialTheme.colorScheme.primary,
-                iconBg     = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                value      = 20,
-                unit       = "cards",
-                min        = 5,
-                max        = 200,
+                label = "Daily Goal",
+                subLabel = "Cards to review each day",
+                iconRes = R.drawable.ic_target,
+                iconTint = MaterialTheme.colorScheme.primary,
+                value = 20,
+                unit = "cards",
+                min = 5,
+                max = 200,
                 onIncrement = {},
                 onDecrement = {},
                 hasDivider = false,
@@ -691,24 +669,32 @@ private fun StepperRowPreview() {
 }
 
 @Preview(name = "DestructiveRow · Light", showBackground = true)
-@Preview(name = "DestructiveRow · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(
+    name = "DestructiveRow · Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
 @Composable
 private fun DestructiveRowPreview() {
     SynapseTheme {
         Surface {
             DestructiveSettingsRow(
-                label      = "Clear All Data",
-                subLabel   = "Reset progress and all decks",
-                iconRes    = R.drawable.ic_trash_2,
+                label = "Clear All Data",
+                subLabel = "Reset progress and all decks",
+                iconRes = R.drawable.ic_trash_2,
                 hasDivider = false,
-                onClick    = {},
+                onClick = {},
             )
         }
     }
 }
 
 @Preview(name = "DeleteAccountDialog · Light", showBackground = true)
-@Preview(name = "DeleteAccountDialog · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(
+    name = "DeleteAccountDialog · Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
 @Composable
 private fun DeleteAccountDialogPreview() {
     SynapseTheme {
