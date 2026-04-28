@@ -1,14 +1,16 @@
 package io.synapse.ai.ui.viewmodel
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.synapse.ai.core.ui.state.UiEffect
-import kotlinx.coroutines.flow.MutableSharedFlow
+import io.synapse.ai.data.repo.AppSettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface SubtitleOverrideState {
@@ -17,36 +19,46 @@ sealed interface SubtitleOverrideState {
 }
 
 @HiltViewModel
-class RootViewModel @Inject constructor() : ViewModel() {
+class RootViewModel @Inject constructor(
+    private val settingsRepository: AppSettingsRepository,
+) : ViewModel() {
 
+    // ── Splash gate ──────────────────────────────────────────────────────────
+    var isLoadingOnboardingState: Boolean by mutableStateOf(true)
+        private set
+
+    // ── Onboarding ───────────────────────────────────────────────────────────
     private val _onboardingDone = MutableStateFlow(false)
     val onboardingDone: StateFlow<Boolean> = _onboardingDone.asStateFlow()
 
-    // ── UI Effects ──────────────────────────────────────────────
-    private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
-    val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
-
-    // ── Shell Overrides ─────────────────────────────────────────
-    private val _subtitleOverride = MutableStateFlow<SubtitleOverrideState>(SubtitleOverrideState.Default)
+    // ── Shell Overrides ──────────────────────────────────────────────────────
+    private val _subtitleOverride =
+        MutableStateFlow<SubtitleOverrideState>(SubtitleOverrideState.Default)
     val subtitleOverride: StateFlow<SubtitleOverrideState> = _subtitleOverride.asStateFlow()
 
+    // Init
+    init {
+        viewModelScope.launch {
+            val isFirstLaunch = settingsRepository.isFirstLaunch()
+            _onboardingDone.value = !isFirstLaunch
+            isLoadingOnboardingState = false
+        }
+    }
+
+    // ── Onboarding completion ─────────────────────────────────────────────────
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            settingsRepository.setFirstLaunchComplete()  // persists to DataStore
+            _onboardingDone.value = true
+        }
+    }
+
+    // ── Shell override helpers ────────────────────────────────────────────────
     fun setSubtitleResOverride(resId: Int) {
         _subtitleOverride.value = SubtitleOverrideState.Resource(resId)
     }
 
     fun clearSubtitleResOverride() {
         _subtitleOverride.value = SubtitleOverrideState.Default
-    }
-
-    fun navigateTo(route: String) {
-        _uiEffects.tryEmit(UiEffect.Navigate(route))
-    }
-
-    fun navigateBack() {
-        _uiEffects.tryEmit(UiEffect.NavigateBack)
-    }
-
-    fun setOnboardingState(showOnboarding: Boolean) {
-        _onboardingDone.value = !showOnboarding
     }
 }
