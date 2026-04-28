@@ -2,10 +2,12 @@ package io.synapse.ai
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import io.synapse.ai.core.framework.audio.SoundManager
@@ -24,40 +26,50 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var soundManager: SoundManager
 
+    // ── ViewModels ───────────────────────────────────────────────────────────
     private val rootViewModel: RootViewModel by viewModels()
     private val profileViewModel: ProfileViewModel by viewModels()
     private val studySettingsViewModel: StudySettingsViewModel by viewModels()
     private val entitlementViewModel: EntitlementViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        installSplashScreen().setKeepOnScreenCondition {
+            rootViewModel.isLoadingOnboardingState
+        }
 
-        val showOnboarding = intent.getBooleanExtra(EXTRA_SHOW_ONBOARDING, false)
-        rootViewModel.setOnboardingState(showOnboarding)
+        super.onCreate(savedInstanceState)
+
+        // Explicitly declare transparent bars
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT,
+            ),
+        )
 
         setContent {
+            if (rootViewModel.isLoadingOnboardingState) return@setContent
+
             val studySettings by studySettingsViewModel.uiState.collectAsStateWithLifecycle()
             val appTheme = studySettings.appTheme
 
             SynapseTheme(appTheme = appTheme) {
                 LimitedFontScale {
                     SynapseApp(
-                        soundManager = soundManager,
-                        rootViewModel = rootViewModel,
+                        soundManager     = soundManager,
+                        rootViewModel    = rootViewModel,
                         profileViewModel = profileViewModel,
                     )
                 }
             }
         }
     }
-
     override fun onResume() {
         super.onResume()
         entitlementViewModel.onResume()
-    }
-
-    companion object {
-        const val EXTRA_SHOW_ONBOARDING = "show_onboarding"
     }
 }

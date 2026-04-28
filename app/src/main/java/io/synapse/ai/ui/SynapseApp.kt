@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -35,12 +34,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.synapse.ai.BuildConfig
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.ui.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SynapseTopBar
-import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.navigation.AppState
 import io.synapse.ai.navigation.BarConfig
@@ -63,22 +60,13 @@ fun SynapseApp(
     val onboardingDone by rootViewModel.onboardingDone.collectAsStateWithLifecycle()
     val subtitleOverride by rootViewModel.subtitleOverride.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        rootViewModel.uiEffects.collect { effect ->
-            when (effect) {
-                is UiEffect.Navigate -> appState.navigateTo(effect.route)
-                is UiEffect.NavigateBack -> appState.navigateBack()
-                else -> Unit
-            }
-        }
-    }
 
     CompositionLocalProvider(LocalSoundManager provides soundManager) {
         SynapseShell(
-            appState = appState,
-            onboardingDone = onboardingDone,
+            appState         = appState,
+            onboardingDone   = onboardingDone,
             subtitleOverride = subtitleOverride,
-            rootViewModel = rootViewModel,
+            rootViewModel    = rootViewModel,
             profileViewModel = profileViewModel,
         )
     }
@@ -104,90 +92,88 @@ private fun SynapseShell(
     val barConfig: BarConfig = appState.barConfig
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
 
+    val routeReady = appState.currentRoute != null
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier            = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .systemBarsPadding()
+                .safeDrawingPadding()
                 .padding(innerPadding)
                 .background(MaterialTheme.synapse.gradients.page)
         ) {
             SynapseNavGraph(
-                navController = appState.navController,
+                navController  = appState.navController,
                 onboardingDone = onboardingDone,
-                rootViewModel = rootViewModel,
-                modifier = Modifier
+                rootViewModel  = rootViewModel,
+                modifier       = Modifier,
             )
 
             // Bottom nav
             AnimatedVisibility(
-                visible = barConfig.showBottomBar,
-                enter = BarEnter,
-                exit = BarExit,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter),
+                visible  = routeReady && barConfig.showBottomBar,
+                enter    = BarEnter,
+                exit     = BarExit,
+                modifier = Modifier.align(Alignment.BottomCenter),
             ) {
                 BottomBar(
-                    items = SynapseNavigationItems.visibleItems,
+                    items         = SynapseNavigationItems.visibleItems,
                     navController = appState.navController,
-                    currentRoute = appState.currentRoute,
+                    currentRoute  = appState.currentRoute,
                 )
             }
 
-            // Top bar overlaid on content with gradient backing
+            // Top bar
             AnimatedVisibility(
-                visible = barConfig.showTopBar,
-                enter = BarEnter,
-                exit = BarExit,
+                visible = routeReady && barConfig.showTopBar,
+                enter   = BarEnter,
+                exit    = BarExit,
             ) {
                 var topBarHeightPx by remember { mutableIntStateOf(0) }
                 val density = LocalDensity.current
 
                 Box {
-
-                    if (!BuildConfig.DEBUG)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(with(density) { topBarHeightPx.toDp() })
-                                .matchParentSize()
-                                .background(
-                                    Brush.verticalGradient(
-                                        colorStops = arrayOf(
-                                            0.0f to MaterialTheme.colorScheme.background,
-                                            0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
-                                            1.0f to Color.Transparent,
-                                        )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(with(density) { topBarHeightPx.toDp() })
+                            .matchParentSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colorStops = arrayOf(
+                                        0.0f  to MaterialTheme.colorScheme.background,
+                                        0.55f to MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+                                        1.0f  to Color.Transparent,
                                     )
-                                ),
-                        )
-
+                                )
+                            ),
+                    )
                     SynapseTopBar(
-                        title = stringResource(appState.currentScreen.titleRes),
-                        subtitle = when (subtitleOverride) {
+                        title            = stringResource(appState.currentScreen.titleRes),
+                        subtitle         = when (subtitleOverride) {
                             is SubtitleOverrideState.Resource -> stringResource(subtitleOverride.resId)
-                            SubtitleOverrideState.Default -> appState.currentScreen.subtitleRes
+                            SubtitleOverrideState.Default     -> appState.currentScreen.subtitleRes
                                 .takeIf { it != 0 }
                                 ?.let { stringResource(it) }
                                 ?: ""
                         },
                         profileAvatarUrl = profileState.avatarUrl,
-                        userInitial = profileState.avatarInitial.toString(),
-                        isPremium = profileState.isPremium,
-                        onProfileClick = {
+                        userInitial      = profileState.avatarInitial.toString(),
+                        isPremium        = profileState.isPremium,
+                        onProfileClick   = {
                             appState.navController.navigate(SynapseScreen.Profile.route) {
                                 launchSingleTop = true
                             }
                         },
-                        onPremiumClick = {
+                        onPremiumClick   = {
                             appState.navController.navigate(SynapseScreen.Premium.route) {
                                 launchSingleTop = true
                             }
                         },
-                        modifier = Modifier.onSizeChanged { topBarHeightPx = it.height }
+                        modifier         = Modifier.onSizeChanged { topBarHeightPx = it.height }
                     )
                 }
             }
@@ -212,10 +198,7 @@ internal fun openSubscriptionManagement(
     }
     context.startActivity(
         Intent(Intent.ACTION_VIEW, url.toUri()).apply {
-            // Prefer the Play Store app; fall back to browser automatically.
             setPackage("com.android.vending")
-            // If Play Store is not installed, Android strips setPackage and
-            // the Intent resolves to a browser — no crash.
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
     )
