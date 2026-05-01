@@ -148,6 +148,12 @@ class AppConfigProvider @Inject constructor(
             DefaultConfig.Sync.PERIODIC_INTERVAL_MS,
         )
 
+    val freeExportMonthlyLimit: Int
+        get() = remoteConfig.getLong(
+            RCKeys.Export.FREE_MONTHLY_LIMIT,
+            DefaultConfig.Export.FREE_MONTHLY_LIMIT.toLong()
+        ).toInt()
+
     val appEmail: String get() = getString(RCKeys.AppInfo.EMAIL, DefaultConfig.AppInfo.EMAIL)
     val appGithub: String get() = getString(RCKeys.AppInfo.GITHUB, DefaultConfig.AppInfo.GITHUB)
     val appLinkedin: String get() = getString(RCKeys.AppInfo.LINKEDIN, DefaultConfig.AppInfo.LINKEDIN)
