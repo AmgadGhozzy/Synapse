@@ -19,6 +19,7 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["packId", "type"]),
         Index(value = ["packId", "createdAt"]),
+        Index(value = ["packId", "moduleTitle"])
     ]
 )
 data class QuestionEntity(
@@ -36,5 +37,18 @@ data class QuestionEntity(
 
     @ColumnInfo(defaultValue = "NULL")
     val reference: String? = null,
-    val sourcePage: Int? = null
+
+    @ColumnInfo(defaultValue = "0")
+    val isDeleted: Int = 0,
+
+    // Unified fields
+    @ColumnInfo(defaultValue = "NULL")
+    val moduleTitle: String? = null,
+
+    /** Per-question difficulty: "easy" | "medium" | "hard". */
+    @ColumnInfo(defaultValue = "NULL")
+    val level: String? = null,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val objective: String? = null,
 )
