@@ -53,6 +53,10 @@ object DefaultConfig {
         const val REVIEWER_MODE = false
     }
 
+    object Export {
+        const val FREE_MONTHLY_LIMIT = 5
+    }
+
     object AppInfo {
         const val EMAIL = "synapse.app.ai@gmail.com"
         const val GITHUB = "https://github.com/AmgadGhozzy"
@@ -89,6 +93,7 @@ object DefaultConfig {
         RCKeys.Sync.PERIODIC_INTERVAL_MS to Sync.PERIODIC_INTERVAL_MS,
         RCKeys.Ads.ENABLED to Ads.ENABLED,
         RCKeys.Reviewer.REVIEWER_MODE to Reviewer.REVIEWER_MODE,
+        RCKeys.Export.FREE_MONTHLY_LIMIT to Export.FREE_MONTHLY_LIMIT,
         RCKeys.AppInfo.EMAIL to AppInfo.EMAIL,
         RCKeys.AppInfo.GITHUB to AppInfo.GITHUB,
         RCKeys.AppInfo.LINKEDIN to AppInfo.LINKEDIN,

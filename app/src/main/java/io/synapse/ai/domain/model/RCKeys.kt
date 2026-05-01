@@ -55,6 +55,10 @@ object RCKeys {
         const val REVIEWER_MODE = "reviewer_mode_enabled"
     }
 
+    object Export {
+        const val FREE_MONTHLY_LIMIT = "export_free_monthly_limit"
+    }
+
     object AppInfo {
         const val EMAIL = "app_email"
         const val GITHUB = "app_github"
