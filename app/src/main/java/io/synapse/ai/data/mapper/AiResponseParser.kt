@@ -33,6 +33,7 @@ object AiResponseParser {
             emoji      = packDto.emoji,
             color      = packDto.color,
             language   = packDto.language.ifBlank { language },
+            questionCount = packDto.questionCount,
         )
 
         val questions = response.questions.mapIndexed { index, dto ->
@@ -69,7 +70,6 @@ object AiResponseParser {
             createdAt    = fallbackCreatedAt,
             remoteId     = remoteId,
             reference    = reference,
-            sourcePage   = null,
         )
     }
 
@@ -92,7 +92,7 @@ object AiResponseParser {
             options      = safeOpts,
             correctIndex = safeIdx,
             explanation  = c.explanation,
-            hint         = null,
+            hint         = c.hint,
         )
     }
 
@@ -102,7 +102,7 @@ object AiResponseParser {
         QuestionContent.TfContent(
             answer      = c.correctAnswer ?: true,
             explanation = c.explanation,
-            hint        = null,
+            hint        = c.hint,
         )
 
     // FLASHCARD
