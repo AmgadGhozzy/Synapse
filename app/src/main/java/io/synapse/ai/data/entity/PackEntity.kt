@@ -11,11 +11,12 @@ import androidx.room.PrimaryKey
         Index(value = ["createdAt"]),
         Index(value = ["language"]),
         Index(value = ["isDeleted"]),
+        Index(value = ["packType"]),
     ]
 )
 data class PackEntity(
-    @PrimaryKey
-    val id: Long,
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
 
     @ColumnInfo(defaultValue = "NULL")
     val uuid: String? = null,
@@ -42,5 +43,42 @@ data class PackEntity(
     val language: String = "en",
 
     @ColumnInfo(defaultValue = "0")
-    val isDeleted: Boolean = false
+    val isDeleted: Boolean = false,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val difficulty: String? = null,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val sourceUrl: String? = null,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val sourceSummary: String? = null,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val sourceHash: String? = null,
+
+    @ColumnInfo(defaultValue = "0")
+    val questionCount: Int = 0,
+
+    // Unified fields
+    @ColumnInfo(defaultValue = "ai_generated")
+    val packType: String = "ai_generated",
+
+    @ColumnInfo(defaultValue = "NULL")
+    val modules: String? = null,
+
+    @ColumnInfo(defaultValue = "[]")
+    val tags: String = "[]",
+
+    @ColumnInfo(defaultValue = "NULL")
+    val estimatedMinutes: Int? = null,
+
+    @ColumnInfo(defaultValue = "0")
+    val isPremium: Boolean = false,
+
+    @ColumnInfo(defaultValue = "1")
+    val version: Int = 1,
+
+    @ColumnInfo(defaultValue = "NULL")
+    val templateId: String? = null,
 )
