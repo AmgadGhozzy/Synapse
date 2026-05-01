@@ -1,13 +1,12 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 enum class QuestionType {
     MCQ,
     TRUE_FALSE,
-    FLASHCARD,
-    IMAGE;
+    FLASHCARD;
 
     companion object {
         fun fromString(value: String): QuestionType =
-            entries.find { it.name == value } ?: MCQ
+            entries.find { it.name == value.uppercase().trim() } ?: MCQ
     }
 }

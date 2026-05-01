@@ -1,4 +1,4 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 data class DayActivityModel(
     /** UTC midnight epoch-ms. */

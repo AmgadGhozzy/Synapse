@@ -1,11 +1,11 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 /**
  * SRS progress fields for a single question.
  * Math logic for nextReview should be handled in StudyEngine (Layer 3).
  */
 data class QuestionProgressModel(
-    val questionId: Long,
+    val questionId: Long = 0,
     val easeFactor: Double = 2.5,
     val intervalDays: Int = 0,
     val repetitions: Int = 0,

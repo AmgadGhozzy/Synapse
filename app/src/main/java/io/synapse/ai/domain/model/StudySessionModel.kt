@@ -1,4 +1,4 @@
-package com.venom.synapse.domain.model
+package io.synapse.ai.domain.model
 
 data class SessionWithQuestionsModel(
     val session: StudySessionModel,
@@ -7,7 +7,7 @@ data class SessionWithQuestionsModel(
 
 data class StudySessionModel(
     val id: Long = 0L,
-    val packId: Long,
+    val packId: Long? = null,
     val mode: SessionMode,
     val startedAt: Long,
     val finishedAt: Long? = null,
