@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
@@ -45,6 +46,7 @@ import io.synapse.ai.core.ui.components.ConfettiAnimationType
 import io.synapse.ai.core.ui.components.ConfettiView
 import io.synapse.ai.core.ui.components.ErrorBanner
 import io.synapse.ai.core.ui.components.SnackbarHost
+import io.synapse.ai.core.ui.components.StepIndicator
 import io.synapse.ai.core.ui.components.rememberSnackbarController
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.add_pdf.presentation.components.AddPdfHeader
@@ -53,9 +55,7 @@ import io.synapse.ai.features.add_pdf.presentation.components.DoneStep
 import io.synapse.ai.features.add_pdf.presentation.components.GeneratingStep
 import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
 import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
-import io.synapse.ai.features.add_pdf.presentation.components.StepIndicator
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
-import io.synapse.ai.features.add_pdf.presentation.components.label
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
 import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
@@ -75,6 +75,12 @@ fun AddPdfScreen(
     var showLanguagePicker by remember { mutableStateOf(false) }
     val context            = LocalContext.current
     val selectedLanguage   = LANGUAGES.find { it.code == uiState.language } ?: LANGUAGES[0]
+    val stepLabels = listOf(
+        stringResource(R.string.step_upload),
+        stringResource(R.string.step_configure),
+        stringResource(R.string.step_generate),
+        stringResource(R.string.step_done),
+    )
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -107,7 +113,7 @@ fun AddPdfScreen(
                 is UiEffect.NavigateBack -> onNavigateBack()
                 is UiEffect.ShowToast    -> snackbarController.showToast(effect.type, effect.text.asString(context))
 
-                is UiEffect.ShowUpgradePrompt -> {
+                is UiEffect.ShowPaywall -> {
                     val feature = effect.feature.asString(context)
                     when {
                         // Hard-navigate to Premium for pack limit or web/YouTube feature.
@@ -165,7 +171,8 @@ fun AddPdfScreen(
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.sectionGap),
         ) {
             StepIndicator(
-                currentIndex = uiState.step.toIndicatorIndex(),
+                currentStep = uiState.step.toIndicatorIndex(),
+                steps = stepLabels,
                 modifier     = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.adp),
@@ -223,10 +230,8 @@ fun AddPdfScreen(
                     )
 
                     AddPdfStep.GENERATING -> GeneratingStep(
-                        progress         = uiState.generationProgress,
-                        questionCount    = uiState.questionCount,
-                        language         = selectedLanguage.label(),
-                        focusNotesActive = uiState.focusNotes.isNotBlank(),
+                        uiState          = uiState,
+                        onStartEarly     = { viewModel.onEvent(AddPdfUiEvent.StartStudyEarly) },
                     )
 
                     AddPdfStep.DONE -> DoneStep(

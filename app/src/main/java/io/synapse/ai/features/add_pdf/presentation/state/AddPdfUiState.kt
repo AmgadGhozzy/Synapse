@@ -58,6 +58,28 @@ data class AddPdfUiState(
     val thinkingEnabled: Boolean = false,
     val isThinkingLocked: Boolean = false,
 
+    // ── Streaming generation state ────────────────────────────────
+    /** Server-provided stage message (e.g. "Extracting key ideas…") */
+    val streamStage: String = "",
+    /** Index for local checklist animation during the Preparing phase */
+    val progressMessageIndex: Int = 0,
+    /** Number of distinct concepts the AI found in the source */
+    val conceptsFound: Int = 0,
+    /** Questions completed so far (live counter) */
+    val questionsCompleted: Int = 0,
+    /** Total questions expected from the server */
+    val questionsExpected: Int = 0,
+    /** Pack title from server (available after pack_meta event) */
+    val streamPackTitle: String = "",
+    /** Pack emoji from server */
+    val streamPackEmoji: String = "",
+    /** Pack color from server */
+    val streamPackColor: String = "",
+    /** True once enough questions exist for early start (≥40%) */
+    val canStartEarly: Boolean = false,
+    /** Whether generation is still running in background after early start */
+    val generatingInBackground: Boolean = false,
+
     // ── Generation / Done ─────────────────────────────────────────
     val sourceDescription: String = "",
     val generationProgress: Float = 0f,
@@ -68,6 +90,8 @@ data class AddPdfUiState(
 
     // ── UI meta ───────────────────────────────────────────────────
     val isLoading: Boolean = false,
+    val isUploading: Boolean = false,
+    val uploadProgress: Float? = null,
     val error: UiText? = null,
     val isPackLimitReached: Boolean = false,
     val isOcrFeatureLocked: Boolean = false,

@@ -28,4 +28,7 @@ sealed interface AddPdfUiEvent {
 
     // ── Generation ────────────────────────────────────────────────
     data object GeneratePack : AddPdfUiEvent
+
+    /** User taps "Start Now" before generation finishes. */
+    data object StartStudyEarly : AddPdfUiEvent
 }

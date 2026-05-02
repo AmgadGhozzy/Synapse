@@ -3,15 +3,18 @@ package io.synapse.ai.features.add_pdf.presentation.components
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -57,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -66,10 +71,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -81,6 +88,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
@@ -90,10 +98,10 @@ import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SecondaryButton
 import io.synapse.ai.core.ui.components.StatusIconHeader
+import io.synapse.ai.core.ui.components.StepIndicator
 import io.synapse.ai.core.ui.components.WavyProgressIndicator
 import io.synapse.ai.core.ui.state.QuestionUiModel
 import io.synapse.ai.core.ui.utils.animatedDashedBorder
-import io.synapse.ai.core.ui.utils.localized
 import io.synapse.ai.domain.model.QuestionType
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiState
 import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
@@ -103,7 +111,6 @@ import kotlinx.coroutines.runBlocking
 const val TEXT_MAX_CHARS = 5_000
 
 private data class GenerationTask(val label: String, val done: Boolean)
-
 @Composable
 fun UploadStep(
     uiState: AddPdfUiState,
@@ -530,7 +537,7 @@ private fun TextFieldTrailingIcons(
     value: String,
     onValueChange: (String) -> Unit,
     enabled: Boolean = true,
-    size: Dp = 16.dp,
+    size: Dp = 16.adp,
 ) {
     if (value.isNotBlank()) {
         IconButton(onClick = { onValueChange("") }) {
@@ -771,7 +778,7 @@ fun TextTab(
                     TextFieldTrailingIcons(
                         value = text,
                         onValueChange = onTextChange,
-                        size = 24.dp,
+                        size = 24.adp,
                     )
                 },
                 shape = MaterialTheme.shapes.medium,
@@ -1097,94 +1104,308 @@ fun LanguagePickerCard(
     }
 }
 
+enum class GenerationPhase {
+    UPLOADING, PREPARING, GENERATING
+}
+
 @Composable
 fun GeneratingStep(
-    progress: Float,
-    questionCount: Int,
-    language: String,
-    focusNotesActive: Boolean,
+    uiState: AddPdfUiState,
+    onStartEarly: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val animatedProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(280))
-
-    val taskAnalysing = stringResource(R.string.generating_task_analysing)
-    val taskGenerating = stringResource(R.string.generating_task_generating)
-    val taskAnswers = stringResource(R.string.generating_task_answers)
-    val taskSrs = stringResource(R.string.generating_task_srs)
-
-    val tasks = remember(progress) {
-        listOf(
-            GenerationTask(taskAnalysing, progress > 0.20f),
-            GenerationTask(taskGenerating, progress > 0.50f),
-            GenerationTask(taskAnswers, progress > 0.75f),
-            GenerationTask(taskSrs, progress >= 1.00f),
-        )
+    val phase = remember(uiState.isUploading, uiState.packId) {
+        when {
+            uiState.isUploading -> GenerationPhase.UPLOADING
+            uiState.packId == 0L -> GenerationPhase.PREPARING
+            else -> GenerationPhase.GENERATING
+        }
     }
 
-    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(24.adp))
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.adp)) {
-            LoadingIndicator(size = 120.adp)
+    AnimatedContent(
+        targetState = phase,
+        transitionSpec = {
+            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(animationSpec = tween(500))
+        },
+        label = "phase_transition",
+        modifier = modifier
+    ) { currentPhase ->
+        when (currentPhase) {
+            GenerationPhase.UPLOADING -> UploadingPhaseUi(uiState)
+            GenerationPhase.PREPARING -> PreparingPhaseUi(uiState)
+            GenerationPhase.GENERATING -> GeneratingPhaseUi(uiState, onStartEarly)
         }
+    }
+}
+
+@Composable
+private fun UploadingPhaseUi(uiState: AddPdfUiState) {
+    // Hybrid Fake/Real Progress: Reaches 85% smoothly if no real progress is available
+    var fakeProgress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        androidx.compose.animation.core.animate(
+            initialValue = 0f,
+            targetValue = 0.85f,
+            animationSpec = tween(durationMillis = 8000, easing = FastOutSlowInEasing)
+        ) { value, _ ->
+            fakeProgress = value
+        }
+    }
+    
+    val displayProgress = uiState.uploadProgress ?: fakeProgress
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.adp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(120.adp)) {
+            if (displayProgress > 0f) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    progress = { displayProgress },
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 6.adp,
+                    strokeCap = StrokeCap.Round
+                )
+            } else {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.fillMaxSize(),
+                    strokeWidth = 6.adp,
+                    strokeCap = StrokeCap.Round
+                )
+            }
+            Icon(
+                painter = painterResource(R.drawable.ic_upload),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.adp)
+            )
+        }
+        
         Spacer(Modifier.height(28.adp))
         Text(
-            text = stringResource(R.string.generating_title),
+            text = stringResource(R.string.generating_upload_title), 
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(8.adp))
+        Text(
+            text = "${uiState.fileName ?: stringResource(R.string.generating_upload_pdf_fallback)} • ${uiState.fileSizeMb} MB",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.adp))
+        Text(
+            text = stringResource(R.string.generating_upload_subtitle),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.Center
+        )
+        
+        if (!uiState.isPro) {
+            Spacer(Modifier.height(32.adp))
+            AnimatedVisibility(
+                visible = fakeProgress > 0.3f, // Show the tip after 30% progress (~2.5s) to let user feel the wait
+                enter = fadeIn() + expandVertically()
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        text = stringResource(R.string.generating_upload_pro_tip),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.adp, vertical = 8.adp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreparingPhaseUi(uiState: AddPdfUiState) {
+    val tasks = stringArrayResource(
+        if (uiState.isPro) R.array.generating_tasks_pro else R.array.generating_tasks_standard
+    )
+    
+    val currentIndex = uiState.progressMessageIndex.coerceAtMost(tasks.lastIndex)
+    // Show up to 3 recent tasks to keep the UI clean
+    val startIndex = maxOf(0, currentIndex - 2)
+    val visibleTasks = tasks.slice(startIndex..currentIndex)
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 32.adp, horizontal = 8.adp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(100.adp)) {
+            LoadingIndicator(size = 100.adp)
+        }
+        Spacer(Modifier.height(32.adp))
+        Text(
+            text = stringResource(R.string.generating_prepare_title), 
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(Modifier.height(8.adp))
+        if (uiState.fileSizeMb > 0f) {
+            Text(
+                text = stringResource(R.string.generating_prepare_analyzing_size, uiState.fileSizeMb),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        
+        Spacer(Modifier.height(32.adp))
+        
+        // Animated Checklist
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)),
+            verticalArrangement = Arrangement.spacedBy(12.adp)
+        ) {
+            visibleTasks.forEachIndexed { i, taskLabel ->
+                val actualIndex = startIndex + i
+                val isDone = actualIndex < currentIndex
+                
+                GeneratingTaskRow(
+                    label = taskLabel,
+                    done = isDone
+                )
+            }
+        }
+    }
+}
+
+// Helper to smooth out generation progress (fast start, steady middle, slow finish)
+private fun mapProgress(real: Float): Float {
+    return when {
+        real < 0.2f -> real * 0.5f // 0 -> 0.1
+        real < 0.8f -> 0.1f + (real - 0.2f) * 1.25f // 0.1 -> 0.85
+        else -> 0.85f + (real - 0.8f) * 0.75f // 0.85 -> 1.0
+    }
+}
+
+@Composable
+private fun GeneratingPhaseUi(
+    uiState: AddPdfUiState,
+    onStartEarly: () -> Unit
+) {
+    val mappedProgress = remember(uiState.generationProgress) { mapProgress(uiState.generationProgress) }
+    val animatedProgress by animateFloatAsState(
+        targetValue = mappedProgress, 
+        animationSpec = tween(800, easing = FastOutSlowInEasing),
+        label = "progress"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(16.adp))
+        
+        Box(
+            contentAlignment = Alignment.Center, 
+            modifier = Modifier
+                .size(72.adp)
+                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+        ) {
+            Text(
+                text = uiState.streamPackEmoji.ifBlank { stringResource(R.string.generating_pack_fallback) },
+                fontSize = 32.sp
+            )
+        }
+        
+        Spacer(Modifier.height(24.adp))
+        Text(
+            text = uiState.streamPackTitle.ifBlank { stringResource(R.string.generating_pack_title) },
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.adp))
-        val primaryColor = MaterialTheme.colorScheme.primary
-        val subtitleColor = MaterialTheme.colorScheme.onSurfaceVariant
         Text(
-            text = buildAnnotatedString {
-                append(stringResource(R.string.generating_subtitle_prefix))
-                withStyle(
-                    SpanStyle(
-                        color = primaryColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                ) { append("$questionCount") }
-                append(stringResource(R.string.generating_subtitle_in))
-                withStyle(
-                    SpanStyle(
-                        color = primaryColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                ) { append(language) }
-                if (focusNotesActive) append(stringResource(R.string.generating_subtitle_focus))
-            },
+            text = uiState.streamStage,
             style = MaterialTheme.typography.bodyMedium,
-            color = subtitleColor,
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(28.adp))
+        
+        Spacer(Modifier.height(32.adp))
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.adp), horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.adp), 
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = stringResource(R.string.generating_progress_label),
+                text = stringResource(R.string.generating_progress_lbl),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "${
-                    (animatedProgress * 100).toInt().localized()
-                } ${stringResource(R.string.percent_mark)}",
-                style = MaterialTheme.typography
-                    .bodySmall.copy(fontWeight = FontWeight.Bold),
+                text = "${(animatedProgress * 100).toInt()} %",
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary
             )
         }
+        
         WavyProgressIndicator(animatedProgress)
-        Spacer(Modifier.height(16.adp))
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.adp)
+        
+        Spacer(Modifier.height(28.adp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.adp)) {
+            StatChip(
+                value = "${uiState.conceptsFound}",
+                label = stringResource(R.string.generating_concepts_found),
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.weight(1f)
+            )
+            StatChip(
+                value = "${uiState.questionsCompleted} / ${uiState.questionsExpected.coerceAtLeast(1)}",
+                label = stringResource(R.string.generating_questions_ready),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(Modifier.height(32.adp))
+
+        AnimatedVisibility(
+            visible = uiState.canStartEarly,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
         ) {
-            tasks.forEach { task -> GeneratingTaskRow(label = task.label, done = task.done) }
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.adp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.adp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_zap),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.adp)
+                        )
+                        Text(
+                            text = stringResource(R.string.generating_early_start_msg),
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Spacer(Modifier.height(16.adp))
+                PrimaryGradientButton(
+                    text = stringResource(R.string.generating_start_now),
+                    iconRes = R.drawable.ic_zap,
+                    enabled = true,
+                    onClick = onStartEarly
+                )
+            }
         }
     }
 }
@@ -1206,7 +1427,7 @@ fun GeneratingTaskRow(
         modifier = modifier.fillMaxWidth(),
         color = bgColor,
         shape = MaterialTheme.shapes.medium,
-        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
+        border = androidx.compose.foundation.BorderStroke(1.adp, borderColor)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.adp, vertical = 12.adp),
@@ -1645,7 +1866,9 @@ private fun StepIndicatorPreview() {
     SynapseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             StepIndicator(
-                currentIndex = 1, modifier = Modifier
+                currentStep = 1,
+                steps = emptyList(),
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.adp)
             )
@@ -1675,11 +1898,8 @@ private fun GeneratingStepPreview() {
     SynapseTheme {
         Surface(color = MaterialTheme.colorScheme.background) {
             GeneratingStep(
-                progress = 0.65f,
-                questionCount = 20,
-                language = "English",
-                focusNotesActive = true,
-                modifier = Modifier.padding(20.adp)
+                uiState = AddPdfUiState(),
+                onStartEarly = {}
             )
         }
     }

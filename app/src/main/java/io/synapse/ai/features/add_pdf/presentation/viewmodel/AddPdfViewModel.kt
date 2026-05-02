@@ -142,7 +142,7 @@ class AddPdfViewModel @Inject constructor(
             return
         }
         if (sizeMb > _uiState.value.maxFileSizeMb) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_large_pdf)))
             _uiState.update {
                 it.copy(error = UiText.Raw(R.string.add_pdf_error_file_too_large, sizeMb, appConfig.proMaxFileSizeMb))
             }
@@ -171,7 +171,7 @@ class AddPdfViewModel @Inject constructor(
     // ── OCR toggle ────────────────────────────────────────────────────────
     private fun toggleOcr() {
         if (_uiState.value.isOcrFeatureLocked) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_pro_ocr)))
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_pro_ocr)))
             return
         }
         _uiState.update { it.copy(ocrEnabled = !it.ocrEnabled, extractedText = null) }
@@ -195,7 +195,7 @@ class AddPdfViewModel @Inject constructor(
     }
 
     private fun onWebTabLockedClicked() =
-        _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_web_youtube_import)))
+        _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_web_youtube_import)))
 
     // ── Configure fields ──────────────────────────────────────────────────
     private fun updateQuestionCount(count: Int) = _uiState.update { it.copy(questionCount = count.coerceIn(3, 50)) }
@@ -214,7 +214,7 @@ class AddPdfViewModel @Inject constructor(
 
     private fun toggleThinking() {
         if (_uiState.value.isThinkingLocked) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_deep_thinking)))
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_deep_thinking)))
             return
         }
         _uiState.update { it.copy(thinkingEnabled = !it.thinkingEnabled) }
@@ -223,7 +223,7 @@ class AddPdfViewModel @Inject constructor(
     // ── Continue to Configure ─────────────────────────────────────────────
     private fun continueToConfig() {
         if (_uiState.value.isPackLimitReached) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
         val state = _uiState.value
@@ -260,7 +260,7 @@ class AddPdfViewModel @Inject constructor(
 
     private fun generateQuestions() {
         if (_uiState.value.isPackLimitReached) {
-            _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_unlimited_packs)))
             return
         }
         val state = _uiState.value
@@ -269,12 +269,15 @@ class AddPdfViewModel @Inject constructor(
             it.copy(
                 step                   = AddPdfStep.GENERATING,
                 isLoading              = true,
+                isUploading            = state.sourceTab == SourceTab.FILE,
+                uploadProgress         = null,
                 generationProgress     = 0f,
                 error                  = null,
                 questionsCompleted     = 0,
                 questionsExpected      = state.questionCount,
                 conceptsFound          = 0,
-                streamStage            = PROGRESS_MESSAGES.first(),
+                streamStage            = "",
+                progressMessageIndex   = 0,
                 streamPackTitle        = "",
                 streamPackEmoji        = "",
                 streamPackColor        = "",
@@ -291,6 +294,8 @@ class AddPdfViewModel @Inject constructor(
         generationJob = viewModelScope.launch {
             try {
                 val resolved = withContext(ioDispatcher) { resolveSource(state) }
+                delay(350) // Smooth visual transition from uploading to preparing
+                _uiState.update { it.copy(isUploading = false) }
                 if (resolved == null) {
                     stopMessageRotation()
                     _uiState.update { it.copy(step = AddPdfStep.CONFIGURE, isLoading = false, generationProgress = 0f) }
@@ -509,14 +514,13 @@ class AddPdfViewModel @Inject constructor(
     private fun startMessageRotation() {
         stopMessageRotation()
         messageRotationJob = viewModelScope.launch {
-            val messages = if (_uiState.value.isPro) PRO_PROGRESS_MESSAGES else PROGRESS_MESSAGES
             var idx = 0
             while (true) {
-                delay(MESSAGE_ROTATION_MS)
                 if (_uiState.value.questionsCompleted == 0 && _uiState.value.conceptsFound == 0) {
-                    _uiState.update { it.copy(streamStage = messages[idx % messages.size]) }
+                    _uiState.update { it.copy(progressMessageIndex = idx) }
                     idx++
                 }
+                delay(MESSAGE_ROTATION_MS)
             }
         }
     }
@@ -531,15 +535,15 @@ class AddPdfViewModel @Inject constructor(
         val msg: UiText = when (error) {
             is GenerationError.NetworkError         -> UiText.Raw(R.string.error_network)
             is GenerationError.QuotaExceeded        -> {
-                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_daily_limit)))
+                _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_daily_limit)))
                 UiText.Raw(R.string.add_pdf_error_daily_limit)
             }
             is GenerationError.ContentTooLong       -> {
-                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_ai_generation)))
+                _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_ai_generation)))
                 UiText.Raw(R.string.add_pdf_error_invalid_request)
             }
             is GenerationError.FileTooLarge         -> {
-                _uiEffects.tryEmit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_large_pdf)))
+                _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_large_pdf)))
                 UiText.Raw(R.string.add_pdf_error_invalid_request)
             }
             is GenerationError.AuthenticationFailed -> UiText.Raw(R.string.add_pdf_error_ai_service)
@@ -633,7 +637,7 @@ class AddPdfViewModel @Inject constructor(
                 .collect { isLimitReached ->
                     _uiState.update { it.copy(isPackLimitReached = isLimitReached) }
                     if (isLimitReached) {
-                        _uiEffects.emit(UiEffect.ShowUpgradePrompt(UiText.Raw(R.string.feature_unlimited_packs)))
+                        _uiEffects.emit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_unlimited_packs)))
                     }
                 }
         }
@@ -699,40 +703,16 @@ class AddPdfViewModel @Inject constructor(
         const val TAG = "AddPdfViewModel"
 
         /** Allow early start when this fraction of questions is ready. */
-        const val EARLY_START_THRESHOLD = 0.30f
+        const val EARLY_START_THRESHOLD = 0.20f
 
         /** How long to wait between local message rotations. */
         const val MESSAGE_ROTATION_MS = 2_800L
 
-        // FIX: IGNORE_CASE so "HTTP", "Youtube.com", etc. are matched correctly
         val YOUTUBE_PATTERN = Regex(
             "^https?://(www\\.)?youtube\\.com/watch\\?v=[\\w-]{11}" +
                     "|^https?://youtu\\.be/[\\w-]{11}" +
                     "|^https?://(www\\.)?youtube\\.com/shorts/[\\w-]{11}",
             RegexOption.IGNORE_CASE,
-        )
-
-        /** Displayed while waiting for server PackMeta event. */
-        val PROGRESS_MESSAGES = listOf(
-            "Reading your content...",
-            "Understanding the material...",
-            "Extracting key ideas...",
-            "Discovering core concepts...",
-            "Creating smart questions...",
-            "Building accurate answer choices...",
-            "Preparing review cards...",
-            "Designing your revision plan...",
-            "Running final quality checks...",
-        )
-
-        /** Premium version — slightly richer copy for Pro users. */
-        val PRO_PROGRESS_MESSAGES = listOf(
-            "Analyzing your content...",
-            "Extracting the most important points...",
-            "Generating questions tailored to your level...",
-            "Preparing precise answers and distractors...",
-            "Building a smart review strategy...",
-            "Validating final quality...",
         )
 
         private data class PremiumConfig(
