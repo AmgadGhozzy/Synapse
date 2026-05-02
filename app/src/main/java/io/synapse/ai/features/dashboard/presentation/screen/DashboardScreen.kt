@@ -285,6 +285,7 @@ private fun PortraitLayout(
             }
         } else {
             items(uiState.packs, key = { it.id }) { pack ->
+                val isFirst = uiState.packs.indexOf(pack) == 0
                 PackCard(
                     pack = pack,
                     openSwipedPackId = openSwipedPackId,

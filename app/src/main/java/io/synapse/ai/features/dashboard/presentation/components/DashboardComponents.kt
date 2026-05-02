@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
@@ -145,7 +144,7 @@ private fun StatChip(
         ),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = data.bgColor),
-        border = BorderStroke(1.dp, data.borderColor)
+        border = BorderStroke(1.adp, data.borderColor)
     ) {
         Column(
             modifier = Modifier

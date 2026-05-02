@@ -3,6 +3,8 @@ package io.synapse.ai.features.dashboard.presentation.viewmodel
 import android.icu.util.Calendar
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -53,6 +55,9 @@ class DashboardViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    private val _showSwipeHint = MutableStateFlow(false)
+    val showSwipeHint: StateFlow<Boolean> = _showSwipeHint.asStateFlow()
 
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
@@ -159,8 +164,7 @@ class DashboardViewModel @Inject constructor(
                     val totalDue = allDisplayItems.sumOf { it.cardsToReview }
                     val totalCardsCount = allDisplayItems.sumOf { it.totalCards }
                     val masteredCardsCount = allDisplayItems.sumOf { it.masteredCards }
-
-_uiState.update {
+                    _uiState.update {
                         DashboardUiState(
                             greetingRes = resolveGreeting(),
                             todayStudied = todayStudied,
@@ -185,12 +189,17 @@ _uiState.update {
         }
     }
 
-    fun onEditPack(packId: Long) {
-        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon), ToastType.INFO))
-    }
+    fun onEditPack(packId: Long) = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Overview.createRoute(packId)))
 
-    fun onExportPack(packId: Long) {
-        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon), ToastType.INFO))
+    fun onExportPack(packId: Long) = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Export.createRoute(packId)))
+
+    fun onSwipeHintDismissed() {
+        viewModelScope.launch {
+            dataStore.edit { prefs ->
+                prefs[booleanPreferencesKey("swipe_hint_dismissed")] = true
+            }
+            _showSwipeHint.value = false
+        }
     }
 
     private fun resolveGreeting(): Int = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
