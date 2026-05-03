@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -44,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -57,6 +57,7 @@ import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.CloseButton
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.SnackbarHost
@@ -138,7 +139,7 @@ fun ExportScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background),
+                .padding(horizontal = MaterialTheme.synapse.spacing.screen)
         ) {
             StepIndicator(
                 currentStep = state.currentStepIndex,
@@ -172,9 +173,10 @@ fun ExportScreen(
 
         // Success snackbar
         if (state.exportedUri != null && !state.isExporting) {
-            val successMessage =
-                stringResource(R.string.export_saved_to_downloads, state.exportedFileName)
-            val actionLabel = stringResource(R.string.view_pdf)
+            val successMessage = stringResource(R.string.export_saved_to_downloads, state.exportedFileName)
+            val isWord = state.exportedFileName.endsWith(".doc")
+            val actionLabel = if (isWord) stringResource(R.string.view_word) else stringResource(R.string.view_pdf)
+            
             LaunchedEffect(state.exportedUri) {
                 snackbarController.show(
                     message = successMessage,
@@ -182,18 +184,18 @@ fun ExportScreen(
                     duration = SnackbarDuration.Long,
                     action = {
                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(state.exportedUri, "application/pdf")
+                            setDataAndType(state.exportedUri, if (isWord) "application/msword" else "application/pdf")
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         runCatching {
                             context.startActivity(
                                 Intent.createChooser(
                                     intent,
-                                    context.getString(R.string.open_pdf_with)
+                                    context.getString(if (isWord) R.string.open_word_with else R.string.open_pdf_with)
                                 )
                             )
                         }
-                    },
+                    }
                 )
             }
         }
@@ -253,24 +255,23 @@ private fun ExportBottomBar(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            width = MaterialTheme.synapse.spacing.s2 / 2,
-            color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = modifier
+            .clip(MaterialTheme.shapes.medium)
+            .dropShadow(
+            MaterialTheme.shapes.medium,
+            MaterialTheme.synapse.shadows.strong.toShadow(),
         ),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(MaterialTheme.synapse.spacing.s16),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
         ) {
             Button(
                 onClick = onBack,
                 modifier = Modifier.weight(1f),
-                shape = MaterialTheme.synapse.radius.lg,
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -286,7 +287,7 @@ private fun ExportBottomBar(
             Button(
                 onClick = onNext,
                 modifier = Modifier.weight(2f),
-                shape = MaterialTheme.synapse.radius.lg,
+                shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.onSurface,
                     contentColor = MaterialTheme.colorScheme.surface,
@@ -335,8 +336,7 @@ private fun StepContent(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = MaterialTheme.synapse.spacing.screen)
-            .padding(bottom = MaterialTheme.synapse.spacing.xl),
+            .padding(bottom = MaterialTheme.synapse.spacing.s80),
     ) {
         Text(
             text = stringResource(titleRes),
@@ -362,7 +362,6 @@ private fun StepContent(
 }
 
 // ── Step 1: Template ──────────────────────────────────────────────────────────
-
 @Composable
 private fun Step1Template(
     state: ExportUiState,
@@ -412,18 +411,22 @@ private fun Step1Template(
 
 
 // ── Step 2: Options ───────────────────────────────────────────────────────────
-
 @Composable
 private fun Step2Options(
     state: ExportUiState,
     viewModel: ExportViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val isStudy = state.options.template == ExportTemplate.STUDY
+    val isTeacher = state.options.template == ExportTemplate.TEACHER
+    val isExam = state.options.template == ExportTemplate.EXAM
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
     ) {
-        if (state.options.template == ExportTemplate.STUDY) {
+
+        if (isStudy || isTeacher) {
             OptionToggleRow(
                 iconRes = R.drawable.ic_book_open,
                 labelRes = R.string.include_answers,
@@ -433,7 +436,9 @@ private fun Step2Options(
                     viewModel.onEvent(ExportEvent.OptionsChanged(state.options.copy(includeAnswers = it)))
                 },
             )
-        } else {
+        }
+
+        if (isExam || isTeacher) {
             OptionToggleRow(
                 iconRes = R.drawable.ic_bookmark,
                 labelRes = R.string.include_answer_key,
@@ -443,23 +448,6 @@ private fun Step2Options(
                     viewModel.onEvent(ExportEvent.OptionsChanged(state.options.copy(includeAnswerKey = it)))
                 },
             )
-            if (state.options.template == ExportTemplate.EXAM) {
-                OptionToggleRow(
-                    iconRes = R.drawable.ic_shuffle,
-                    labelRes = R.string.shuffle_questions,
-                    descriptionRes = R.string.shuffle_questions_desc,
-                    checked = state.options.shuffleQuestions,
-                    onCheckedChange = {
-                        viewModel.onEvent(
-                            ExportEvent.OptionsChanged(
-                                state.options.copy(
-                                    shuffleQuestions = it
-                                )
-                            )
-                        )
-                    },
-                )
-            }
             OptionToggleRow(
                 iconRes = R.drawable.ic_star,
                 labelRes = R.string.show_marks,
@@ -470,9 +458,20 @@ private fun Step2Options(
                 },
             )
         }
+
+        if (isExam) {
+            OptionToggleRow(
+                iconRes = R.drawable.ic_shuffle,
+                labelRes = R.string.shuffle_questions,
+                descriptionRes = R.string.shuffle_questions_desc,
+                checked = state.options.shuffleQuestions,
+                onCheckedChange = {
+                    viewModel.onEvent(ExportEvent.OptionsChanged(state.options.copy(shuffleQuestions = it)))
+                },
+            )
+        }
     }
 }
-
 @Composable
 private fun OptionToggleRow(
     @DrawableRes iconRes: Int,
@@ -484,13 +483,13 @@ private fun OptionToggleRow(
 ) {
     Surface(
         onClick = { onCheckedChange(!checked) },
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.synapse.radius.lg,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            MaterialTheme.synapse.spacing.s2 / 2,
-            MaterialTheme.colorScheme.outlineVariant,
-        ),
+        modifier = modifier.fillMaxWidth()
+            .dropShadow(
+                MaterialTheme.shapes.medium,
+                MaterialTheme.synapse.shadows.subtle.toShadow(),
+            ),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface
     ) {
         Row(
             modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
@@ -535,7 +534,6 @@ private fun OptionToggleRow(
 }
 
 // ── Step 3: Header ────────────────────────────────────────────────────────────
-
 @Composable
 private fun Step3Header(
     state: ExportUiState,
@@ -544,7 +542,7 @@ private fun Step3Header(
 ) {
     val h = state.options.institutionHeader
     val onChange: (InstitutionHeader) -> Unit = { viewModel.onEvent(ExportEvent.HeaderChanged(it)) }
-
+    val isExam = state.options.template == ExportTemplate.EXAM
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16),
@@ -573,34 +571,52 @@ private fun Step3Header(
                 )
             }
         }
+        // ── University / Faculty / Department (exam only) ─────────────────────
+        if (isExam) {
+            InstitutionField(
+                labelRes = R.string.university,
+                value = h.university,
+                placeholderRes = R.string.placeholder_university,
+                onValueChange = { onChange(h.copy(university = it)) },
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.adp)) {
+                InstitutionField(
+                    labelRes = R.string.faculty,
+                    value = h.faculty,
+                    placeholderRes = R.string.placeholder_faculty,
+                    onValueChange = { onChange(h.copy(faculty = it)) },
+                    modifier = Modifier.weight(1f),
+                )
+                InstitutionField(
+                    labelRes = R.string.department,
+                    value = h.department,
+                    placeholderRes = R.string.placeholder_department,
+                    onValueChange = { onChange(h.copy(department = it)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
-        // TEACHER template — minimal header (course + professor only)
-        if (state.options.template == ExportTemplate.TEACHER) {
-            TeacherHeaderFields(h = h, onChange = onChange)
-        } else {
-            // EXAM template — full institutional header
-            ExamHeaderFields(h = h, onChange = onChange)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 2.adp))
+
+            // Single free-text exam info line
+            InstitutionField(
+                labelRes = R.string.exam_info,
+                value = h.examInfo,
+                placeholderRes = R.string.placeholder_exam_info,
+                onValueChange = { onChange(h.copy(examInfo = it)) },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 2.adp))
         }
-    }
-}
 
-@Composable
-private fun TeacherHeaderFields(
-    h: InstitutionHeader,
-    onChange: (InstitutionHeader) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
+        // ── Course name + code ────────────────────────────────────────────────
+        Row(horizontalArrangement = Arrangement.spacedBy(12.adp)) {
             InstitutionField(
                 labelRes = R.string.course_name,
                 value = h.courseName,
                 placeholderRes = R.string.placeholder_course_name,
                 onValueChange = { onChange(h.copy(courseName = it)) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(2f),
             )
             InstitutionField(
                 labelRes = R.string.course_code,
@@ -610,135 +626,44 @@ private fun TeacherHeaderFields(
                 modifier = Modifier.weight(1f),
             )
         }
+
+        // ── Professor ─────────────────────────────────────────────────────────
         InstitutionField(
             labelRes = R.string.professor,
             value = h.professorName,
             placeholderRes = R.string.placeholder_professor,
             onValueChange = { onChange(h.copy(professorName = it)) },
         )
-    }
-}
 
-@Composable
-private fun ExamHeaderFields(
-    h: InstitutionHeader,
-    onChange: (InstitutionHeader) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16),
-    ) {
-        // Institution block
-        InstitutionField(
-            labelRes = R.string.university,
-            value = h.university,
-            placeholderRes = R.string.placeholder_university,
-            onValueChange = { onChange(h.copy(university = it)) },
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.faculty,
-                value = h.faculty,
-                placeholderRes = R.string.placeholder_faculty,
-                onValueChange = { onChange(h.copy(faculty = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.department,
-                value = h.department,
-                placeholderRes = R.string.placeholder_department,
-                onValueChange = { onChange(h.copy(department = it)) },
-                modifier = Modifier.weight(1f),
-            )
-        }
+        // ── Semester / Date / Year (exam only) ────────────────────────────────
+        if (isExam) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 2.adp))
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = MaterialTheme.synapse.spacing.s4))
-
-        // Course block
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.course_name,
-                value = h.courseName,
-                placeholderRes = R.string.placeholder_course_name,
-                onValueChange = { onChange(h.copy(courseName = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.course_code,
-                value = h.courseCode,
-                placeholderRes = R.string.placeholder_course_code,
-                onValueChange = { onChange(h.copy(courseCode = it)) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.professor,
-                value = h.professorName,
-                placeholderRes = R.string.placeholder_professor,
-                onValueChange = { onChange(h.copy(professorName = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.academic_year,
-                value = h.academicYear,
-                placeholderRes = R.string.placeholder_academic_year,
-                onValueChange = { onChange(h.copy(academicYear = it)) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = MaterialTheme.synapse.spacing.s4))
-
-        // Exam-specific block
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.exam_type,
-                value = h.examType,
-                placeholderRes = R.string.placeholder_exam_type,
-                onValueChange = { onChange(h.copy(examType = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.program,
-                value = h.program,
-                placeholderRes = R.string.placeholder_program,
-                onValueChange = { onChange(h.copy(program = it)) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.level,
-                value = h.level,
-                placeholderRes = R.string.placeholder_level,
-                onValueChange = { onChange(h.copy(level = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.section,
-                value = h.section,
-                placeholderRes = R.string.placeholder_section,
-                onValueChange = { onChange(h.copy(section = it)) },
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12)) {
-            InstitutionField(
-                labelRes = R.string.semester,
-                value = h.semester,
-                placeholderRes = R.string.placeholder_semester,
-                onValueChange = { onChange(h.copy(semester = it)) },
-                modifier = Modifier.weight(1f),
-            )
-            InstitutionField(
-                labelRes = R.string.exam_date,
-                value = h.examDate,
-                placeholderRes = R.string.placeholder_exam_date,
-                onValueChange = { onChange(h.copy(examDate = it)) },
-                modifier = Modifier.weight(1f),
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.adp)) {
+                InstitutionField(
+                    labelRes = R.string.semester,
+                    value = h.semester,
+                    placeholderRes = R.string.placeholder_semester,
+                    onValueChange = { onChange(h.copy(semester = it)) },
+                    modifier = Modifier.weight(1f),
+                )
+                InstitutionField(
+                    labelRes = R.string.exam_date,
+                    value = h.examDate,
+                    placeholderRes = R.string.placeholder_exam_date,
+                    onValueChange = { onChange(h.copy(examDate = it)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.adp)) {
+                InstitutionField(
+                    labelRes = R.string.academic_year,
+                    value = h.academicYear,
+                    placeholderRes = R.string.placeholder_academic_year,
+                    onValueChange = { onChange(h.copy(academicYear = it)) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -764,7 +689,6 @@ private fun InstitutionField(
 }
 
 // ── Step 4: Export ────────────────────────────────────────────────────────────
-
 @Composable
 private fun Step4Export(
     state: ExportUiState,
@@ -779,7 +703,7 @@ private fun Step4Export(
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.lg),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16),
     ) {
         // Summary card
         ExportSummaryCard(
@@ -807,51 +731,85 @@ private fun Step4Export(
 
             state.exportedUri != null -> {
                 val context = LocalContext.current
+                val isWord = state.exportedFileName.endsWith(".doc")
+                val mimeType = if (isWord) "application/msword" else "application/pdf"
+
                 ExportActionButton(
-                    iconRes = R.drawable.ic_share,
-                    titleRes = R.string.share_pdf,
+                    iconRes = if (isWord) R.drawable.ic_file_text else R.drawable.ic_share,
+                    titleRes = if (isWord) R.string.share_word else R.string.share_pdf,
                     subtitle = state.exportedFileName,
                     isPrimary = true,
                     onClick = { viewModel.onEvent(ExportEvent.ShareExport) },
                 )
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-                ExportActionButton(
-                    iconRes = R.drawable.ic_printer,
-                    titleRes = R.string.print_pdf,
-                    subtitleRes = R.string.print_pdf_desc,
-                    isPrimary = false,
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_SEND).apply {
-                            type = "application/pdf"
-                            putExtra(Intent.EXTRA_STREAM, state.exportedUri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            component = ComponentName(
-                                "com.android.bips",
-                                "com.android.bips.PdfPrintActivity",
-                            )
-                        }
-                        runCatching {
-                            context.startActivity(
-                                Intent.createChooser(
-                                    intent,
-                                    context.getString(R.string.open_pdf_with)
+                if (!isWord) {
+                    ExportActionButton(
+                        iconRes = R.drawable.ic_printer,
+                        titleRes = R.string.print_pdf,
+                        subtitleRes = R.string.print_pdf_desc,
+                        isPrimary = false,
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, state.exportedUri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                component = ComponentName(
+                                    "com.android.bips",
+                                    "com.android.bips.PdfPrintActivity",
                                 )
-                            )
-                        }.onFailure {
-                            val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(state.exportedUri, "application/pdf")
+                            }
+                            runCatching {
+                                context.startActivity(
+                                    Intent.createChooser(
+                                        intent,
+                                        context.getString(R.string.open_pdf_with)
+                                    )
+                                )
+                            }.onFailure {
+                                val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(state.exportedUri, "application/pdf")
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                runCatching {
+                                    context.startActivity(
+                                        Intent.createChooser(
+                                            viewIntent,
+                                            context.getString(R.string.open_pdf_with)
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                    )
+                } else {
+                    ExportActionButton(
+                        iconRes = R.drawable.ic_book_open,
+                        titleRes = R.string.view_word,
+                        subtitleRes = R.string.save_word_desc,
+                        isPrimary = false,
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setDataAndType(state.exportedUri, mimeType)
                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             }
                             runCatching {
                                 context.startActivity(
                                     Intent.createChooser(
-                                        viewIntent,
-                                        context.getString(R.string.open_pdf_with)
+                                        intent,
+                                        context.getString(R.string.open_word_with)
                                     )
                                 )
                             }
-                        }
-                    },
+                        },
+                    )
+                }
+
+                ExportActionButton(
+                    iconRes = R.drawable.ic_refresh_cw,
+                    titleRes = R.string.create_new_version,
+                    subtitleRes = R.string.create_new_version_desc,
+                    isPrimary = false,
+                    onClick = { viewModel.onEvent(ExportEvent.ClearExport) },
                 )
             }
 
@@ -861,15 +819,21 @@ private fun Step4Export(
                     titleRes = R.string.save_pdf,
                     subtitleRes = R.string.save_pdf_desc,
                     isPrimary = true,
-                    enabled = state.isPro || state.exportsRemaining > 0,
+                    enabled = true,
                     onClick = { viewModel.onEvent(ExportEvent.StartExport) },
+                )
+                ExportActionButton(
+                    iconRes = R.drawable.ic_file_text,
+                    titleRes = R.string.save_word,
+                    subtitleRes = R.string.save_word_desc,
+                    isPrimary = false,
+                    enabled = true,
+                    onClick = { viewModel.onEvent(ExportEvent.StartWordExport) },
                 )
             }
         }
     }
 }
-
-// ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Export Top Bar — Light", showBackground = true)
 @Preview(
