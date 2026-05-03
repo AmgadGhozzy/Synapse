@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -29,7 +28,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
-import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.components.LoadingContent
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
@@ -87,21 +85,18 @@ fun MarketplaceScreen(
     // Pack detail bottom sheet
     if (state.showDetailSheet) {
         PackDetailsBottomSheet(
-            detail      = state.selectedDetail,
+            detail = state.selectedDetail,
+            isPro = state.isPro,
             isAcquiring = state.isAcquiring,
-            onDismiss   = { viewModel.onEvent(MarketplaceEvent.DismissDetail) },
-            onAcquire   = { 
+            onDismiss = { viewModel.onEvent(MarketplaceEvent.DismissDetail) },
+            onAcquire = {
                 state.selectedDetail?.pack?.id?.let {
                     viewModel.onEvent(MarketplaceEvent.OnAcquireClicked(it))
-                } 
+                }
             },
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Pure-UI content — no ViewModel dependency
-// ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -114,14 +109,14 @@ private fun MarketplaceContent(
     val spacing = MaterialTheme.synapse.spacing
 
     LazyColumn(
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = spacing.screen,
             end = spacing.screen,
             top = spacing.screenContentTop,
             bottom = spacing.screenContentBottom,
         ),
-        verticalArrangement = Arrangement.spacedBy(spacing.s12),
-        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(spacing.s12)
     ) {
         stickyHeader {
             MarketplaceSearchBar(
@@ -136,7 +131,10 @@ private fun MarketplaceContent(
             item {
                 LoadingContent(modifier = Modifier.fillParentMaxSize())
             }
-        } else if (state.error != null && state.packs.isEmpty()) {
+            return@LazyColumn
+        }
+
+        if (state.error != null && state.packs.isEmpty()) {
             item {
                 MarketplaceErrorPlaceholder(
                     message = state.error,
@@ -144,63 +142,71 @@ private fun MarketplaceContent(
                     modifier = Modifier.fillParentMaxSize()
                 )
             }
-        } else {
-            // Featured row
-            if (state.featuredPacks.isNotEmpty()) {
-                item(key = "featured_header") {
-                    MarketplaceSectionHeader(
-                        title = stringResource(R.string.synapse_marketplace_featured),
-                        modifier = Modifier.padding(horizontal = 20.adp, vertical = 16.adp),
-                    )
-                }
-                item(key = "featured_row") {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.adp),
-                        horizontalArrangement = Arrangement.spacedBy(14.adp),
-                    ) {
-                        items(state.featuredPacks, key = { it.id }) { pack ->
-                            MarketplacePackCard(
-                                pack = pack,
-                                wide = true,
-                                onClick = { onEvent(MarketplaceEvent.OnPackClicked(pack.id)) },
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.adp))
-                }
-            }
+            return@LazyColumn
+        }
 
-            // All packs header
-            item(key = "all_header") {
+        if (state.featuredPacks.isNotEmpty()) {
+
+            item {
                 MarketplaceSectionHeader(
-                    title = if (state.filter.isActive) stringResource(
-                        R.string.synapse_marketplace_results_count,
-                        state.packs.size
-                    ) else stringResource(R.string.synapse_marketplace_all_packs),
-                    modifier = Modifier.padding(horizontal = 20.adp, vertical = 16.adp),
+                    title = stringResource(R.string.synapse_marketplace_featured),
+                    modifier = Modifier.padding(horizontal = spacing.s24, vertical = spacing.s16),
                 )
             }
 
-            // All packs 2-column grid
-            items(state.packs.chunked(2), key = { rowPacks -> rowPacks.first().id }) { rowPacks ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.adp),
-                    horizontalArrangement = Arrangement.spacedBy(12.adp)
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = spacing.s24),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.s14),
                 ) {
-                    for (pack in rowPacks) {
+                    items(
+                        items = state.featuredPacks,
+                        key = { it.id }
+                    ) { pack ->
                         MarketplacePackCard(
                             pack = pack,
-                            wide = false,
                             onClick = { onEvent(MarketplaceEvent.OnPackClicked(pack.id)) },
-                            modifier = Modifier.weight(1f),
                         )
                     }
-                    // Fill remaining space if the last row is incomplete
-                    if (rowPacks.size < 2) {
-                        Spacer(Modifier.weight((2 - rowPacks.size).toFloat()))
-                    }
+                }
+            }
+        }
+
+        item {
+            MarketplaceSectionHeader(
+                title = if (state.filter.isActive)
+                    stringResource(R.string.synapse_marketplace_results_count, state.packs.size)
+                else
+                    stringResource(R.string.synapse_marketplace_all_packs),
+                modifier = Modifier.padding(horizontal = spacing.s24, vertical = spacing.s16),
+            )
+        }
+
+        val rows = state.packs.chunked(2)
+
+        items(
+            items = rows,
+            key = { row -> row.first().id }
+        ) { rowPacks ->
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.s12),
+                horizontalArrangement = Arrangement.spacedBy(spacing.s12)
+            ) {
+
+                rowPacks.forEach { pack ->
+                    MarketplacePackCard(
+                        pack = pack,
+                        onClick = { onEvent(MarketplaceEvent.OnPackClicked(pack.id)) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                // fill empty space لو فردي
+                if (rowPacks.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
         }
