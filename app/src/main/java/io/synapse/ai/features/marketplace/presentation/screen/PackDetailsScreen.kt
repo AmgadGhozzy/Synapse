@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,8 +23,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stars
+import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,6 +50,7 @@ import io.synapse.ai.R
 import io.synapse.ai.core.theme.LocalSemanticColors
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.features.marketplace.domain.MarketplacePack
@@ -61,6 +60,7 @@ import io.synapse.ai.features.marketplace.domain.MarketplacePackDetail
 @Composable
 fun PackDetailsBottomSheet(
     detail: MarketplacePackDetail?,
+    isPro: Boolean,
     isAcquiring: Boolean,
     onDismiss: () -> Unit,
     onAcquire: () -> Unit,
@@ -80,17 +80,20 @@ fun PackDetailsBottomSheet(
         if (detail == null) {
             Box(
                 modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .padding(MaterialTheme.synapse.spacing.screenContentBottom),
+                contentAlignment = Alignment.TopCenter
             ) {
-                LoadingIndicator()
+                LoadingIndicator(size = 124.adp)
             }
         } else {
             PackDetailsContent(
                 detail = detail,
+                isPro = isPro,
                 isAcquiring = isAcquiring,
                 onBack = onDismiss,
                 onAcquire = onAcquire,
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
@@ -99,13 +102,15 @@ fun PackDetailsBottomSheet(
 @Composable
 private fun PackDetailsContent(
     detail: MarketplacePackDetail,
+    isPro: Boolean,
     isAcquiring: Boolean,
     onBack: () -> Unit,
     onAcquire: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = modifier) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier,
             contentPadding = PaddingValues(bottom = 120.adp),
         ) {
             item { HeroSection(pack = detail.pack) }
@@ -131,6 +136,7 @@ private fun PackDetailsContent(
         // Pinned bottom CTA
         AcquireButton(
             isOwned = detail.isOwned,
+            isPro = isPro,
             isPremium = detail.pack.isPremium,
             isAcquiring = isAcquiring,
             onClick = onAcquire,
@@ -145,6 +151,7 @@ private fun HeroSection(pack: MarketplacePack) {
 
     Box(
         modifier = Modifier
+            .clip(RoundedCornerShape(MaterialTheme.synapse.spacing.s28))
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
@@ -164,10 +171,6 @@ private fun HeroSection(pack: MarketplacePack) {
                 .padding(
                     top = MaterialTheme.synapse.spacing.s32,
                     bottom = MaterialTheme.synapse.spacing.s28
-                )
-                .dropShadow(
-                    shape = MaterialTheme.synapse.radius.xxxl,
-                    shadow = MaterialTheme.synapse.shadows.medium.toShadow(),
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -223,9 +226,9 @@ private fun HeroSection(pack: MarketplacePack) {
                             Text(
                                 text = tag.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Black,
+                                fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary,
-                                letterSpacing = 1.5.sp,
+                                letterSpacing = 1.asp,
                                 modifier = Modifier.padding(horizontal = 12.adp, vertical = 5.adp),
                             )
                         }
@@ -265,7 +268,7 @@ private fun StatsGrid(pack: MarketplacePack) {
         Triple(
             stringResource(R.string.synapse_marketplace_stat_iq),
             iqLabel,
-            R.drawable.ic_trend_up
+            R.drawable.ic_brain
         ),
         Triple(
             stringResource(R.string.synapse_marketplace_stat_lang),
@@ -292,14 +295,13 @@ private fun StatTile(
 ) {
     Column(
         modifier = modifier
+            .dropShadow(
+                MaterialTheme.synapse.radius.md,
+                MaterialTheme.synapse.shadows.subtle.toShadow()
+            )
             .clip(MaterialTheme.synapse.radius.md)
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(
-                MaterialTheme.synapse.spacing.s2 / 2,
-                MaterialTheme.colorScheme.outlineVariant,
-                MaterialTheme.synapse.radius.md
-            )
-            .padding(vertical = MaterialTheme.synapse.spacing.s10),
+            .padding(vertical = MaterialTheme.synapse.spacing.s14),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
@@ -323,10 +325,6 @@ private fun StatTile(
         )
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Curriculum header
-// ─────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun CurriculumHeader(moduleCount: Int) {
@@ -416,11 +414,13 @@ private fun ModuleCard(index: Int, title: String, modifier: Modifier = Modifier)
 @Composable
 fun AcquireButton(
     isOwned: Boolean,
+    isPro: Boolean,
     isPremium: Boolean,
     isAcquiring: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val locked = isPremium && !isPro
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -441,8 +441,8 @@ fun AcquireButton(
             )
     ) {
         Button(
-            onClick = onClick,
-            enabled = !isAcquiring,
+            onClick  = onClick,
+            enabled  = !isAcquiring,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(MaterialTheme.synapse.spacing.s56),
@@ -450,8 +450,8 @@ fun AcquireButton(
             colors = ButtonDefaults.buttonColors(
                 containerColor = when {
                     isOwned -> MaterialTheme.colorScheme.secondary
-                    isPremium -> MaterialTheme.colorScheme.tertiary
-                    else -> MaterialTheme.colorScheme.primary
+                    locked  -> MaterialTheme.colorScheme.tertiary
+                    else    -> MaterialTheme.colorScheme.primary
                 }
             ),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.adp),
@@ -462,10 +462,11 @@ fun AcquireButton(
                     color = MaterialTheme.colorScheme.onPrimary,
                     strokeWidth = MaterialTheme.synapse.spacing.s2,
                 )
+
             } else when {
                 isOwned -> {
                     Icon(
-                        Icons.Filled.PlayArrow,
+                        Icons.AutoMirrored.Rounded.ArrowBackIos,
                         contentDescription = null,
                         modifier = Modifier.size(MaterialTheme.synapse.spacing.s24)
                     )
@@ -477,10 +478,9 @@ fun AcquireButton(
                         letterSpacing = 0.8.sp
                     )
                 }
-
-                isPremium -> {
+                locked -> {
                     Icon(
-                        Icons.Filled.Stars,
+                        painter = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
                         modifier = Modifier.size(MaterialTheme.synapse.spacing.s24)
                     )
@@ -492,7 +492,6 @@ fun AcquireButton(
                         letterSpacing = 0.8.sp
                     )
                 }
-
                 else -> {
                     Text(
                         stringResource(R.string.synapse_marketplace_get_pack),
