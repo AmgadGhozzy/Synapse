@@ -13,15 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,121 +49,130 @@ import io.synapse.ai.features.marketplace.domain.MarketplacePack
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketplacePackCard(
-    pack    : MarketplacePack,
-    onClick : () -> Unit,
-    modifier: Modifier = Modifier,
-    wide    : Boolean  = false,
+    pack: MarketplacePack,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val semantic = LocalSemanticColors.current
+
     val difficultyColor = when (pack.difficulty?.lowercase()) {
-        "easy"   -> semantic.success
+        "easy" -> semantic.success
         "medium" -> semantic.gold
-        else     -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.error
     }
+
     val difficultyBg = when (pack.difficulty?.lowercase()) {
-        "easy"   -> semantic.successBg
+        "easy" -> semantic.successBg
         "medium" -> semantic.goldBg
-        else     -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.errorContainer
     }
 
     Card(
-        onClick   = onClick,
-        modifier  = modifier.then(
-            if (wide) Modifier.width(240.adp) else Modifier.fillMaxWidth()
-        ).wrapContentHeight()
+        onClick = onClick,
+        modifier = modifier
+            .width(220.adp)
             .dropShadow(
-                shape  = MaterialTheme.synapse.radius.xl,
+                shape = MaterialTheme.synapse.radius.xl,
                 shadow = MaterialTheme.synapse.shadows.medium.toShadow(),
             ),
-        shape     = MaterialTheme.synapse.radius.xl,
-        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = MaterialTheme.synapse.radius.xl,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
     ) {
-        Column(modifier = Modifier.padding(16.adp)) {
+        Column(
+            modifier = Modifier.padding(14.adp)
+        ) {
 
-            // Top row: emoji + premium badge
+            // Top row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Top,
             ) {
+
                 Box(
                     modifier = Modifier
-                        .size(56.adp)
+                        .size(52.adp)
                         .clip(MaterialTheme.synapse.radius.md)
                         .background(MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(text = pack.emoji ?: "📚", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        text = pack.emoji ?: "📚",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
                 }
+
                 if (pack.isPremium) {
-                    Surface(
-                        shape = MaterialTheme.synapse.radius.sm,
-                        color = semantic.goldBg,
-                    ) {
-                        Text(
-                            text     = stringResource(R.string.synapse_marketplace_pro_badge),
-                            style    = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Black,
-                            color    = semantic.gold,
-                            modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s6, vertical = MaterialTheme.synapse.spacing.s3),
-                        )
-                    }
+                    Text(
+                        text = stringResource(R.string.synapse_marketplace_pro_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = semantic.gold,
+                        modifier = Modifier
+                            .background(
+                                semantic.gold.copy(alpha = 0.15f),
+                                MaterialTheme.synapse.radius.sm
+                            )
+                            .padding(horizontal = 8.adp, vertical = 2.adp)
+                    )
                 }
             }
 
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
 
             Text(
-                text       = pack.title,
-                style      = MaterialTheme.typography.titleSmall,
+                text = pack.title,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.onSurface,
-                minLines   = 2,
-                maxLines   = 2,
-                overflow   = TextOverflow.Ellipsis,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
 
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s6))
 
-            // Difficulty + card count
             Row(
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.adp)
             ) {
-                pack.difficulty?.let { diff ->
-                    Surface(shape = MaterialTheme.synapse.radius.sm, color = difficultyBg) {
-                        Text(
-                            text       = getDifficultyString(diff),
-                            style      = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color      = difficultyColor,
-                            modifier   = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s6, vertical = MaterialTheme.synapse.spacing.s2),
-                        )
-                    }
-                }
-                Text(
-                    text       = stringResource(R.string.synapse_marketplace_cards_count, pack.questionCount),
-                    style      = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
-                    color      = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                pack.estimatedMinutes?.let { min ->
+
+                pack.difficulty?.let {
                     Text(
-                        text       = "· ${min}m",
-                        style      = MaterialTheme.typography.labelSmall,
-                        color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = difficultyColor,
+                        modifier = Modifier
+                            .background(difficultyBg, MaterialTheme.synapse.radius.sm)
+                            .padding(horizontal = 6.adp, vertical = 2.adp)
+                    )
+                }
+
+                Text(
+                    text = stringResource(
+                        R.string.synapse_marketplace_cards_count,
+                        pack.questionCount
+                    ) ,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                pack.estimatedMinutes?.let {
+                    Text(
+                        text = "• ${it}m",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         }
     }
 }
-
 @Composable
 fun MarketplaceSearchBar(
-    query           : String,
-    onQuery         : (String) -> Unit,
-    onFilters       : () -> Unit,
+    query: String,
+    onQuery: (String) -> Unit,
+    onFilters: () -> Unit,
     hasActiveFilters: Boolean,
 ) {
     val semantic = LocalSemanticColors.current
@@ -175,35 +180,38 @@ fun MarketplaceSearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .dropShadow(
-                shape  = MaterialTheme.synapse.radius.lg,
+                shape = MaterialTheme.shapes.medium,
                 shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
             )
-            .clip(MaterialTheme.synapse.radius.lg)
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = MaterialTheme.synapse.spacing.s14, vertical = MaterialTheme.synapse.spacing.s12),
+            .padding(
+                horizontal = MaterialTheme.synapse.spacing.s14,
+                vertical = MaterialTheme.synapse.spacing.s12
+            ),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector        = Icons.Default.Search,
+                painter = painterResource(R.drawable.icon_search),
                 contentDescription = "Search",
-                tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_sm),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
             )
             Spacer(Modifier.width(MaterialTheme.synapse.spacing.s10))
             BasicTextField(
-                value       = query,
+                value = query,
                 onValueChange = onQuery,
-                singleLine  = true,
-                textStyle   = MaterialTheme.typography.bodyMedium.copy(
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Medium,
-                    color      = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onSurface,
                 ),
                 decorationBox = { inner ->
                     if (query.isEmpty()) {
                         Text(
-                            text  = stringResource(R.string.synapse_marketplace_search_hint),
+                            text = stringResource(R.string.synapse_marketplace_search_hint),
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color      = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium,
                             )
                         )
@@ -213,12 +221,19 @@ fun MarketplaceSearchBar(
                 modifier = Modifier.weight(1f),
             )
             if (query.isNotEmpty()) {
-                IconButton(onClick = { onQuery("") }, modifier = Modifier.size(MaterialTheme.synapse.spacing.s32)) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(MaterialTheme.synapse.spacing.s16))
+                IconButton(
+                    onClick = { onQuery("") },
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.s32)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_x),
+                        contentDescription = "Clear",
+                        modifier = Modifier.size(MaterialTheme.synapse.spacing.s16)
+                    )
                 }
             }
             IconButton(
-                onClick  = onFilters,
+                onClick = onFilters,
                 modifier = Modifier
                     .padding(MaterialTheme.synapse.spacing.s6)
                     .size(MaterialTheme.synapse.spacing.s32)
@@ -229,11 +244,11 @@ fun MarketplaceSearchBar(
                     ),
             ) {
                 Icon(
-                    imageVector        = Icons.Default.Tune,
+                    painter = painterResource(R.drawable.ic_filter),
                     contentDescription = "Filters",
-                    tint               = if (hasActiveFilters) MaterialTheme.colorScheme.primary
-                                         else MaterialTheme.colorScheme.onSurface,
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
+                    tint = if (hasActiveFilters) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
                 )
             }
         }
@@ -243,38 +258,56 @@ fun MarketplaceSearchBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarketplaceFiltersBottomSheet(
-    currentCategory  : String?,
+    currentCategory: String?,
     currentDifficulty: String?,
-    categories       : List<String>,
-    onCategory       : (String?) -> Unit,
-    onDifficulty     : (String?) -> Unit,
-    onClear          : () -> Unit,
-    onClose          : () -> Unit,
+    categories: List<String>,
+    onCategory: (String?) -> Unit,
+    onDifficulty: (String?) -> Unit,
+    onClear: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onClose,
-        sheetState       = sheetState,
-        shape            = RoundedCornerShape(topStart = MaterialTheme.synapse.spacing.s28, topEnd = MaterialTheme.synapse.spacing.s28),
-        containerColor   = MaterialTheme.colorScheme.surface,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(
+            topStart = MaterialTheme.synapse.spacing.s28,
+            topEnd = MaterialTheme.synapse.spacing.s28
+        ),
+        containerColor = MaterialTheme.colorScheme.surface,
     ) {
-        Column(modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s24).padding(bottom = MaterialTheme.synapse.spacing.s48)) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = MaterialTheme.synapse.spacing.s24)
+                .padding(bottom = MaterialTheme.synapse.spacing.s48)
+        ) {
             Row(
-                modifier              = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.synapse_marketplace_filters), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+                Text(
+                    stringResource(R.string.synapse_marketplace_filters),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Black
+                )
                 TextButton(onClick = { onClear(); onClose() }) {
-                    Text(stringResource(R.string.synapse_marketplace_clear_filters), color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        stringResource(R.string.synapse_marketplace_clear_filters),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
 
             // Difficulty
-            Text(stringResource(R.string.synapse_marketplace_difficulty), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(R.string.synapse_marketplace_difficulty),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
             Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10)) {
                 listOf("easy", "medium", "hard").forEach { diff ->
@@ -287,8 +320,12 @@ fun MarketplaceFiltersBottomSheet(
 
             if (categories.isNotEmpty()) {
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
-                Text(stringResource(R.string.synapse_marketplace_category), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold,
-                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    stringResource(R.string.synapse_marketplace_category),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -305,12 +342,18 @@ fun MarketplaceFiltersBottomSheet(
 
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
             Button(
-                onClick  = onClose,
-                modifier = Modifier.fillMaxWidth().height(MaterialTheme.synapse.spacing.s48 + MaterialTheme.synapse.spacing.s4),
-                shape    = MaterialTheme.synapse.radius.lg,
-                colors   = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                onClick = onClose,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(MaterialTheme.synapse.spacing.s48 + MaterialTheme.synapse.spacing.s4),
+                shape = MaterialTheme.shapes.large,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
-                Text(stringResource(R.string.synapse_marketplace_apply), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.synapse_marketplace_apply),
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }
@@ -319,41 +362,54 @@ fun MarketplaceFiltersBottomSheet(
 @Composable
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
-        onClick   = onClick,
-        shape     = CircleShape,
-        color     = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        border    = if (!selected) androidx.compose.foundation.BorderStroke(MaterialTheme.synapse.spacing.s2 / 2, MaterialTheme.colorScheme.outlineVariant) else null,
-        modifier  = Modifier.height(MaterialTheme.synapse.spacing.s32 + MaterialTheme.synapse.spacing.s4)
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = if (!selected) androidx.compose.foundation.BorderStroke(
+            MaterialTheme.synapse.spacing.s2 / 2,
+            MaterialTheme.colorScheme.outlineVariant
+        ) else null,
+        modifier = Modifier
+            .height(MaterialTheme.synapse.spacing.s32 + MaterialTheme.synapse.spacing.s4)
             .dropShadow(
-                shape  = CircleShape,
+                shape = CircleShape,
                 shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
             )
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s14)) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s14)
+        ) {
             Text(
-                text       = label,
-                style      = MaterialTheme.typography.bodyMedium,
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color      = if (selected) MaterialTheme.colorScheme.onPrimary
-                             else MaterialTheme.colorScheme.onSurface,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurface,
             )
         }
     }
 }
 
 @Composable
-fun MarketplaceErrorPlaceholder(message: String?, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+fun MarketplaceErrorPlaceholder(
+    message: String?,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        modifier              = modifier.fillMaxSize().padding(MaterialTheme.synapse.spacing.s32),
-        horizontalAlignment   = Alignment.CenterHorizontally,
-        verticalArrangement   = Arrangement.Center,
+        modifier = modifier
+            .fillMaxSize()
+            .padding(MaterialTheme.synapse.spacing.s32),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
         Text("😕", style = MaterialTheme.typography.displayMedium)
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         Text(
-            text       = message ?: stringResource(R.string.synapse_marketplace_error_default),
-            style      = MaterialTheme.typography.bodyLarge,
-            color      = MaterialTheme.colorScheme.onSurfaceVariant,
+            text = message ?: stringResource(R.string.synapse_marketplace_error_default),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
         )
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
@@ -366,17 +422,17 @@ fun MarketplaceErrorPlaceholder(message: String?, onRetry: () -> Unit, modifier:
 @Composable
 fun MarketplaceSectionHeader(title: String, modifier: Modifier = Modifier) {
     Text(
-        text       = title,
-        style      = MaterialTheme.typography.titleLarge,
+        text = title,
+        style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Black,
-        color      = MaterialTheme.colorScheme.onSurface,
-        modifier   = modifier,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier,
     )
 }
 
 @Composable
 private fun getDifficultyString(diff: String): String {
-    return when(diff.lowercase()) {
+    return when (diff.lowercase()) {
         "easy" -> stringResource(R.string.synapse_marketplace_diff_easy)
         "medium" -> stringResource(R.string.synapse_marketplace_diff_medium)
         "hard" -> stringResource(R.string.synapse_marketplace_diff_hard)
