@@ -2,6 +2,7 @@ package io.synapse.ai.features.export.presentation.screen
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Icon
@@ -49,15 +49,14 @@ fun TemplateCard(
     modifier: Modifier = Modifier,
 ) {
     val borderColor = if (isSelected) model.accentColor else MaterialTheme.colorScheme.outlineVariant
-    val borderWidth = if (isSelected) MaterialTheme.synapse.spacing.s2 / 2 * 3 else MaterialTheme.synapse.spacing.s2 / 2
 
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.synapse.radius.lg,
+        shape = MaterialTheme.shapes.medium,
         color = if (isSelected) model.accentColor.copy(alpha = 0.06f)
         else MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(borderWidth, borderColor),
+        border = BorderStroke(1.adp, borderColor),
     ) {
         Row(
             modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
@@ -115,24 +114,6 @@ fun TemplateCard(
                     modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s2),
                 )
             }
-
-            // Selected indicator
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .size(20.adp)
-                        .clip(CircleShape)
-                        .background(model.accentColor),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_check),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier.size(12.adp),
-                    )
-                }
-            }
         }
     }
 }
@@ -145,9 +126,9 @@ fun ExportSummaryCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.synapse.radius.lg,
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
+        border = BorderStroke(
             MaterialTheme.synapse.spacing.s2 / 2,
             MaterialTheme.colorScheme.outlineVariant,
         ),
@@ -202,6 +183,22 @@ fun ExportSummaryCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            
+            // Selected Options
+            val options = mutableListOf<String>()
+            options.clear()
+            if (state.options.includeAnswers) options.add(stringResource(R.string.include_answers))
+            if (state.options.includeAnswerKey) options.add(stringResource(R.string.include_answer_key))
+            if (state.options.showMarks) options.add(stringResource(R.string.show_marks))
+            if (state.options.shuffleQuestions) options.add(stringResource(R.string.shuffle_questions))
+            
+            if (options.isNotEmpty()) {
+                Text(
+                    text = options.joinToString(" • "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -262,7 +259,7 @@ fun ExportActionButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
-        shape = MaterialTheme.synapse.radius.lg,
+        shape = MaterialTheme.shapes.medium,
         color = if (isPrimary) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.surface,
         border = if (!isPrimary) androidx.compose.foundation.BorderStroke(
