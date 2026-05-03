@@ -6,10 +6,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
 import io.synapse.ai.core.ui.components.PackDisplayItemBuilder
 import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.EntitlementManager
+import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.domain.model.PackModel
 import io.synapse.ai.domain.repo.IAuthRepository
 import io.synapse.ai.domain.repo.IPackRepository
@@ -18,6 +19,7 @@ import io.synapse.ai.domain.repo.IQuestionRepository
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 import io.synapse.ai.features.library.presentation.state.LibraryUiState
 import io.synapse.ai.navigation.SynapseScreen
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -39,7 +41,7 @@ class LibraryViewModel @Inject constructor(
     private val questionRepo: IQuestionRepository,
     private val progressRepo: IProgressRepository,
     private val authRepo    : IAuthRepository,
-    private val entitlementManager: EntitlementManager,
+    private val premiumManager: PremiumManager,
     private val appConfigProvider: AppConfigProvider,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -56,11 +58,10 @@ class LibraryViewModel @Inject constructor(
         _searchQuery,
         _activeCategory,
         _sortBy,
-        combine(authRepo.userState, entitlementManager.entitlement, ::Pair)
-    ) { packs, query, category, sort, (userState, entitlement) ->
+        combine(authRepo.userState, premiumManager.isPro, appConfigProvider.libraryFreePackLimitFlow, ::Triple)
+    ) { packs, query, category, sort, (userState, isPremium, packLimit) ->
 
-        val isPremium       = entitlement.isAccessGranted
-        val packLimit       = appConfigProvider.libraryFreePackLimit
+        val isPremiumValue = isPremium
         val totalPackCount  = packs.size
         val isLimitReached  = totalPackCount >= packLimit
 
@@ -74,12 +75,12 @@ class LibraryViewModel @Inject constructor(
             .let { sortPacks(it, sort) }
 
         LibraryUiState(
-            packs               = filtered,
+            packs               = filtered.toImmutableList(),
             searchQuery         = query,
             activeCategory      = category,
             availableCategories = categories,
             sortBy              = sort,
-            isPremium           = isPremium,
+            isPremium           = isPremiumValue,
             isPackLimitReached  = isLimitReached,
             totalPackCount      = totalPackCount,
             isLoading           = false,
@@ -105,7 +106,7 @@ class LibraryViewModel @Inject constructor(
     fun onPackTapped(packId: Long) {
         val pack = uiState.value.packs.find { it.id == packId }
         if (pack != null && pack.cardsToReview == 0) {
-            _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.dashboard_pack_all_caught_up)))
+            _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.dashboard_pack_all_caught_up), ToastType.INFO))
             return
         }
         _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Quiz.createRoute(packId)))
@@ -114,7 +115,7 @@ class LibraryViewModel @Inject constructor(
     /**
      * Tapping the AddPackCell.
      * Free-tier users who have reached the limit are routed to the
-     * premium screen.  All others go to the Add-PDF wizard.
+     * gold screen.  All others go to the Add-PDF wizard.
      */
     fun onImportFromPdf() {
         if (uiState.value.isPackLimitReached) {
@@ -125,18 +126,18 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onEditPack(packId: Long) {
-        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
+        _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Overview.createRoute(packId)))
     }
 
     fun onExportPack(packId: Long) {
-        _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.coming_soon)))
+        _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Export.createRoute(packId)))
     }
 
     fun onDeletePack(packId: Long) {
         viewModelScope.launch {
             runCatching {
                 withContext(ioDispatcher) { packRepo.deletePack(packId) }
-                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.library_pack_deleted)))
+                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.library_pack_deleted), ToastType.SUCCESS))
             }.onFailure {
                 val errorText = it.message?.takeIf { msg -> msg.isNotBlank() }?.let { msg ->
                     UiText.Raw(R.string.library_delete_pack_error, msg)

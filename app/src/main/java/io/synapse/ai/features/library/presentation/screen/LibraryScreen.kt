@@ -3,6 +3,7 @@ package io.synapse.ai.features.library.presentation.screen
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -154,19 +156,29 @@ private fun LibraryContent(
             LibrarySearchBar(
                 query = uiState.searchQuery,
                 onChanged = onSearchChanged,
-                modifier = Modifier.padding(bottom = spacing.s12),
+                modifier = Modifier.padding(bottom = spacing.s8),
             )
         }
 
         item(span = { GridItemSpan(maxLineSpan) }) {
-            FilterTabRow(
-                activeFilter = activeFilter,
-                onSelect = { tab ->
-                    activeFilter = tab
-                    onSortChanged(tab.sort)
-                },
-                modifier = Modifier.padding(bottom = spacing.s8),
-            )
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(bottom = spacing.s8),
+            ) {
+                FilterTabRow(
+                    activeFilter = activeFilter,
+                    onSelect = { tab ->
+                        activeFilter = tab
+                        onSortChanged(tab.sort)
+                    },
+                )
+                PackCountRow(
+                    packCount = displayedPacks.size,
+                    totalDue = if (activeFilter == LibraryFilter.DUE) displayedPacks.sumOf { it.cardsToReview } else 0,
+                    showDueSum = activeFilter == LibraryFilter.DUE && displayedPacks.isNotEmpty(),
+                )
+            }
         }
 
         if (uiState.error != null && !isErrorDismissed) {
@@ -177,15 +189,6 @@ private fun LibraryContent(
                     modifier = Modifier.padding(bottom = spacing.s8),
                 )
             }
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            PackCountRow(
-                packCount = displayedPacks.size,
-                totalDue = if (activeFilter == LibraryFilter.DUE) displayedPacks.sumOf { it.cardsToReview } else 0,
-                showDueSum = activeFilter == LibraryFilter.DUE && displayedPacks.isNotEmpty(),
-                modifier = Modifier.padding(bottom = spacing.s8),
-            )
         }
 
         if (displayedPacks.isEmpty() && !uiState.isLoading) {

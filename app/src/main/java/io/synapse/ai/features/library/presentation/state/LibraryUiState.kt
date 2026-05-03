@@ -3,6 +3,8 @@ package io.synapse.ai.features.library.presentation.state
 import androidx.compose.runtime.Immutable
 import io.synapse.ai.core.ui.state.PackDisplayItem
 import io.synapse.ai.core.ui.state.UiText
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
 enum class LibrarySortOption {
     RECENT,
@@ -12,7 +14,7 @@ enum class LibrarySortOption {
 
 @Immutable
 data class LibraryUiState(
-    val packs               : List<PackDisplayItem> = emptyList(),
+    val packs               : ImmutableList<PackDisplayItem> = persistentListOf(),
     val searchQuery         : String                = "",
     val activeCategory      : String                = ALL_CATEGORY,
     val availableCategories : List<String>          = listOf(ALL_CATEGORY),

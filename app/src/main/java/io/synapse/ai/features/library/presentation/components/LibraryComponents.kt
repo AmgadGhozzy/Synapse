@@ -216,7 +216,7 @@ fun LibrarySearchBar(
             }
         } else null,
         singleLine = true,
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         textStyle = MaterialTheme.typography.bodyLarge.copy(
             color = MaterialTheme.colorScheme.onSurface,
         ),
@@ -315,13 +315,13 @@ fun PackCountRow(
     ) {
         Text(
             text = stringResource(R.string.library_pack_count, packCount),
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (showDueSum) {
             Text(
                 text = stringResource(R.string.library_cards_due, totalDue),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,
             )
