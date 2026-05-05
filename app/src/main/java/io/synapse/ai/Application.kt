@@ -40,8 +40,8 @@ class Application : Application() {
         super.onCreate()
         createNotificationChannels()
         initializeTracking()
-        bootstrapAuth()
         initializePremium()
+        bootstrapAuth()
         preWarmNetworkClients()
 
         applicationScope.launch {
@@ -49,8 +49,24 @@ class Application : Application() {
             premiumManager.reEvaluateReviewerMode()
         }
 
-        if (BuildConfig.DEBUG) {
-            enableStrictMode()
+        if (BuildConfig.DEBUG) enableStrictMode()
+    }
+
+    private fun initializePremium() {
+        premiumManager.initialize()
+    }
+
+    private fun bootstrapAuth() {
+        applicationScope.launch {
+            authRepo.ensureSignedIn()
+                .onSuccess {
+                    premiumManager.verifyWithServer(force = true)
+                }
+                .onFailure { e ->
+                    Log.e(TAG, "Auth bootstrap failed", e)
+                    trackingManager.logException(e, "Auth bootstrap failed")
+                    premiumManager.verifyWithServer()
+                }
         }
     }
 
@@ -73,19 +89,6 @@ class Application : Application() {
         }
     }
 
-    private fun initializePremium() {
-        premiumManager.initialize()
-    }
-
-    /**
-     * Consent-first initialization flow:
-     * 1. Load consent from DataStore (synchronous first emission)
-     * 2. Initialize TrackingManager with resolved consent
-     * 3. Observe future consent changes for runtime toggling
-     *
-     * Firebase SDKs are NEVER touched before consent is resolved.
-     * Manifest flags ensure zero auto-collection.
-     */
     private fun initializeTracking() {
         applicationScope.launch {
             try {
@@ -118,16 +121,8 @@ class Application : Application() {
         }
     }
 
-    /**
-     * Continuously observes consent changes from settings UI.
-     * When the user toggles a consent flag, the corresponding
-     * Firebase SDK is enabled/disabled in real time.
-     */
     private fun observeConsentChanges() {
         applicationScope.launch {
-            // S-2 FIX: The current consent value was already consumed by consent.first()
-            // in initializeTracking(). Without drop(1), the flow re-emits that same
-            // cached value immediately, calling updateConsent() twice on startup.
             consentRepository.consent.drop(1).collect { consent ->
                 trackingManager.updateConsent(consent)
             }
@@ -147,15 +142,6 @@ class Application : Application() {
             } catch (e: Exception) {
                 Log.e(TAG, "Network client warm-up failed", e)
                 trackingManager.logException(e, "Network client warm-up failed")
-            }
-        }
-    }
-
-    private fun bootstrapAuth() {
-        applicationScope.launch {
-            authRepo.ensureSignedIn().onFailure { e ->
-                Log.e(TAG, "Auth bootstrap failed", e)
-                trackingManager.logException(e, "Auth bootstrap failed")
             }
         }
     }

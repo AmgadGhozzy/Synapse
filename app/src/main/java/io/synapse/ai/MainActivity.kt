@@ -13,6 +13,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.LimitedFontScale
 import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.features.premium.presentation.viewmodel.EntitlementViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.StudySettingsViewModel
@@ -23,10 +24,9 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var soundManager: SoundManager
+    @Inject lateinit var soundManager: SoundManager
+    @Inject lateinit var premiumManager: PremiumManager
 
-    // ── ViewModels ───────────────────────────────────────────────────────────
     private val rootViewModel: RootViewModel by viewModels()
     private val profileViewModel: ProfileViewModel by viewModels()
     private val studySettingsViewModel: StudySettingsViewModel by viewModels()
@@ -34,12 +34,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
-            rootViewModel.isLoadingOnboardingState
+            rootViewModel.isLoadingOnboardingState || !premiumManager.isReady.value
         }
 
         super.onCreate(savedInstanceState)
 
-        // Explicitly declare transparent bars
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
                 android.graphics.Color.TRANSPARENT,
@@ -52,7 +51,7 @@ class MainActivity : ComponentActivity() {
         )
 
         setContent {
-            if (rootViewModel.isLoadingOnboardingState) return@setContent
+            if (rootViewModel.isLoadingOnboardingState || !premiumManager.isReady.value) return@setContent
 
             val studySettings by studySettingsViewModel.uiState.collectAsStateWithLifecycle()
             val appTheme = studySettings.appTheme
@@ -68,6 +67,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     override fun onResume() {
         super.onResume()
         entitlementViewModel.onResume()
