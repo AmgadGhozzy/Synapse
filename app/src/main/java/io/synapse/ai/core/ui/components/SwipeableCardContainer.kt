@@ -1,7 +1,9 @@
 package io.synapse.ai.core.ui.components
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableDefaults
@@ -50,6 +52,7 @@ import androidx.compose.ui.util.lerp
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
+import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 @Composable
@@ -61,6 +64,8 @@ fun SwipeableCardContainer(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
     verticalActions: Boolean = false,
+    showSwipeHint: Boolean = false,
+    onSwipeHintComplete: () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -97,10 +102,33 @@ fun SwipeableCardContainer(
         }
     }
 
+    // reveals the action panel to hint swipeability,
+    val hintPeekPx = with(density) { actionWidth.toPx() }
+    val hintOffset = remember { Animatable(0f) }
+    LaunchedEffect(showSwipeHint) {
+        if (showSwipeHint && dragState.currentValue == DragValue.Closed) {
+            delay(1000L)
+            hintOffset.animateTo(
+                targetValue = -hintPeekPx,
+                animationSpec = tween(durationMillis = 350),
+            )
+            delay(200L)
+            hintOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    stiffness    = Spring.StiffnessMedium,
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                ),
+            )
+            onSwipeHintComplete()
+        }
+    }
+
     val progress by remember {
         derivedStateOf {
-            val offset = if (dragState.offset.isNaN()) 0f else dragState.offset
-            (-offset / revealWidthPx).coerceIn(0f, 1f)
+            val dragPx  = if (dragState.offset.isNaN()) 0f else dragState.offset
+            val totalPx = dragPx + hintOffset.value
+            (-totalPx / revealWidthPx).coerceIn(0f, 1f)
         }
     }
 
@@ -123,7 +151,7 @@ fun SwipeableCardContainer(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset { IntOffset(dragState.requireOffset().roundToInt(), 0) }
+                .offset { IntOffset((dragState.requireOffset() + hintOffset.value).roundToInt(), 0) }
                 .anchoredDraggable(
                     state         = dragState,
                     orientation   = Orientation.Horizontal,
