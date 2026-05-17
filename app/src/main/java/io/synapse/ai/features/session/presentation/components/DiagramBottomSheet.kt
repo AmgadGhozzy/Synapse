@@ -1,5 +1,7 @@
 package io.synapse.ai.features.session.presentation.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -31,12 +33,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -58,6 +59,7 @@ import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.ui.components.CloseButton
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.SecondaryButton
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,22 +73,21 @@ fun DiagramBottomSheet(
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     val surfaceArgb = MaterialTheme.colorScheme.surface.toArgb()
+    val primaryArgb = MaterialTheme.colorScheme.primary.toArgb()
+    val onSurfaceArgb = MaterialTheme.colorScheme.onSurface.toArgb()
     val bgColorHex = "%06X".format(surfaceArgb and 0xFFFFFF)
 
-    val onSurfaceVariantArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
-    val textColorHex = "%06X".format(onSurfaceVariantArgb and 0xFFFFFF)
-
-    val diagramUrl = remember(mermaid, isDark, bgColorHex, textColorHex) {
+    val diagramUrl = remember(mermaid, isDark, bgColorHex) {
         buildMermaidInkUrl(
             mermaidCode = mermaid,
             darkTheme = isDark,
             bgColorHex = bgColorHex,
-            textColorHex = textColorHex,
+            primaryHex = "%06X".format(primaryArgb and 0xFFFFFF),
+            onSurfaceHex = "%06X".format(onSurfaceArgb and 0xFFFFFF),
         )
     }
 
     val surfaceColor = MaterialTheme.colorScheme.surface
-    val primaryColor = MaterialTheme.colorScheme.primary
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -149,9 +150,7 @@ fun DiagramBottomSheet(
                     ) {
                         Text(
                             text = explanation,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                lineHeight = 18.asp,
-                            ),
+                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.asp),
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(
@@ -183,15 +182,13 @@ private fun FloatingDiagramHeader(
     surfaceColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    val closeButtonSize = 44.adp
-
     Box(
         modifier = modifier
             .height(84.adp)
             .background(
                 Brush.verticalGradient(
-                    1f to Color.Transparent,
                     0f to surfaceColor,
+                    1f to Color.Transparent,
                 )
             ),
     ) {
@@ -199,8 +196,9 @@ private fun FloatingDiagramHeader(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Drag handle pill
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
+
+            // Drag handle pill
             Box(
                 modifier = Modifier
                     .size(width = 40.adp, height = 4.adp)
@@ -209,6 +207,7 @@ private fun FloatingDiagramHeader(
                         shape = MaterialTheme.synapse.radius.pill,
                     )
             )
+
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
 
             Row(
@@ -225,14 +224,14 @@ private fun FloatingDiagramHeader(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = MaterialTheme.synapse.spacing.s8),
-                    maxLines = 1,
                 )
 
-                // Symmetrical spacer so title stays centered
-                Spacer(modifier = Modifier.size(closeButtonSize))
+                // Mirror spacer to keep title visually centred
+                Spacer(modifier = Modifier.size(44.adp))
             }
         }
     }
@@ -245,24 +244,17 @@ private fun ZoomableDiagramImage(
     url: String,
     modifier: Modifier = Modifier,
 ) {
+    val scope = rememberCoroutineScope()
     var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
     var retryTrigger by remember { mutableIntStateOf(0) }
+
+    // Use Animatable for offset so we can snap during drag and spring on release/reset
+    val offsetX = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(0f) }
 
     val animatedScale by animateFloatAsState(
         targetValue = scale,
-        animationSpec = spring(stiffness = 300f),
-        label = "diagram_scale",
-    )
-    val animatedOffsetX by animateFloatAsState(
-        targetValue = offset.x,
-        animationSpec = spring(stiffness = 300f),
-        label = "diagram_offset_x",
-    )
-    val animatedOffsetY by animateFloatAsState(
-        targetValue = offset.y,
-        animationSpec = spring(stiffness = 300f),
-        label = "diagram_offset_y",
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
 
     val context = LocalContext.current
@@ -277,18 +269,41 @@ private fun ZoomableDiagramImage(
 
     Box(
         modifier = modifier
+            // Pan & pinch-to-zoom
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale = (scale * zoom).coerceIn(0.5f, 6f)
-                    offset = Offset(offset.x + pan.x, offset.y + pan.y)
+                    scope.launch {
+                        offsetX.snapTo(offsetX.value + pan.x)
+                        offsetY.snapTo(offsetY.value + pan.y)
+                    }
                 }
             }
+            // Double-tap to reset zoom & pan with a spring snap-back
             .pointerInput(Unit) {
-                // Double-tap to reset zoom & pan
                 detectTapGestures(
                     onDoubleTap = {
                         scale = 1f
-                        offset = Offset.Zero
+                        scope.launch {
+                            launch {
+                                offsetX.animateTo(
+                                    0f,
+                                    spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMediumLow,
+                                    ),
+                                )
+                            }
+                            launch {
+                                offsetY.animateTo(
+                                    0f,
+                                    spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessMediumLow,
+                                    ),
+                                )
+                            }
+                        }
                     }
                 )
             },
@@ -304,8 +319,8 @@ private fun ZoomableDiagramImage(
                     .graphicsLayer(
                         scaleX = animatedScale,
                         scaleY = animatedScale,
-                        translationX = animatedOffsetX,
-                        translationY = animatedOffsetY,
+                        translationX = offsetX.value,
+                        translationY = offsetY.value,
                     ),
                 loading = {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -354,36 +369,69 @@ private fun ZoomableDiagramImage(
     }
 }
 
-// ─── URL builder ─────────────────────────────────────────────────────────────
-
 internal fun buildMermaidInkUrl(
     mermaidCode: String,
     darkTheme: Boolean = false,
     bgColorHex: String = "ffffff",
-    textColorHex: String = "000000",
+    primaryHex: String = "6650a4",
+    onSurfaceHex: String = "1c1b1f"
 ): String {
-    val cleanCode = mermaidCode
+
+    // ── 1. Strip markdown fences ──────────────────────────────────────────────
+    var clean = mermaidCode
         .removePrefix("```mermaid")
         .removePrefix("```")
         .removeSuffix("```")
         .trim()
 
-    val themeStr = if (darkTheme) "dark" else "default"
-
-    val withLook = if ("init" !in cleanCode) {
-        "%%{init: {'theme': '$themeStr', 'themeVariables': { 'primaryTextColor': '#$textColorHex', 'lineColor': '#$textColorHex', 'textColor': '#$textColorHex', 'nodeTextColor': '#$textColorHex' }}}%%\n$cleanCode"
-    } else {
-        cleanCode
+    clean = clean.replace(
+        Regex("""(?<!\()\["([^"]+)"](?!\))""")
+    ) { match ->
+        """(["${match.groupValues[1]}"])"""
     }
 
+    val alreadyHasInit = "%%{init" in clean
+
+    val initBlock = if (!alreadyHasInit) {
+        val nodeColor = if (darkTheme) "\"#1e1e2e\"" else "\"#f0f0ff\""
+        val nodeBorder = "\"#$primaryHex\""
+        val nodeText = "\"#$onSurfaceHex\""
+        val edgeColor = "\"#$onSurfaceHex\""
+
+        """%%{init: {
+          'look': 'handDrawn',
+          'themeVariables': {
+            'primaryColor': $nodeColor,
+            'primaryBorderColor': $nodeBorder,
+            'primaryTextColor': $nodeText,
+            'lineColor': $edgeColor,
+            'edgeLabelBackground': ${if (darkTheme) "\"#1e1e2e\"" else "\"#f8f8ff\""}
+          }
+        }}%%"""
+            .trimIndent()
+    } else {
+        // Already has init — only inject look if missing
+        if ("look" !in clean) {
+            clean = clean.replaceFirst(
+                "%%{init:",
+                "%%{init: 'look': 'handDrawn',"
+            )
+        }
+        ""
+    }
+
+    val mermaidSource = if (initBlock.isNotEmpty()) "$initBlock\n$clean" else clean
+
+    // ── 4. Base64-URL-safe encode ─────────────────────────────────────────────
     val encoded = android.util.Base64.encodeToString(
-        withLook.toByteArray(Charsets.UTF_8),
+        mermaidSource.toByteArray(Charsets.UTF_8),
         android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP,
     )
 
+    val theme = if (darkTheme) "dark" else "default"
     return "https://mermaid.ink/img/$encoded" +
             "?type=webp" +
-            "&theme=$themeStr" +
+            "&theme=$theme" +
             "&bgColor=$bgColorHex" +
             "&width=1200" +
             "&scale=3"
