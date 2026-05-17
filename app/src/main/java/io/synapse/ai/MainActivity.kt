@@ -1,5 +1,6 @@
 package io.synapse.ai
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -50,6 +51,8 @@ class MainActivity : ComponentActivity() {
             ),
         )
 
+        handleIntent(intent)
+
         setContent {
             if (rootViewModel.isLoadingOnboardingState || !premiumManager.isReady.value) return@setContent
 
@@ -71,5 +74,24 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         entitlementViewModel.onResume()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_SEND) {
+            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            }
+            uri?.let {
+                rootViewModel.setSharedUri(it.toString())
+            }
+        }
     }
 }

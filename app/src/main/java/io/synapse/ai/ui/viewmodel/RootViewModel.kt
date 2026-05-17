@@ -36,6 +36,18 @@ class RootViewModel @Inject constructor(
         MutableStateFlow<SubtitleOverrideState>(SubtitleOverrideState.Default)
     val subtitleOverride: StateFlow<SubtitleOverrideState> = _subtitleOverride.asStateFlow()
 
+    // ── Shared Intent ────────────────────────────────────────────────────────
+    private val _sharedUri = MutableStateFlow<String?>(null)
+    val sharedUri: StateFlow<String?> = _sharedUri.asStateFlow()
+
+    fun setSharedUri(uri: String) {
+        _sharedUri.value = uri
+    }
+
+    fun consumeSharedUri() {
+        _sharedUri.value = null
+    }
+
     // Init
     init {
         viewModelScope.launch {

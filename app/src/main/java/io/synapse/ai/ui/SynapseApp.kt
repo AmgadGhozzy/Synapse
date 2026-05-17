@@ -59,7 +59,15 @@ fun SynapseApp(
 ) {
     val onboardingDone by rootViewModel.onboardingDone.collectAsStateWithLifecycle()
     val subtitleOverride by rootViewModel.subtitleOverride.collectAsStateWithLifecycle()
+    val sharedUri by rootViewModel.sharedUri.collectAsStateWithLifecycle()
 
+    androidx.compose.runtime.LaunchedEffect(sharedUri, onboardingDone) {
+        if (onboardingDone && sharedUri != null) {
+            val uri = sharedUri!!
+            rootViewModel.consumeSharedUri()
+            appState.navController.navigate(SynapseScreen.AddPdf.createRoute(SynapseScreen.AddPdf.SOURCE_FILE, uri))
+        }
+    }
 
     CompositionLocalProvider(LocalSoundManager provides soundManager) {
         SynapseShell(
