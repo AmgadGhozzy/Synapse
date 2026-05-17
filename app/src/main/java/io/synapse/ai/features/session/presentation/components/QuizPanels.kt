@@ -1,12 +1,10 @@
-package com.venom.synapse.features.session.presentation.components
+package io.synapse.ai.features.session.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,19 +34,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.synapse.core.theme.tokens.toShadow
-import com.venom.synapse.features.session.presentation.screen.previewFlashcardQuestion
-import com.venom.synapse.features.session.presentation.screen.previewMcqQuestion
-import com.venom.synapse.features.session.presentation.screen.previewTfQuestion
-import com.venom.synapse.features.session.presentation.state.QuestionUiContent
-import com.venom.synapse.features.session.presentation.state.QuestionUiModel
-import com.venom.ui.components.common.adp
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
+import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.features.session.presentation.screen.previewFlashcardQuestion
+import io.synapse.ai.features.session.presentation.screen.previewMcqQuestion
+import io.synapse.ai.features.session.presentation.screen.previewTfQuestion
+import io.synapse.ai.features.session.presentation.state.QuestionUiContent
+import io.synapse.ai.features.session.presentation.state.QuestionUiModel
 
 @Composable
 internal fun McqPanel(
@@ -57,9 +53,6 @@ internal fun McqPanel(
     content: QuestionUiContent.Mcq,
     isInputEnabled: Boolean,
     lastAnswerCorrect: Boolean?,
-    showHint: Boolean,
-    explanation: String? = null,
-    correctLabel: String? = null,
     onOptionSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -79,19 +72,12 @@ internal fun McqPanel(
             label = stringResource(R.string.quiz_question_label, question.id),
             chipColor = MaterialTheme.colorScheme.primary,
             text = question.questionText,
-            modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s14),
+            modifier = Modifier.padding(
+                bottom = MaterialTheme.synapse.spacing.s14,
+                top = MaterialTheme.synapse.spacing.s6
+            ),
         )
 
-        AnimatedVisibility(
-            visible = showHint && !question.hint.isNullOrBlank(),
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(160)),
-        ) {
-            HintReveal(
-                hint = question.hint ?: "",
-                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
-            )
-        }
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         content.options.forEachIndexed { index, option ->
             val letter = ('A' + index).toString()
@@ -100,31 +86,32 @@ internal fun McqPanel(
             val isWrong = isAnswered && isSelected && !isCorrect
 
             val containerColor = when {
-                !isAnswered && isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                !isAnswered && isSelected -> semantic.primaryBg
                 !isAnswered -> MaterialTheme.colorScheme.surface
-                isCorrect -> semantic.successContainer
-                isWrong -> semantic.errorContainer
-                else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                isCorrect -> semantic.successBg
+                isWrong -> semantic.errorBg
+                else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
             }
             val badgeColor = when {
-                !isAnswered && isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                !isAnswered && isSelected -> semantic.primaryContainer
                 !isAnswered -> MaterialTheme.colorScheme.surfaceVariant
-                isCorrect -> semantic.success.copy(alpha = 0.22f)
-                isWrong -> semantic.error.copy(alpha = 0.22f)
+                isCorrect -> semantic.successContainer
+                isWrong -> semantic.errorContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             }
             val badgeTextColor = when {
-                !isAnswered && isSelected -> MaterialTheme.colorScheme.primary
+                !isAnswered && isSelected -> semantic.primary
                 !isAnswered -> MaterialTheme.colorScheme.onSurfaceVariant
                 isCorrect -> semantic.success
                 isWrong -> semantic.error
                 else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
             }
             val optionTextColor = when {
+                !isAnswered && isSelected -> semantic.primary
                 !isAnswered -> MaterialTheme.colorScheme.onSurface
                 isCorrect -> semantic.success
                 isWrong -> semantic.error
-                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             }
             val glowColor = when {
                 isAnswered && isCorrect -> semantic.success
@@ -174,17 +161,15 @@ private fun McqOptionRow(
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.medium
+    val semantic = MaterialTheme.synapse.semantic
+    val typo = MaterialTheme.typography
 
-    val rowModifier = if (glowColor != null) {
-        modifier.dropShadow(
-            shape = shape,
-            shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = glowColor)
-        )
-    } else modifier
+    val shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = glowColor)
 
     Row(
-        modifier = rowModifier
+        modifier = modifier
             .fillMaxWidth()
+            .dropShadow(shape = shape, shadow = shadow)
             .padding(horizontal = MaterialTheme.synapse.spacing.s6)
             .clip(shape)
             .background(containerColor)
@@ -196,8 +181,7 @@ private fun McqOptionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s14),
     ) {
-        val typo = MaterialTheme.typography
-        val semantic = MaterialTheme.synapse.semantic
+        // Badge: number before answer, icon after answer
         Box(
             modifier = Modifier
                 .size(38.adp)
@@ -219,7 +203,6 @@ private fun McqOptionRow(
                     fontWeight = FontWeight.ExtraBold,
                     color = semantic.error,
                 )
-
                 else -> Text(
                     text = letter,
                     style = typo.bodyMedium,
@@ -233,32 +216,9 @@ private fun McqOptionRow(
             text = text,
             style = typo.bodyLarge,
             color = optionTextColor,
-            fontWeight = if (isCorrect || isWrong) FontWeight.ExtraBold else FontWeight.Normal,
+            fontWeight = if (isCorrect || isWrong) FontWeight.SemiBold else FontWeight.Normal,
             modifier = Modifier.weight(1f),
         )
-
-        AnimatedVisibility(
-            visible = isCorrect,
-            enter = fadeIn(tween(180)),
-            exit = fadeOut(tween(120)),
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(semantic.success.copy(alpha = 0.18f))
-                    .padding(horizontal = MaterialTheme.synapse.spacing.s8)
-                    .padding(vertical = MaterialTheme.synapse.spacing.s2),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = stringResource(R.string.quiz_correct_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = semantic.success,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
     }
 }
 
@@ -268,9 +228,6 @@ internal fun TrueFalsePanel(
     content: QuestionUiContent.TrueFalse,
     isInputEnabled: Boolean,
     lastAnswerCorrect: Boolean?,
-    showHint: Boolean,
-    explanation: String? = null,
-    correctLabel: String? = null,
     onAnswer: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -280,25 +237,15 @@ internal fun TrueFalsePanel(
 
     Column(modifier = modifier) {
         QuestionCard(
-            label = stringResource(R.string.quiz_statement_label),
-            chipColor = MaterialTheme.colorScheme.secondary,
+            label = stringResource(R.string.quiz_ft_label),
+            chipColor = MaterialTheme.colorScheme.primary,
             text = question.questionText,
             modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s14),
         )
 
-        AnimatedVisibility(
-            visible = showHint && !question.hint.isNullOrBlank(),
-            enter = fadeIn(tween(200)),
-            exit = fadeOut(tween(160)),
-        ) {
-            HintReveal(
-                hint = question.hint ?: "",
-                modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s12),
-            )
-        }
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = MaterialTheme.synapse.spacing.s6),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
         ) {
             TfButton(
@@ -339,25 +286,25 @@ private fun TfButton(
     val shape = MaterialTheme.shapes.large
 
     val containerColor = when {
-        !isAnswered && isSelected && isTrue -> semantic.successContainer
-        !isAnswered && isSelected && !isTrue -> semantic.errorContainer
+        !isAnswered && isSelected && isTrue -> semantic.successBg
+        !isAnswered && isSelected && !isTrue -> semantic.errorBg
         !isAnswered -> MaterialTheme.colorScheme.surface
-        isThisCorrect -> semantic.successContainer
-        isSelected -> semantic.errorContainer
-        else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
+        isThisCorrect -> semantic.successBg
+        isSelected -> semantic.errorBg
+        else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
     }
     val borderColor = when {
-        !isAnswered && isSelected && isTrue -> semantic.success.copy(alpha = 0.70f)
-        !isAnswered && isSelected && !isTrue -> semantic.error.copy(alpha = 0.60f)
+        !isAnswered && isSelected && isTrue -> semantic.successBorder
+        !isAnswered && isSelected && !isTrue -> semantic.errorBorder
         !isAnswered -> MaterialTheme.colorScheme.outlineVariant
-        isThisCorrect -> semantic.success.copy(alpha = 0.70f)
-        isSelected -> semantic.error.copy(alpha = 0.50f)
+        isThisCorrect -> semantic.successBorder
+        isSelected -> semantic.errorBorder
         else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f)
     }
     val iconTint = when {
         !isAnswered && isSelected && isTrue -> semantic.success
         !isAnswered && isSelected && !isTrue -> semantic.error
-        !isAnswered && isTrue -> MaterialTheme.colorScheme.primary
+        !isAnswered && isTrue -> semantic.success
         !isAnswered -> MaterialTheme.colorScheme.error
         isThisCorrect -> semantic.success
         isSelected -> semantic.error
@@ -372,20 +319,16 @@ private fun TfButton(
     val iconRes = if (isTrue) R.drawable.ic_check else R.drawable.ic_x
     val label = stringResource(if (isTrue) R.string.quiz_true_label else R.string.quiz_false_label)
 
-    val btnModifier = if (glowColor != null) {
-        modifier.dropShadow(
-            shape = shape,
-            shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = glowColor)
-        )
-    } else modifier
+    val shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = glowColor)
 
     Column(
-        modifier = btnModifier
+        modifier = modifier
+            .dropShadow(shape = shape, shadow = shadow)
             .clip(shape)
             .background(containerColor)
-            .border(if (isAnswered && isThisCorrect) 1.adp else Dp.Hairline, borderColor, shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 28.adp),
+            .padding(vertical = 28.adp)
+,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
     ) {
@@ -417,24 +360,29 @@ internal fun QuestionCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .padding(top = MaterialTheme.synapse.spacing.s12)
             .dropShadow(
                 shape = shape,
-                shadow = MaterialTheme.synapse.shadows.subtle.toShadow()
+                shadow = MaterialTheme.synapse.shadows.medium.toShadow()
             )
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(MaterialTheme.synapse.spacing.s28),
         ) {
             Column {
                 QuestionTypeChip(label = label, chipColor = chipColor)
+
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
+
                 Text(
                     text = text,
-                    style = typo.titleLarge,
+                    style = typo.titleLarge.copy(
+                        lineHeight = 32.asp
+                    ),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -453,7 +401,6 @@ private fun McqPanelPreview() {
                 content = previewMcqQuestion.content as QuestionUiContent.Mcq,
                 isInputEnabled = true,
                 lastAnswerCorrect = null,
-                showHint = false,
                 onOptionSelected = {},
                 modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
             )
@@ -472,7 +419,6 @@ private fun TrueFalsePanelPreview() {
                 content = previewTfQuestion.content as QuestionUiContent.TrueFalse,
                 isInputEnabled = true,
                 lastAnswerCorrect = null,
-                showHint = false,
                 onAnswer = {},
                 modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
             )
