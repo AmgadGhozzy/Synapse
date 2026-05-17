@@ -18,25 +18,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Synapse"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <!-- Splash Activity as Launcher -->
+
         <activity
-            android:name="io.synapse.ai.SplashActivity"
+            android:name="io.synapse.ai.MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Synapse.Splash">
+            android:theme="@style/Theme.Synapse.Splash"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
 
-        <!-- Main Activity -->
-        <activity
-            android:name="io.synapse.ai.MainActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Synapse"
-            android:windowSoftInputMode="adjustResize" />
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="application/msword" />
+                <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            </intent-filter>
+        </activity>
 
         <!-- ════════════════════════════════════════════════════════════ -->
         <!-- FIREBASE PRIVACY COMPLIANCE: Disable all auto-collection    -->
@@ -46,7 +48,7 @@
         <!-- Disable Firebase Analytics auto-collection -->
         <meta-data
             android:name="firebase_analytics_collection_deactivated"
-            android:value="true" />
+            android:value="false" />
 
         <!-- Disable Crashlytics auto-collection -->
         <meta-data
