@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.aboutlibraries)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
-    id("dagger.hilt.android.plugin")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
 }
@@ -28,12 +27,12 @@ android {
         applicationId = "io.synapse.ai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 66
-        versionName = "2.1.6"
-        ndk {
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("arm-v7a")
-        }
+        versionCode = 73
+        versionName = "2.2.3"
+//        ndk {
+//            abiFilters.add("arm64-v8a")
+//            abiFilters.add("armeabi-v7a")
+//        }
         multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -97,6 +96,7 @@ dependencies {
 
     // ML Kit
     //implementation(libs.text.recognition)
+    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0")
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.splashscreen)
