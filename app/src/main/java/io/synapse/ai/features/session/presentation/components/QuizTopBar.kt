@@ -1,4 +1,4 @@
-package com.venom.synapse.features.session.presentation.components
+package io.synapse.ai.features.session.presentation.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
@@ -10,8 +10,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,17 +18,17 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,24 +42,23 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import com.venom.synapse.R
-import com.venom.synapse.core.theme.SynapseTheme
-import com.venom.synapse.core.theme.synapse
-import com.venom.ui.components.common.adp
-import com.venom.ui.components.common.localized
+import io.synapse.ai.R
+import io.synapse.ai.core.theme.SynapseTheme
+import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.asp
+import io.synapse.ai.core.ui.components.CloseButton
+import io.synapse.ai.core.ui.utils.localized
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun QuizTopBar(
     title          : String,
+    moduleTitle    : String? = null,
     questionIndex  : Int,
     totalQuestions : Int,
     progress       : Float,
@@ -71,106 +68,102 @@ internal fun QuizTopBar(
     scrollBehavior : TopAppBarScrollBehavior,
     modifier       : Modifier = Modifier,
 ) {
-    val primary        = MaterialTheme.colorScheme.primary
-    val semantic       = MaterialTheme.synapse.semantic
-    val spacing        = MaterialTheme.synapse.spacing
-    val useDotsProgress = remember(totalQuestions) { totalQuestions <= 30 }
+    val semantic        = MaterialTheme.synapse.semantic
+    val spacing         = MaterialTheme.synapse.spacing
+    val useDotsProgress = remember(totalQuestions) { totalQuestions <= 40 }
 
     MediumFlexibleTopAppBar(
-        modifier       = modifier.fillMaxWidth()
+        modifier       = modifier
+            .fillMaxWidth()
             .clipToBounds(),
-        windowInsets   = WindowInsets(0, 0, 0, 0),
+        windowInsets   = WindowInsets.systemBars,
         scrollBehavior = scrollBehavior,
         colors         = TopAppBarDefaults.topAppBarColors(
-            containerColor        = Color.Transparent,
-            scrolledContainerColor = Color.Transparent,
-            titleContentColor     = MaterialTheme.colorScheme.onSurface,
+            containerColor         = Color.Transparent,
+            scrolledContainerColor  = Color.Transparent,
+            titleContentColor      = MaterialTheme.colorScheme.onSurface,
             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
         title = {
-            Text(
-                text      = title,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines  = 1,
-                overflow  = TextOverflow.Ellipsis,
-            )
-        },
-        subtitle = {
-                if (useDotsProgress) {
-                    SegmentedDotTrack(
-                        questionIndex  = questionIndex,
-                        totalQuestions = totalQuestions,
+            Column {
+                if (!moduleTitle.isNullOrBlank()) {
+                    Text(
+                        text = moduleTitle,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            lineHeight = 10.asp
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                } else {
-                    SmoothProgressBar(progress       = progress)
                 }
-        },
-        navigationIcon = {
-            Box(
-                modifier = Modifier
-                    .padding(end = spacing.s8, top = spacing.s16)
-                    .size(48.adp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .border(
-                        width = Dp.Hairline,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = MaterialTheme.shapes.medium,
-                    )
-                    .clickable(onClick = onClose),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter           = painterResource(R.drawable.ic_x),
-                    contentDescription = null,
-                    tint              = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier          = Modifier.size(20.adp),
+                Text(
+                    text       = title,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines   = 1,
+                    overflow   = TextOverflow.Ellipsis,
                 )
             }
+        },
+        subtitle = {
+            if (useDotsProgress) {
+                SegmentedDotTrack(
+                    questionIndex  = questionIndex,
+                    totalQuestions = totalQuestions,
+                )
+            } else {
+                SmoothProgressBar(progress = progress)
+            }
+        },
+        navigationIcon = {
+            CloseButton(
+                onClick  = onClose,
+                modifier = Modifier.padding(end = spacing.s8),
+            )
         },
         actions = {
             Row(
                 verticalAlignment     = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(spacing.s10),
-                modifier              = Modifier.padding(start = spacing.s8, top = spacing.s16),
+                modifier              = Modifier.padding(start = spacing.s8),
             ) {
                 AnimatedVisibility(
                     visible = showAccuracy,
                     enter   = scaleIn(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
                     exit    = scaleOut(tween(180)),
                 ) {
-                    val accInt   = (accuracy * 100).toInt()
-                    val badgeColor = if (accuracy >= 0.70f) semantic.success else semantic.error
+                    val accInt = (accuracy * 100).toInt()
+
+                    val badgeTextColor = if (accuracy >= 0.70f) semantic.success else semantic.error
+                    val badgeBgColor   = if (accuracy >= 0.70f) semantic.successBg else semantic.errorBg
                     BadgePill(
                         text      = "${accInt.localized()}${stringResource(R.string.percent_mark)}",
-                        textColor = badgeColor,
-                        bgColor   = badgeColor.copy(alpha = 0.13f),
-                        rimColor  = badgeColor.copy(alpha = 0.35f),
+                        textColor = badgeTextColor,
+                        bgColor   = badgeBgColor,
                     )
                 }
 
                 BadgePill(
                     text      = "${questionIndex.localized()} / ${totalQuestions.localized()}",
-                    textColor = primary,
-                    bgColor   = primary.copy(alpha = 0.12f),
-                    rimColor  = primary.copy(alpha = 0.28f),
+                    textColor = semantic.primary,
+                    bgColor   = semantic.primaryBg,
                 )
             }
         },
     )
 }
+
 @Composable
 private fun BadgePill(
     text: String,
     textColor: Color,
     bgColor: Color,
-    rimColor: Color,
 ) {
     Box(
         modifier = Modifier
+            .minimumInteractiveComponentSize()
             .clip(CircleShape)
             .background(bgColor)
-            .border(Dp.Hairline, rimColor, CircleShape)
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s16,
                 vertical = MaterialTheme.synapse.spacing.s4,
@@ -179,7 +172,6 @@ private fun BadgePill(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge.copy(
-                platformStyle = PlatformTextStyle(includeFontPadding = false),
                 fontWeight = FontWeight.ExtraBold
             ),
             color = textColor
@@ -194,9 +186,10 @@ private fun SegmentedDotTrack(
     modifier: Modifier = Modifier,
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    val semantic = MaterialTheme.synapse.semantic
 
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(bottom = 4.adp),
         horizontalArrangement = Arrangement.spacedBy(6.adp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -213,20 +206,22 @@ private fun SegmentedDotTrack(
                 animationSpec = tween(200)
             )
 
+            val rectSize = 8.adp
+            val topLeft = (-4).adp
             Box(
                 modifier = Modifier
                     .weight(if (isActive) 1.8f else 1f)
-                    .height(dotHeight.dp)
+                    .height(dotHeight.adp)
                     .drawBehind {
                         if (isActive) {
                             drawRoundRect(
-                                color = primary.copy(alpha = 0.18f),
+                                color = semantic.primaryBg,
                                 cornerRadius = CornerRadius(size.height * 2),
                                 size = size.copy(
-                                    width = size.width + 8.dp.toPx(),
-                                    height = size.height + 8.dp.toPx(),
+                                    width = size.width + rectSize.toPx(),
+                                    height = size.height + rectSize.toPx(),
                                 ),
-                                topLeft = Offset(-4.dp.toPx(), -4.dp.toPx()),
+                                topLeft = Offset(topLeft.toPx(), topLeft.toPx()),
                             )
                         }
                     }
@@ -243,10 +238,12 @@ private fun SmoothProgressBar(
     modifier: Modifier = Modifier,
 ) {
     val primary = MaterialTheme.colorScheme.primary
+    val semantic = MaterialTheme.synapse.semantic
 
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
-        animationSpec = tween(500, easing = FastOutSlowInEasing),)
+        animationSpec = tween(500, easing = FastOutSlowInEasing)
+    )
 
     val fillBrush = remember(primary) {
         Brush.horizontalGradient(
@@ -260,7 +257,7 @@ private fun SmoothProgressBar(
                 .fillMaxWidth()
                 .height(11.adp)
                 .clip(CircleShape)
-                .background(primary.copy(alpha = 0.12f)),
+                .background(semantic.primaryContainer),
         ) {
             Box(
                 modifier = Modifier
@@ -272,6 +269,7 @@ private fun SmoothProgressBar(
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview(name = "TopBar Dots — Light, Expanded", showBackground = true, locale = "ar")
