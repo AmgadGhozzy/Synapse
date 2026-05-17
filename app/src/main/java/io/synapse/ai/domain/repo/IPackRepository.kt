@@ -13,6 +13,8 @@ interface IPackRepository {
 
     suspend fun updateQuestionCount(packId: Long, count: Int)
 
+    suspend fun updateModules(packId: Long, modulesJson: String)
+
     suspend fun updatePack(pack: PackModel)
 
     suspend fun deletePack(id: Long)
