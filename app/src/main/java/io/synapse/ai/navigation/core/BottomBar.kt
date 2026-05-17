@@ -27,8 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
@@ -50,10 +48,14 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.navigation.SynapseNavigationItems
 
 private data class BarColors(
     val glassTop: Color,
@@ -168,22 +170,30 @@ fun BottomBar(
             )
         }
 
-        // ── Glow blob ─────────────────────────────────────────────────────────
+        // ── Glow blob  ─────────────────────────────────────────────────────────
         Canvas(
             modifier = Modifier
                 .matchParentSize()
                 .clip(barShape)
-                .blur(radius = 34.adp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         ) {
             withTransform({ if (isRtl) scale(scaleX = -1f, scaleY = 1f, pivot = center) }) {
                 val tabWidth = size.width / visibleItems.size
+
+                val centerOffset = Offset(
+                    x = tabWidth * animatedIndex + tabWidth / 2f,
+                    y = size.height / 2f,
+                )
+                val glowColor = animatedGlow.copy(alpha = if (isDark) 0.55f else 0.35f)
+                val glowRadius = size.height * 1.5f
+
                 drawCircle(
-                    color = animatedGlow.copy(alpha = if (isDark) 0.55f else 0.35f),
-                    radius = size.height * 0.6f,
-                    center = Offset(
-                        x = tabWidth * animatedIndex + tabWidth / 2f,
-                        y = size.height / 2f,
+                    brush = Brush.radialGradient(
+                        colors = listOf(glowColor, Color.Transparent),
+                        center = centerOffset,
+                        radius = glowRadius
                     ),
+                    radius = glowRadius,
+                    center = centerOffset,
                 )
             }
         }
@@ -290,6 +300,24 @@ fun BottomBar(
                     }
                 }
             }
+        }
+    }
+}
+
+@Preview(name = "Android 12 (API 31)", apiLevel = 31, showBackground = true)
+@Preview(name = "Android 8 (API 26)", apiLevel = 36, showBackground = true)
+@Composable
+private fun BottomBarPreview() {
+    SynapseTheme {
+        Box(
+            modifier = Modifier.padding(16.adp),
+            contentAlignment = Alignment.Center
+        ) {
+            BottomBar(
+                items = SynapseNavigationItems.visibleItems,
+                navController = rememberNavController(),
+                currentRoute = SynapseNavigationItems.DASHBOARD.route
+            )
         }
     }
 }

@@ -23,6 +23,12 @@ enum class SynapseNavigationItems(
         iconActive = R.drawable.ic_books_fill,
         titleRes = R.string.synapse_nav_library,
     ),
+    MARKETPLACE(
+        route    = SynapseScreen.Marketplace.route,
+        icon     = R.drawable.ic_layout_grid,
+        iconActive = R.drawable.ic_layout_grid_fill,
+        titleRes = R.string.synapse_nav_marketplace,
+    ),
     STATS(
         route    = SynapseScreen.Stats.route,
         icon     = R.drawable.ic_bar_chart,

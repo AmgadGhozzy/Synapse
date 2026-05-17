@@ -1,5 +1,8 @@
 package io.synapse.ai.navigation
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -97,21 +100,30 @@ fun SynapseNavGraph(
         ) {
             // SynapseNavGraph.kt
             tabComposable(SynapseScreen.Dashboard.route) { entry ->
-                val parentEntry = remember(entry) {
-                    navController.getBackStackEntry("synapse/main")
+                val uri by rootViewModel.sharedUri.collectAsStateWithLifecycle()
+                if (uri != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
+                    )
+                } else {
+                    val parentEntry = remember(entry) {
+                        navController.getBackStackEntry("synapse/main")
+                    }
+                    val vm: DashboardViewModel = hiltViewModel(parentEntry)
+                    DashboardScreen(
+                        viewModel     = vm,
+                        rootViewModel = rootViewModel,
+                        onNavigate    = { route ->
+                            if (route == SynapseScreen.Library.route) {
+                                navController.navigateToStart(route)
+                            } else {
+                                navController.navigate(route)
+                            }
+                        },
+                    )
                 }
-                val vm: DashboardViewModel = hiltViewModel(parentEntry)
-                DashboardScreen(
-                    viewModel     = vm,
-                    rootViewModel = rootViewModel,
-                    onNavigate    = { route ->
-                        if (route == SynapseScreen.Library.route) {
-                            navController.navigateToStart(route)
-                        } else {
-                            navController.navigate(route)
-                        }
-                    },
-                )
             }
 
             tabComposable(SynapseScreen.Library.route) {
@@ -202,8 +214,8 @@ fun SynapseNavGraph(
                 val vm: SessionViewModel = hiltViewModel(parentEntry)
 
                 SessionSummaryScreen(
-                    viewModel       = vm,
-                    onAddPack       = {
+                    viewModel        = vm,
+                    onAddSource      = {
                         navController.navigate(
                             SynapseScreen.AddPdf.createRoute(SynapseScreen.AddPdf.SOURCE_FILE)
                         ) {
@@ -211,16 +223,14 @@ fun SynapseNavGraph(
                             launchSingleTop = true
                         }
                     },
-                    onPasteText     = {
-                        navController.navigate(
-                            SynapseScreen.AddPdf.createRoute(SynapseScreen.AddPdf.SOURCE_TEXT)
-                        ) {
-                            popUpTo(SynapseScreen.Dashboard.route) { inclusive = false }
-                            launchSingleTop = true
-                        }
+                    onReviewMistakes = { _ ->
+                        vm.onReviewMistakes()
                     },
-                    onGoToDashboard = {
-                        navController.navigate(SynapseScreen.Dashboard.route) {
+                    onContinuePack   = { _ ->
+                        vm.onContinuePack()
+                    },
+                    onGoToLibrary    = {
+                        navController.navigate(SynapseScreen.Library.route) {
                             popUpTo("synapse/main") { inclusive = false }
                             launchSingleTop = true
                         }
@@ -237,6 +247,11 @@ fun SynapseNavGraph(
                     type         = NavType.StringType
                     defaultValue = SynapseScreen.AddPdf.SOURCE_FILE
                 },
+                navArgument(SynapseScreen.AddPdf.ARG_URI) {
+                    type         = NavType.StringType
+                    nullable     = true
+                    defaultValue = null
+                }
             ),
             enterTransition    = NavTransitions.verticalEnter(),
             exitTransition     = NavTransitions.verticalExit(),
