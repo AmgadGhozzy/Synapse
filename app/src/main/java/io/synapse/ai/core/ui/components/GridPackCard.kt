@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -74,6 +73,8 @@ fun GridPackCard(
     isSwiped: Boolean = false,
     onSwipeOpen: () -> Unit = {},
     onSwipeClose: () -> Unit = {},
+    showSwipeHint: Boolean = false,
+    onSwipeHintComplete: () -> Unit = {},
     enableSwipeActions: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -103,27 +104,28 @@ fun GridPackCard(
         )
 
     if (enableSwipeActions && actions.isNotEmpty()) {
-        SwipeableCardContainer(
-            actions = actions,
-            isSwiped = isSwiped,
-            onSwipeOpen = onSwipeOpen,
-            onSwipeClose = onSwipeClose,
-            onTap = onClick,
-            verticalActions = true,
-            modifier = shadowModifier,
-        ) {
-            GridPackCardSurface(
-                pack = pack,
-                colorSet = colorSet,
-                semanticGold = semantic.gold,
-                semanticGoldBg = semantic.goldBg,
-                hasDue = hasDue,
-                learnedPct = learnedPct,
-                animatedProgress = animatedProgress,
-                onClick = onClick,
-                isClickable = false,
-            )
-        }
+            SwipeableCardContainer(
+                actions = actions,
+                isSwiped = isSwiped,
+                onSwipeOpen = onSwipeOpen,
+                onSwipeClose = onSwipeClose,
+                onTap = actions.first().onClick,
+                showSwipeHint = showSwipeHint,
+                onSwipeHintComplete = onSwipeHintComplete,
+                verticalActions = true,
+                modifier = shadowModifier,
+            ) {
+                GridPackCardSurface(
+                    pack = pack,
+                    colorSet = colorSet,
+                    semanticGold = semantic.gold,
+                    semanticGoldBg = semantic.goldBg,
+                    hasDue = hasDue,
+                    learnedPct = learnedPct,
+                    animatedProgress = animatedProgress,
+                    onClick = onClick,
+                )
+            }
     } else {
         GridPackCardSurface(
             pack = pack,
@@ -134,7 +136,6 @@ fun GridPackCard(
             learnedPct = learnedPct,
             animatedProgress = animatedProgress,
             onClick = onClick,
-            isClickable = true,
             modifier = shadowModifier,
         )
     }
@@ -150,13 +151,10 @@ private fun GridPackCardSurface(
     learnedPct: Int,
     animatedProgress: Float,
     onClick: () -> Unit,
-    isClickable: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.then(
-            if (isClickable) Modifier.clickable(onClick = onClick) else Modifier
-        ),
+        modifier = modifier,
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surface,
     ) {
@@ -188,7 +186,6 @@ private fun GridPackCardContent(
 
     Column(
         modifier = Modifier
-            .fillMaxHeight()
             .padding(sp.s16),
     ) {
 
@@ -489,7 +486,7 @@ private fun ContinueButton(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(42.adp)
+            .heightIn(min = 42.adp)
             .clip(MaterialTheme.shapes.large)
             .background(buttonBg)
             .border(
@@ -511,15 +508,17 @@ private fun ContinueButton(
             )
             if (hasDue) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    painter = painterResource(id = R.drawable.ic_chevron_right),
                     contentDescription = null,
                     tint = textColor,
-                    modifier = Modifier.size(10.adp),
+                    modifier = Modifier.size(14.adp),
                 )
             }
         }
     }
 }
+
+
 // ── Previews ──────────────────────────────────────────────────────────────────
 
 @Preview(name = "Light — Due", showBackground = true)

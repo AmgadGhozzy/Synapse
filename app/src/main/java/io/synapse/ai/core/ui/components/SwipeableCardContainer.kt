@@ -64,8 +64,8 @@ fun SwipeableCardContainer(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
     verticalActions: Boolean = false,
-    showSwipeHint: Boolean = false,
-    onSwipeHintComplete: () -> Unit = {},
+    showSwipeHint: Boolean,
+    onSwipeHintComplete: () -> Unit,
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -110,9 +110,9 @@ fun SwipeableCardContainer(
             delay(1000L)
             hintOffset.animateTo(
                 targetValue = -hintPeekPx,
-                animationSpec = tween(durationMillis = 350),
+                animationSpec = tween(durationMillis = 600),
             )
-            delay(200L)
+            delay(1000L)
             hintOffset.animateTo(
                 targetValue = 0f,
                 animationSpec = spring(
