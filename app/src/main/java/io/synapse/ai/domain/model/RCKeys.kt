@@ -19,24 +19,12 @@ object RCKeys {
         const val COMPRESSION_QUALITY = "ocr_compression_quality"
     }
 
-    object Global {
-        const val ANALYTICS_ENABLED = "app_analytics_enabled"
-        const val CRASHLYTICS_ENABLED = "app_crashlytics_enabled"
-    }
-
     object Premium {
-        const val TRIAL_DAYS = "monetization_trial_days"
         const val SOCIAL_PROOF_LABEL = "monetization_social_proof_label"
     }
 
     object Session {
         const val AUTOSAVE_INTERVAL_MS = "session_autosave_interval_ms"
-    }
-
-    object Provider {
-        const val GEMINI_MODEL = "provider_gemini_model"
-        const val GROQ_MODEL = "provider_groq_model"
-        const val GPT_MODEL = "provider_gpt_model"
     }
 
     object Sync {
@@ -45,10 +33,6 @@ object RCKeys {
 
     object Ads {
         const val ENABLED = "feature_ads_enabled"
-    }
-
-    object Thinking {
-        const val PRO_LOCKED = "thinking_pro_locked"
     }
 
     object Reviewer {
@@ -63,7 +47,6 @@ object RCKeys {
         const val EMAIL = "app_email"
         const val GITHUB = "app_github"
         const val LINKEDIN = "app_linkedin"
-        const val LICENSE = "app_license"
         const val PRIVACY = "app_privacy"
         const val TERMS = "app_terms"
         const val PLAY_STORE = "app_play_store"

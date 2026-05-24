@@ -21,24 +21,12 @@ object DefaultConfig {
         const val COMPRESSION_QUALITY = 80
     }
 
-    object Global {
-        const val ANALYTICS_ENABLED = true
-        const val CRASHLYTICS_ENABLED = true
-    }
-
     object Premium {
-        const val TRIAL_DAYS = 3
         const val SOCIAL_PROOF_LABEL = "5,000+"
     }
 
     object Session {
         const val AUTOSAVE_INTERVAL_MS = 30_000L
-    }
-
-    object Provider {
-        const val GEMINI_MODEL = "gemini-1.5-flash"
-        const val GROQ_MODEL = "llama-3.1-70b-versatile"
-        const val GPT_MODEL = "gpt-3.5-turbo"
     }
 
     object Sync {
@@ -54,19 +42,19 @@ object DefaultConfig {
     }
 
     object Export {
-        const val FREE_MONTHLY_LIMIT = 5
+        const val FREE_MONTHLY_LIMIT = 10
     }
 
     object AppInfo {
-        const val EMAIL = "synapse.app.ai@gmail.com"
+        const val EMAIL = "trysynapseapp@gmail.com"
         const val GITHUB = "https://github.com/AmgadGhozzy"
-        const val LINKEDIN = "https://linkedin.com/"
+        const val LINKEDIN = "https://linkedin.com/AmgadGhozzy"
 
         const val PRIVACY = "https://synapse-app.netlify.app/privacy.html"
         const val TERMS = "https://synapse-app.netlify.app/terms.html"
         const val PLAY_STORE = "https://play.google.com/store/apps/details?id=io.synapse.ai"
-        const val PLAY_STORE_SEARCH = "https://play.google.com/store/search?q=Amgad Ghozzy&c=apps"
-        const val HELP_URL = "synapse.app.ai@gmail.com"
+        const val PLAY_STORE_SEARCH = "https://play.google.com/store/search?q=SynapseAi&c=apps"
+        const val HELP_URL = "trysynapseapp@gmail.com"
         const val DELETE_ACCOUNT_URL = "https://synapse-app.netlify.app/delete-account.html"
         const val RATE_APP_URL = "market://details?id=io.synapse.ai"
     }
@@ -79,17 +67,11 @@ object DefaultConfig {
         RCKeys.AddPdf.WEB_IMPORT_LOCKED to AddPdf.WEB_IMPORT_LOCKED,
         RCKeys.AddPdf.MAX_FILE_SIZE_MB to AddPdf.MAX_FILE_SIZE_MB,
         RCKeys.AddPdf.MAX_FILE_SIZE_MB_PRO to AddPdf.MAX_FILE_SIZE_MB_PRO,
-        RCKeys.Global.ANALYTICS_ENABLED to Global.ANALYTICS_ENABLED,
-        RCKeys.Global.CRASHLYTICS_ENABLED to Global.CRASHLYTICS_ENABLED,
         RCKeys.AddPdf.OCR_LOCKED to AddPdf.OCR_LOCKED,
         RCKeys.AddPdf.MAX_PAGES to AddPdf.MAX_PAGES,
         RCKeys.AddPdf.COMPRESSION_QUALITY to AddPdf.COMPRESSION_QUALITY,
-        RCKeys.Premium.TRIAL_DAYS to Premium.TRIAL_DAYS,
         RCKeys.Premium.SOCIAL_PROOF_LABEL to Premium.SOCIAL_PROOF_LABEL,
         RCKeys.Session.AUTOSAVE_INTERVAL_MS to Session.AUTOSAVE_INTERVAL_MS,
-        RCKeys.Provider.GEMINI_MODEL to Provider.GEMINI_MODEL,
-        RCKeys.Provider.GROQ_MODEL to Provider.GROQ_MODEL,
-        RCKeys.Provider.GPT_MODEL to Provider.GPT_MODEL,
         RCKeys.Sync.PERIODIC_INTERVAL_MS to Sync.PERIODIC_INTERVAL_MS,
         RCKeys.Ads.ENABLED to Ads.ENABLED,
         RCKeys.Reviewer.REVIEWER_MODE to Reviewer.REVIEWER_MODE,
