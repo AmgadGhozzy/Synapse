@@ -310,7 +310,7 @@ private fun SheetHandle(modifier: Modifier = Modifier) {
     Box(
         modifier         = modifier
             .fillMaxWidth()
-            .padding(top = MaterialTheme.synapse.spacing.s10, bottom = MaterialTheme.synapse.spacing.s16),
+            .padding(vertical = MaterialTheme.synapse.spacing.s12),
         contentAlignment = Alignment.Center,
     ) {
         Box(
