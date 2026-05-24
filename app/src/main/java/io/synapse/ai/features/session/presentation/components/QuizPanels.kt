@@ -41,6 +41,8 @@ import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.tts.TtsState
+import io.synapse.ai.core.ui.components.TtsButton
 import io.synapse.ai.features.session.presentation.screen.previewFlashcardQuestion
 import io.synapse.ai.features.session.presentation.screen.previewMcqQuestion
 import io.synapse.ai.features.session.presentation.screen.previewTfQuestion
@@ -55,6 +57,8 @@ internal fun McqPanel(
     lastAnswerCorrect: Boolean?,
     onOptionSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    ttsState: TtsState = TtsState.Idle,
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val isAnswered = lastAnswerCorrect != null
     val semantic = MaterialTheme.synapse.semantic
@@ -72,6 +76,8 @@ internal fun McqPanel(
             label = stringResource(R.string.quiz_question_label, question.id),
             chipColor = MaterialTheme.colorScheme.primary,
             text = question.questionText,
+            ttsState = ttsState,
+            onSpeak = onSpeak,
             modifier = Modifier.padding(
                 bottom = MaterialTheme.synapse.spacing.s14,
                 top = MaterialTheme.synapse.spacing.s6
@@ -203,6 +209,7 @@ private fun McqOptionRow(
                     fontWeight = FontWeight.ExtraBold,
                     color = semantic.error,
                 )
+
                 else -> Text(
                     text = letter,
                     style = typo.bodyMedium,
@@ -230,6 +237,8 @@ internal fun TrueFalsePanel(
     lastAnswerCorrect: Boolean?,
     onAnswer: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    ttsState: TtsState = TtsState.Idle,
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val isAnswered = lastAnswerCorrect != null
     var selectedAnswer by rememberSaveable { mutableStateOf<Boolean?>(null) }
@@ -240,12 +249,16 @@ internal fun TrueFalsePanel(
             label = stringResource(R.string.quiz_ft_label),
             chipColor = MaterialTheme.colorScheme.primary,
             text = question.questionText,
+            ttsState = ttsState,
+            onSpeak = onSpeak,
             modifier = Modifier.padding(bottom = MaterialTheme.synapse.spacing.s14),
         )
 
         Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = MaterialTheme.synapse.spacing.s6),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = MaterialTheme.synapse.spacing.s6),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
         ) {
             TfButton(
@@ -327,8 +340,7 @@ private fun TfButton(
             .clip(shape)
             .background(containerColor)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 28.adp)
-,
+            .padding(vertical = 28.adp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
     ) {
@@ -353,6 +365,8 @@ internal fun QuestionCard(
     text: String,
     chipColor: Color = MaterialTheme.colorScheme.primary,
     modifier: Modifier = Modifier,
+    ttsState: TtsState = TtsState.Idle,
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val typo = MaterialTheme.typography
     val shape = MaterialTheme.shapes.large
@@ -365,27 +379,32 @@ internal fun QuestionCard(
                 shape = shape,
                 shadow = MaterialTheme.synapse.shadows.medium.toShadow()
             )
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(MaterialTheme.synapse.spacing.s28),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(MaterialTheme.synapse.spacing.s28),
-        ) {
-            Column {
-                QuestionTypeChip(label = label, chipColor = chipColor)
+        Column {
+            QuestionTypeChip(label = label, chipColor = chipColor)
 
-                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
 
-                Text(
-                    text = text,
-                    style = typo.titleLarge.copy(
-                        lineHeight = 32.asp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+            Text(
+                text = text,
+                style = typo.titleLarge.copy(
+                    lineHeight = 32.asp
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        // TTS button — top-end corner, only shown when caller provides onSpeak
+        if (onSpeak != null) {
+            TtsButton(
+                text = text,
+                ttsState = ttsState,
+                onSpeak = onSpeak,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
         }
     }
 }
