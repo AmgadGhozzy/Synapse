@@ -14,6 +14,7 @@ import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.data.sync.SyncScheduler
 import io.synapse.ai.di.NetworkEntryPoint
 import io.synapse.ai.domain.repo.IAuthRepository
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +36,7 @@ class Application : Application() {
     @Inject lateinit var authRepo: IAuthRepository
     @Inject lateinit var premiumManager: PremiumManager
     @Inject lateinit var soundManager: SoundManager
+    @Inject lateinit var syncScheduler: SyncScheduler
 
     override fun onCreate() {
         super.onCreate()
@@ -61,6 +63,9 @@ class Application : Application() {
             authRepo.ensureSignedIn()
                 .onSuccess {
                     premiumManager.verifyWithServer(force = true)
+                    if (authRepo.isAuthenticated()) {
+                        syncScheduler.schedule()
+                    }
                 }
                 .onFailure { e ->
                     Log.e(TAG, "Auth bootstrap failed", e)
