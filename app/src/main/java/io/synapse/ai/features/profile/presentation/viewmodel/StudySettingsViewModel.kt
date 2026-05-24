@@ -2,6 +2,7 @@ package io.synapse.ai.features.profile.presentation.viewmodel
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -10,9 +11,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.core.theme.AppTheme
+import io.synapse.ai.domain.reminder.ReminderScheduler
+import io.synapse.ai.domain.reminder.ReminderSettings
 import io.synapse.ai.features.profile.presentation.state.StudySettingsUiState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -21,7 +25,8 @@ import javax.inject.Named
 
 @HiltViewModel
 class StudySettingsViewModel @Inject constructor(
-    @Named("study_settings") private val dataStore: DataStore<androidx.datastore.preferences.core.Preferences>,
+    @param:Named("study_settings") private val dataStore: DataStore<Preferences>,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
 
     companion object {
@@ -69,11 +74,43 @@ class StudySettingsViewModel @Inject constructor(
     fun decrementReviewLimit() = updateReviewLimit(uiState.value.reviewLimit - REVIEW_STEP)
     fun updateAppTheme(theme: AppTheme) = save { it[KEY_APP_THEME] = theme.name }
 
-    fun updateDailyReminder(enabled: Boolean) = save { it[KEY_DAILY_REMINDER] = enabled } // TODO: implement DailyReminder
+    /**
+     * Toggle the daily reminder on / off.
+     * Persists [enabled] to DataStore, then reads fresh prefs (avoids stale StateFlow
+     * snapshot) and calls [ReminderScheduler.reschedule] to schedule or cancel the alarm.
+     */
+    fun updateDailyReminder(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { it[KEY_DAILY_REMINDER] = enabled }
+            val prefs = dataStore.data.first()
+            val settings = ReminderSettings(
+                isEnabled = enabled,
+                hour      = prefs[KEY_REMINDER_HOUR]   ?: ReminderSettings.DEFAULT_HOUR,
+                minute    = prefs[KEY_REMINDER_MINUTE]  ?: ReminderSettings.DEFAULT_MINUTE,
+            )
+            reminderScheduler.reschedule(settings)
+        }
+    }
 
-    fun updateReminderTime(hour: Int, minute: Int) = save {
-        it[KEY_REMINDER_HOUR]   = hour
-        it[KEY_REMINDER_MINUTE] = minute
+    /**
+     * Update reminder time — persists and reschedules the alarm immediately.
+     * The new time takes effect starting from the next calendar day (or today
+     * if the time hasn't passed yet).
+     */
+    fun updateReminderTime(hour: Int, minute: Int) {
+        viewModelScope.launch {
+            dataStore.edit {
+                it[KEY_REMINDER_HOUR]   = hour
+                it[KEY_REMINDER_MINUTE] = minute
+            }
+            val prefs = dataStore.data.first()
+            val settings = ReminderSettings(
+                isEnabled = prefs[KEY_DAILY_REMINDER] ?: true,
+                hour      = prefs[KEY_REMINDER_HOUR]  ?: hour,
+                minute    = prefs[KEY_REMINDER_MINUTE] ?: minute,
+            )
+            if (settings.isEnabled) reminderScheduler.reschedule(settings)
+        }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

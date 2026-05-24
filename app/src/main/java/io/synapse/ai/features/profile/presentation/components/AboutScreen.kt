@@ -1,10 +1,10 @@
 package io.synapse.ai.features.profile.presentation.components
 
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -14,26 +14,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
-import com.mikepenz.aboutlibraries.ui.compose.android.produceLibraries
-import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
-import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 import io.synapse.ai.R
+import io.synapse.ai.core.theme.tokens.adp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(
     onNavigateBack: () -> Unit,
 ) {
-    val libraries by produceLibraries(R.raw.aboutlibraries)
-
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
@@ -45,7 +38,7 @@ fun AboutScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBackIos,
+                            painter = painterResource(id = R.drawable.ic_chevron_left),
                             contentDescription = stringResource(R.string.cd_back),
                         )
                     }
@@ -59,27 +52,32 @@ fun AboutScreen(
             )
         },
     ) { innerPadding ->
-        LibrariesContainer(
-            libraries = libraries,
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            showAuthor = true,
-            showDescription = false,
-            showVersion = true,
-            showLicenseBadges = true,
-            contentPadding = PaddingValues(
-                horizontal = 16.dp,
-                vertical = 8.dp,
-            ),
-            colors = LibraryDefaults.libraryColors(
-                libraryBackgroundColor = MaterialTheme.colorScheme.surface,
-                libraryContentColor = MaterialTheme.colorScheme.onSurface,
-                dialogConfirmButtonColor = MaterialTheme.colorScheme.primary,
-            ),
-            shapes = LibraryDefaults.libraryShapes(
-                chipShape = MaterialTheme.shapes.large,
+                .padding(innerPadding)
+                .padding(horizontal = 16.adp, vertical = 8.adp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            val libraries = listOf(
+                "Jetpack Compose" to "Google LLC",
+                "Kotlin" to "JetBrains",
+                "Supabase" to "Supabase",
+                "Ktor" to "JetBrains",
+                "Coil" to "Coil Contributors",
+                "Firebase" to "Google LLC",
+                "Vico" to "Patryk Goworowski & Patrick Michalik"
             )
-        )
+            
+            libraries.forEach { (name, author) ->
+                Text(text = name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "By $author", 
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(bottom = 16.adp))
+            }
+        }
     }
 }

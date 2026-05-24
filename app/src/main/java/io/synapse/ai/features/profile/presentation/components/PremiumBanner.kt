@@ -20,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -37,20 +36,21 @@ import io.synapse.ai.core.ui.components.CardShell
 
 @Composable
 fun PremiumBannerCard(
-    gold: Color,
-    goldGrad: Brush,
-    bgGrad: Brush,
     onUpgrade: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val gold = MaterialTheme.synapse.semantic.gold
+    val goldGrad = MaterialTheme.synapse.gradients.premium
+    val bgGrad = MaterialTheme.synapse.gradients.streakHero
+
     CardShell(
-        color     = gold,
-        bgGrad   = bgGrad,
+        color = gold,
+        bgGrad = bgGrad,
         modifier = modifier,
     ) {
         Column(Modifier.padding(MaterialTheme.synapse.spacing.cardLarge)) {
             Row(
-                verticalAlignment     = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.adp),
             ) {
                 // Crown icon box
@@ -62,23 +62,23 @@ fun PremiumBannerCard(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        painter            = painterResource(R.drawable.ic_crown),
+                        painter = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
-                        tint               = Color.White.copy(0.9f),
-                        modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
+                        tint = Color.White.copy(0.9f),
+                        modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text       = stringResource(R.string.profile_premium_title),
-                        style      = MaterialTheme.typography.bodyLarge,
+                        text = stringResource(R.string.profile_premium_title),
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        color      = gold,
+                        color = gold,
                     )
                     Spacer(Modifier.height(2.adp))
                     Text(
-                        text  = stringResource(R.string.profile_premium_subtitle),
+                        text = stringResource(R.string.profile_premium_subtitle),
                         style = MaterialTheme.typography.labelLarge,
                         color = gold.copy(alpha = 0.65f),
                     )
@@ -99,20 +99,20 @@ fun PremiumBannerCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
-                    verticalAlignment     = Alignment.CenterVertically,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.adp),
                 ) {
                     Icon(
-                        painter            = painterResource(R.drawable.ic_crown),
+                        painter = painterResource(R.drawable.ic_crown),
                         contentDescription = null,
-                        tint               = Color.White.copy(0.9f),
-                        modifier           = Modifier.size(16.adp),
+                        tint = Color.White.copy(0.9f),
+                        modifier = Modifier.size(16.adp),
                     )
                     Text(
-                        text       = stringResource(R.string.profile_premium_cta),
-                        style      = MaterialTheme.typography.titleSmall,
+                        text = stringResource(R.string.profile_premium_cta),
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color      = Color.White.copy(0.9f),
+                        color = Color.White.copy(0.9f),
                     )
                 }
             }
@@ -121,17 +121,17 @@ fun PremiumBannerCard(
 }
 
 @Preview(name = "Profile · Premium Banner · Light", showBackground = true)
-@Preview(name = "Profile · Premium Banner · Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(
+    name = "Profile · Premium Banner · Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
 @Composable
 private fun PremiumBannerPreview() {
     SynapseTheme {
-        val synapse = MaterialTheme.synapse
         PremiumBannerCard(
-            gold      = synapse.semantic.gold,
-            goldGrad  = synapse.gradients.gold,
-            bgGrad    = synapse.gradients.streakHero,
             onUpgrade = {},
-            modifier  = Modifier.padding(16.adp),
+            modifier = Modifier.padding(16.adp),
         )
     }
 }

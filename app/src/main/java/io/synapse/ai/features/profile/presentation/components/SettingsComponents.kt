@@ -1,6 +1,7 @@
 package io.synapse.ai.features.profile.presentation.components
 
 import android.content.res.Configuration
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -20,10 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,7 +44,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -186,7 +182,7 @@ fun StepperRow(
                 horizontalArrangement = Arrangement.spacedBy(8.adp),
             ) {
                 StepperButton(
-                    icon = Icons.Rounded.Remove,
+                    iconRes = R.drawable.ic_minus,
                     enabled = value > min,
                     onClick = onDecrement,
                     contentDescription = stringResource(R.string.a11y_decrement, labelDesc),
@@ -198,8 +194,7 @@ fun StepperRow(
                     transitionSpec = {
                         val dir = if (targetState > initialState) 1 else -1
                         slideInVertically { dir * it } togetherWith slideOutVertically { -dir * it }
-                    },
-                    label = "stepper_value",
+                    }
                 ) { count ->
                     Row(
                         modifier = Modifier.widthIn(min = 44.adp),
@@ -224,7 +219,7 @@ fun StepperRow(
                 }
 
                 StepperButton(
-                    icon = Icons.Rounded.Add,
+                    iconRes = R.drawable.ic_plus,
                     enabled = value < max,
                     onClick = onIncrement,
                     contentDescription = stringResource(R.string.a11y_increment, labelDesc),
@@ -237,7 +232,7 @@ fun StepperRow(
 
 @Composable
 private fun StepperButton(
-    icon: ImageVector,
+    @DrawableRes iconRes: Int,
     enabled: Boolean,
     onClick: () -> Unit,
     contentDescription: String,
@@ -254,7 +249,7 @@ private fun StepperButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = icon,
+            painter = painterResource(iconRes),
             contentDescription = contentDescription,
             tint = cs.primary,
             modifier = Modifier
@@ -558,10 +553,10 @@ fun DestructiveSettingsRow(
                 )
             }
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                painter = painterResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
                 tint = error.copy(alpha = 0.6f),
-                modifier = Modifier.size(14.adp),
+                modifier = Modifier.size(22.adp),
             )
         }
         if (hasDivider) SettingsDivider()
@@ -599,10 +594,10 @@ private fun SettingsDivider() {
 @Composable
 fun ProfileChevron(modifier: Modifier = Modifier) {
     Icon(
-        imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+        painter = painterResource(R.drawable.ic_chevron_right),
         contentDescription = null,
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.size(14.adp),
+        modifier = modifier.size(22.adp),
     )
 }
 

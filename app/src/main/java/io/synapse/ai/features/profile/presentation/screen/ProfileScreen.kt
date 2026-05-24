@@ -1,7 +1,11 @@
 package io.synapse.ai.features.profile.presentation.screen
 
+import android.Manifest
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,13 +15,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,8 +46,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
@@ -46,6 +60,7 @@ import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.components.GoogleSignInButton
 import io.synapse.ai.core.ui.components.LoadingContent
 import io.synapse.ai.core.ui.components.SnackbarHost
+import io.synapse.ai.core.ui.components.SynapseSwitch
 import io.synapse.ai.core.ui.components.rememberSnackbarController
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.data.sync.SyncConsent
@@ -53,16 +68,13 @@ import io.synapse.ai.features.profile.presentation.components.ClearDataConfirmDi
 import io.synapse.ai.features.profile.presentation.components.DeleteAccountConfirmDialog
 import io.synapse.ai.features.profile.presentation.components.DestructiveSettingsRow
 import io.synapse.ai.features.profile.presentation.components.LifetimeProgressCard
-import io.synapse.ai.features.profile.presentation.components.PremiumBannerCard
 import io.synapse.ai.features.profile.presentation.components.ProfileAvatarSection
 import io.synapse.ai.features.profile.presentation.components.ProfileChevron
 import io.synapse.ai.features.profile.presentation.components.ProfileSettingsRow
 import io.synapse.ai.features.profile.presentation.components.ProfileSettingsSection
 import io.synapse.ai.features.profile.presentation.components.ProfileSignOutRow
-import io.synapse.ai.features.profile.presentation.components.ProfileStatRow
 import io.synapse.ai.features.profile.presentation.components.ReminderTimePickerDialog
 import io.synapse.ai.features.profile.presentation.components.StepperRow
-import io.synapse.ai.features.profile.presentation.components.SynapseSwitch
 import io.synapse.ai.features.profile.presentation.components.TimeDisplayRow
 import io.synapse.ai.features.profile.presentation.state.ProfileUiState
 import io.synapse.ai.features.profile.presentation.state.StudySettingsUiState
@@ -72,6 +84,7 @@ import io.synapse.ai.features.profile.presentation.viewmodel.StudySettingsViewMo
 @Composable
 fun ProfileScreen(
     onNavigate: (String) -> Unit,
+    onNavigateBack: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
 ) {
@@ -85,6 +98,7 @@ fun ProfileScreen(
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.Navigate -> onNavigate(effect.route)
+                is UiEffect.NavigateBack -> onNavigateBack()
                 is UiEffect.OpenExternal -> uriHandler.openUri(effect.url)
                 is UiEffect.ShowToast -> snackbarController.success(effect.text.asString(context))
                 is UiEffect.ShowError -> snackbarController.error(effect.text.asString(context))
@@ -102,7 +116,7 @@ fun ProfileScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             ProfileContent(
                 uiState = uiState,
-                onUpgrade = viewModel::onUpgradeTapped,
+                isActionLoading = isActionLoading,
                 onPrivacy = viewModel::onPrivacyTapped,
                 onRateApp = viewModel::onRateAppTapped,
                 onContactUs = viewModel::onContactUsTapped,
@@ -132,8 +146,8 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     uiState: ProfileUiState,
+    isActionLoading: Boolean,
     studyViewModel: StudySettingsViewModel = hiltViewModel(),
-    onUpgrade: () -> Unit,
     onPrivacy: () -> Unit,
     onRateApp: () -> Unit,
     onContactUs: () -> Unit,
@@ -153,14 +167,37 @@ private fun ProfileContent(
     modifier: Modifier = Modifier,
 ) {
     val studySettings by studyViewModel.uiState.collectAsStateWithLifecycle()
-    val isDark = studySettings.appTheme == AppTheme.DARK
 
     val synapse = MaterialTheme.synapse
     val semantic = synapse.semantic
     val cs = MaterialTheme.colorScheme
 
+    // ── POST_NOTIFICATIONS permission (Android 13+) ───────────────────────────
+    val context = LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            studyViewModel.updateDailyReminder(true)
+            onPushConsentChanged(true)
+        }
+        // Denied: do nothing — toggle stays off, system already explained denial
+    }
+    // Helper: requests permission if needed on API 33+, otherwise enables directly
+    val requestNotificationPermissionThenEnable: () -> Unit = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !NotificationManagerCompat.from(context).areNotificationsEnabled()
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            studyViewModel.updateDailyReminder(true)
+            onPushConsentChanged(true)
+        }
+    }
+
     // Local UI state — time picker + delete account dialog visibility
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showThemeDialog by rememberSaveable { mutableStateOf(false) }
     var showDeleteAccountDialog by rememberSaveable { mutableStateOf(false) }
     var showClearDataDialog by rememberSaveable { mutableStateOf(false) }
     var showSyncConsentDialog by rememberSaveable { mutableStateOf(false) }
@@ -202,6 +239,49 @@ private fun ProfileContent(
         )
     }
 
+    if (showThemeDialog) {
+        AlertDialog(
+            onDismissRequest = { showThemeDialog = false },
+            title = { Text(stringResource(R.string.profile_theme)) },
+            text = {
+                Column(Modifier.selectableGroup()) {
+                    AppTheme.entries.forEach { theme ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.adp)
+                                .selectable(
+                                    selected = (theme == studySettings.appTheme),
+                                    onClick = {
+                                        studyViewModel.updateAppTheme(theme)
+                                        showThemeDialog = false
+                                    },
+                                    role = Role.RadioButton
+                                )
+                                .padding(horizontal = 16.adp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (theme == studySettings.appTheme),
+                                onClick = null // null recommended for accessibility with row click
+                            )
+                            Spacer(Modifier.width(16.adp))
+                            Text(
+                                text = stringResource(theme.title),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showThemeDialog = false }) {
+                    Text(stringResource(R.string.cancel)) // Using cancel button as "Close"
+                }
+            }
+        )
+    }
+
     // Delete Account confirmation — shown before the irreversible action
     if (showDeleteAccountDialog) {
         DeleteAccountConfirmDialog(
@@ -227,14 +307,13 @@ private fun ProfileContent(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(
-            bottom = MaterialTheme.synapse.spacing.screenContentBottom,
-            top = MaterialTheme.synapse.spacing.screenContentTop
+            bottom = MaterialTheme.synapse.spacing.screenContentBottom
         ),
         verticalArrangement = Arrangement.spacedBy(20.adp),
     ) {
 
         // ── Avatar ────────────────────────────────────────────────────────────
-        item {
+        item(key = "avatar") {
             ProfileAvatarSection(
                 uiState = uiState,
                 modifier = Modifier.padding(horizontal = 20.adp),
@@ -243,9 +322,10 @@ private fun ProfileContent(
 
         // ── Google sign-in prompt (anonymous) ────────────────────────────────
         if (uiState.isAnonymous && !uiState.isLoading) {
-            item {
+            item(key = "google_sign_in") {
                 val context = LocalContext.current
                 GoogleSignInButton(
+                    isLoading = isActionLoading,
                     onClick = { onGoogleSignIn(context) },
                     modifier = Modifier.padding(horizontal = 20.adp),
                 )
@@ -253,7 +333,7 @@ private fun ProfileContent(
         }
 
         // ── Lifetime Progress card ────────────────────────────────────────────
-        item {
+        item(key = "lifetime_progress") {
             LifetimeProgressCard(
                 cardsLearned = uiState.totalCardsLearned,
                 studyTimeHours = uiState.studyTimeHours,
@@ -263,20 +343,17 @@ private fun ProfileContent(
         }
 
         // ── Premium banner (free users only) ───────────────────
-        if (!uiState.isPremium && !uiState.isLoading) {
-            item {
-                PremiumBannerCard(
-                    gold = semantic.gold,
-                    goldGrad = synapse.gradients.gold,
-                    bgGrad = synapse.gradients.streakHero,
-                    onUpgrade = onUpgrade,
-                    modifier = Modifier.padding(horizontal = 20.adp),
-                )
-            }
-        }
+//        if (!uiState.isPremium && !uiState.isLoading) {
+//            item(key = "premium_banner") {
+//                PremiumBannerCard(
+//                    onUpgrade = onUpgrade,
+//                    modifier = Modifier.padding(horizontal = 20.adp),
+//                )
+//            }
+//        }
 
         // ── 1. Study Settings ─────────────────────────────────────────────────
-        item {
+        item(key = "study_settings") {
             StudySettingsSection(
                 studySettings = studySettings,
                 studyViewModel = studyViewModel,
@@ -284,58 +361,37 @@ private fun ProfileContent(
             )
         }
 
+        // ── 3. Notifications ──────────────────────────────────────────────────
+        item(key = "notifications") {
+
+        }
+
         // ── 2. Appearance ─────────────────────────────────────────────────────
-        item {
+        item(key = "appearance") {
             ProfileSettingsSection(
                 title = stringResource(R.string.profile_section_preferences),
                 modifier = Modifier.padding(horizontal = 20.adp),
             ) {
-//        // ── 3. Notifications ──────────────────────────────────────────────────
-//        item {
-//            NotificationsSection(
-//                studySettings  = studySettings,
-//                onToggle       = studyViewModel::updateDailyReminder,
-//                onTimeRowTap   = { showTimePicker = true },
-//                modifier       = Modifier.padding(horizontal = 20.adp),
-//            )
-//        }
-
-                // Push Notifications
-                ProfileSettingsRow(
-                    label = stringResource(R.string.profile_push_notifications),
-                    subLabel = stringResource(
-                        if (uiState.pushEnabled) R.string.profile_enabled
-                        else R.string.profile_disabled
-                    ),
-                    iconRes = R.drawable.ic_bell,
-                    iconTint = cs.primary,
-                    iconBg = cs.primaryContainer.copy(alpha = 0.5f),
-                    hasDivider = true,
-                    onClick = { onPushConsentChanged(!uiState.pushEnabled) },
-                ) {
-                    SynapseSwitch(
-                        checked = uiState.pushEnabled,
-                        onCheckedChange = onPushConsentChanged,
-                    )
-                }
 
                 ProfileSettingsRow(
-                    label = stringResource(R.string.profile_dark_mode),
-                    subLabel = if (isDark) stringResource(R.string.profile_dark_mode_on)
-                    else stringResource(R.string.profile_dark_mode_off),
+                    label = stringResource(R.string.profile_theme),
+                    subLabel = stringResource(studySettings.appTheme.title),
                     iconRes = R.drawable.ic_moon,
                     iconTint = cs.secondary,
-                    iconBg = cs.secondaryContainer.copy(alpha = 0.5f),
-                    hasDivider = false,
-                    onClick = { studyViewModel.updateAppTheme(if (isDark) AppTheme.LIGHT else AppTheme.DARK) },
+                    hasDivider = true,
+                    onClick = { showThemeDialog = true },
                 ) {
-                    SynapseSwitch(
-                        checked = isDark,
-                        onCheckedChange = { studyViewModel.updateAppTheme(if (it) AppTheme.DARK else AppTheme.LIGHT) },
-                        checkedIconRes = R.drawable.ic_moon,
-                        uncheckedIconRes = R.drawable.ic_sun,
-                    )
+                    ProfileChevron()
                 }
+
+                NotificationsSection(
+                    studySettings = studySettings,
+                    onToggle = { enabled ->
+                        if (enabled) requestNotificationPermissionThenEnable()
+                        else studyViewModel.updateDailyReminder(false)
+                    },
+                    onTimeRowTap = { showTimePicker = true }
+                )
 
                 if (uiState.isAnonymous) {
                     ProfileSettingsRow(
@@ -343,13 +399,12 @@ private fun ProfileContent(
                         subLabel = stringResource(R.string.profile_cloud_sync_locked),
                         iconRes = R.drawable.ic_cloud,
                         iconTint = cs.onSurfaceVariant,
-                        iconBg = cs.surfaceVariant.copy(alpha = 0.5f),
                         hasDivider = false,
                         onClick = { /* Locked for anonymous */ },
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_lock),
-                            contentDescription = "Locked",
+                            contentDescription = stringResource(R.string.a11y_locked),
                             tint = cs.onSurfaceVariant
                         )
                     }
@@ -358,8 +413,7 @@ private fun ProfileContent(
                         label = stringResource(R.string.profile_cloud_sync),
                         subLabel = stringResource(R.string.profile_cloud_sync_sub),
                         iconRes = R.drawable.ic_cloud,
-                        iconTint = cs.primary,
-                        iconBg = cs.primaryContainer.copy(alpha = 0.5f),
+                        iconTint = synapse.semantic.gold,
                         hasDivider = false,
                         onClick = {
                             if (!uiState.isSyncEnabled && uiState.consentState != SyncConsent.ACCEPTED) {
@@ -385,7 +439,7 @@ private fun ProfileContent(
         }
 
         // ── 5. Privacy ───────────────────────────────────────────────────────
-        item {
+        item(key = "privacy") {
             ProfileSettingsSection(
                 title = stringResource(R.string.profile_section_privacy),
                 modifier = Modifier.padding(horizontal = 20.adp),
@@ -396,7 +450,6 @@ private fun ProfileContent(
                     subLabel = stringResource(R.string.profile_privacy_policy_sub),
                     iconRes = R.drawable.ic_shield,
                     iconTint = cs.primary,
-                    iconBg = cs.primaryContainer.copy(alpha = 0.55f),
                     hasDivider = true,
                     onClick = onPrivacy,
                 ) { ProfileChevron() }
@@ -407,7 +460,6 @@ private fun ProfileContent(
                     subLabel = stringResource(R.string.profile_licenses_sub),
                     iconRes = R.drawable.ic_info,
                     iconTint = semantic.accent,
-                    iconBg = semantic.accentBg,
                     hasDivider = false,
                     onClick = onAbout,
                 ) { ProfileChevron() }
@@ -421,7 +473,6 @@ private fun ProfileContent(
                     ),
                     iconRes = R.drawable.ic_chart_bar,
                     iconTint = cs.tertiary,
-                    iconBg = cs.tertiaryContainer.copy(alpha = 0.5f),
                     hasDivider = true,
                     onClick = { onAnalyticsConsentChanged(!uiState.analyticsEnabled) },
                 ) {
@@ -440,7 +491,6 @@ private fun ProfileContent(
                     ),
                     iconRes = R.drawable.ic_alert_circle,
                     iconTint = cs.error,
-                    iconBg = cs.errorContainer.copy(alpha = 0.5f),
                     hasDivider = true,
                     onClick = { onCrashConsentChanged(!uiState.crashEnabled) },
                 ) {
@@ -453,7 +503,7 @@ private fun ProfileContent(
         }
 
         // ── 6. Account ────────────────────────────────────────────────────────
-        item {
+        item(key = "account") {
             AccountSection(
                 onRateApp = onRateApp,
                 onContactUs = onContactUs,
@@ -461,7 +511,7 @@ private fun ProfileContent(
             )
         }
 
-        item {
+        item(key = "danger_zone") {
             DangerZoneSection(
                 isAnonymous = uiState.isAnonymous,
                 onClearAllData = { showClearDataDialog = true },
@@ -473,7 +523,7 @@ private fun ProfileContent(
 
         // Sign Out authenticated only
         if (!uiState.isAnonymous && !uiState.isLoading) {
-            item {
+            item(key = "sign_out") {
                 ProfileSignOutRow(
                     onClick = onSignOut,
                     modifier = Modifier.padding(horizontal = 20.adp),
@@ -500,7 +550,6 @@ private fun StudySettingsSection(
             subLabel = stringResource(R.string.settings_daily_goal_sub),
             iconRes = R.drawable.ic_target,
             iconTint = cs.primary,
-            iconBg = cs.primaryContainer.copy(alpha = 0.5f),
             value = studySettings.dailyGoal,
             unit = stringResource(R.string.settings_unit_cards),
             min = StudySettingsViewModel.DAILY_GOAL_MIN,
@@ -514,7 +563,6 @@ private fun StudySettingsSection(
             subLabel = stringResource(R.string.settings_new_cards_day_sub),
             iconRes = R.drawable.ic_brain,
             iconTint = MaterialTheme.synapse.semantic.success,
-            iconBg = MaterialTheme.synapse.semantic.success.copy(alpha = 0.12f),
             value = studySettings.newCardsPerDay,
             unit = stringResource(R.string.settings_unit_cards),
             min = StudySettingsViewModel.NEW_PER_DAY_MIN,
@@ -528,7 +576,6 @@ private fun StudySettingsSection(
             subLabel = stringResource(R.string.settings_review_limit_sub),
             iconRes = R.drawable.ic_refresh_cw,
             iconTint = MaterialTheme.synapse.semantic.gold,
-            iconBg = MaterialTheme.synapse.semantic.gold.copy(alpha = 0.12f),
             value = studySettings.reviewLimit,
             unit = stringResource(R.string.settings_unit_cards),
             min = StudySettingsViewModel.REVIEW_MIN,
@@ -544,47 +591,40 @@ private fun StudySettingsSection(
 private fun NotificationsSection(
     studySettings: StudySettingsUiState,
     onToggle: (Boolean) -> Unit,
-    onTimeRowTap: () -> Unit,
-    modifier: Modifier = Modifier,
+    onTimeRowTap: () -> Unit
 ) {
-    val cs = MaterialTheme.colorScheme
-    ProfileSettingsSection(
-        title = stringResource(R.string.settings_section_notifications),
-        modifier = modifier,
-    ) {
-        // Daily Reminder toggle
-        ProfileSettingsRow(
-            label = stringResource(R.string.settings_daily_reminder),
-            subLabel = stringResource(R.string.settings_daily_reminder_sub),
-            iconRes = R.drawable.ic_bell,
-            iconTint = cs.secondary,
-            iconBg = cs.secondaryContainer.copy(alpha = 0.5f),
-            hasDivider = studySettings.dailyReminderEnabled,
-            onClick = { onToggle(!studySettings.dailyReminderEnabled) },
-        ) {
-            SynapseSwitch(
-                checked = studySettings.dailyReminderEnabled,
-                onCheckedChange = onToggle,
-            )
-        }
+    val cs = MaterialTheme.synapse.semantic
 
-        // Reminder Time row — animated show/hide
-        AnimatedVisibility(
-            visible = studySettings.dailyReminderEnabled,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut(),
-        ) {
-            TimeDisplayRow(
-                label = stringResource(R.string.settings_reminder_time),
-                subLabel = stringResource(R.string.settings_reminder_time_sub),
-                iconRes = R.drawable.ic_bell,
-                iconTint = cs.secondary,
-                iconBg = cs.secondaryContainer.copy(alpha = 0.35f),
-                hour = studySettings.reminderHour,
-                minute = studySettings.reminderMinute,
-                onTap = onTimeRowTap,
-            )
-        }
+    // Daily Reminder toggle
+    ProfileSettingsRow(
+        label = stringResource(R.string.settings_daily_reminder),
+        subLabel = stringResource(R.string.settings_daily_reminder_sub),
+        iconRes = R.drawable.ic_bell,
+        iconTint = cs.success,
+        hasDivider = studySettings.dailyReminderEnabled,
+        onClick = { onToggle(!studySettings.dailyReminderEnabled) },
+    ) {
+        SynapseSwitch(
+            checked = studySettings.dailyReminderEnabled,
+            onCheckedChange = onToggle,
+        )
+    }
+
+    // Reminder Time row — animated show/hide
+    AnimatedVisibility(
+        visible = studySettings.dailyReminderEnabled,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+    ) {
+        TimeDisplayRow(
+            label = stringResource(R.string.settings_reminder_time),
+            subLabel = stringResource(R.string.settings_reminder_time_sub),
+            iconRes = R.drawable.ic_clock,
+            iconTint = cs.primary,
+            hour = studySettings.reminderHour,
+            minute = studySettings.reminderMinute,
+            onTap = onTimeRowTap,
+        )
     }
 }
 
@@ -607,7 +647,6 @@ private fun AccountSection(
             subLabel = stringResource(R.string.profile_rate_app_sub),
             iconRes = R.drawable.ic_star,
             iconTint = semantic.gold,
-            iconBg = semantic.goldBg,
             hasDivider = true,
             onClick = onRateApp,
         ) { ProfileChevron() }
@@ -618,7 +657,6 @@ private fun AccountSection(
             subLabel = stringResource(R.string.profile_contact_us_sub),
             iconRes = R.drawable.ic_mail,
             iconTint = semantic.success,
-            iconBg = semantic.successContainer,
             hasDivider = true,
             onClick = onContactUs,
         ) { ProfileChevron() }
@@ -652,7 +690,7 @@ private fun DangerZoneSection(
                 label = stringResource(R.string.settings_delete_account),
                 subLabel = stringResource(R.string.settings_delete_account_sub),
                 iconRes = R.drawable.ic_user_x,
-                hasDivider = true,                        // ← was false, now true
+                hasDivider = true,
                 onClick = onDeleteAccount,
             )
             // Web deletion: Google Play compliance — external access path
@@ -666,21 +704,6 @@ private fun DangerZoneSection(
         }
     }
 }
-// ── Previews ──────────────────────────────────────────────────────────────────
-
-private val previewProfile = ProfileUiState(
-    userName = "Alex Johnson",
-    userEmail = "alex.johnson@email.com",
-    planLabelRes = R.string.profile_plan_free,
-    avatarInitial = 'A',
-    packCount = 4,
-    cardCount = 470,
-    streakDays = 7,
-    isLoading = false,
-    totalCardsLearned = 470,
-    studyTimeHours = 12.4f,
-    avgRetentionPct = 0.77f,
-)
 
 @Preview(name = "StudySettingsSection · Light", showBackground = true)
 @Preview(
@@ -701,37 +724,6 @@ private fun StudySettingsSectionPreview() {
                 fontWeight = FontWeight.Normal,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(16.adp),
-            )
-        }
-    }
-}
-
-@Preview(name = "LifetimeProgress + Stats · Light", showBackground = true)
-@Preview(
-    name = "LifetimeProgress + Stats · Dark",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true
-)
-@Composable
-private fun LifetimeProgressPreview() {
-    SynapseTheme {
-        val semantic = MaterialTheme.synapse.semantic
-        Column(
-            modifier = Modifier.padding(16.adp),
-            verticalArrangement = Arrangement.spacedBy(12.adp),
-        ) {
-            ProfileStatRow(
-                packCount = 4,
-                cardCount = 470,
-                streakDays = 7,
-                accentColor = MaterialTheme.colorScheme.secondary,
-                successColor = semantic.success,
-                goldColor = semantic.gold,
-            )
-            LifetimeProgressCard(
-                cardsLearned = previewProfile.totalCardsLearned,
-                studyTimeHours = previewProfile.studyTimeHours,
-                avgRetentionPct = previewProfile.avgRetentionPct,
             )
         }
     }

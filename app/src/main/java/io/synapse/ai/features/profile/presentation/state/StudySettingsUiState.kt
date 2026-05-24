@@ -5,11 +5,11 @@ import io.synapse.ai.core.theme.AppTheme
 
 @Immutable
 data class StudySettingsUiState(
-    val dailyGoal: Int = 20,
+    val dailyGoal: Int = 30,
     val newCardsPerDay: Int = 10,
-    val reviewLimit: Int = 100,
+    val reviewLimit: Int = 75,
     val dailyReminderEnabled: Boolean = true,
     val reminderHour: Int = 8,
     val reminderMinute: Int = 0,
-    val appTheme: AppTheme = AppTheme.DARK,
+    val appTheme: AppTheme = AppTheme.SYSTEM,
 )

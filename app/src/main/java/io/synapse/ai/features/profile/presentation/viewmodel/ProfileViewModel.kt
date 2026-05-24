@@ -5,19 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
+import io.synapse.ai.core.analytics.TrackingManager
+import io.synapse.ai.core.analytics.model.AnalyticsEvent
+import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.data.sync.RemoteDataRepository
 import io.synapse.ai.data.sync.SyncConsent
+import io.synapse.ai.data.sync.SyncScheduler
 import io.synapse.ai.domain.repo.IAuthRepository
 import io.synapse.ai.domain.repo.ILocalDataRepository
 import io.synapse.ai.domain.repo.IPackRepository
 import io.synapse.ai.domain.repo.IQuestionRepository
 import io.synapse.ai.domain.repo.ISessionRepository
 import io.synapse.ai.domain.stats.StreakCalculator
-import io.synapse.ai.domain.usecase.ExportDataUseCase
 import io.synapse.ai.features.profile.presentation.state.ProfileUiState
 import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.coroutines.CoroutineDispatcher
@@ -47,9 +50,10 @@ class ProfileViewModel @Inject constructor(
     private val premiumManager: PremiumManager,
     private val consentManager: io.synapse.ai.data.sync.ConsentManager,
     private val syncEngine: io.synapse.ai.data.sync.SyncEngine,
+    private val syncScheduler: SyncScheduler,
     private val appConfigProvider: AppConfigProvider,
     private val analyticsConsentRepo: io.synapse.ai.core.analytics.data.ConsentRepository,
-    private val exportDataUseCase: ExportDataUseCase,
+    private val trackingManager: TrackingManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
@@ -132,8 +136,6 @@ class ProfileViewModel @Inject constructor(
                 initialValue = ProfileUiState(),
             )
 
-    // ── Navigation / simple actions ───────────────────────────────────────────
-    fun onUpgradeTapped()    = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Premium.route))
 
     fun onHelpTapped()       = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appHelpUrl))
     fun onPrivacyTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appPrivacy))
@@ -164,6 +166,7 @@ class ProfileViewModel @Inject constructor(
                     localDataRepo.clearAllLocalData()   // 1. wipe Room cache
                     authRepo.signOut()                  // 2. revoke JWT + new anon session
                     syncEngine.onSignOut()              // 3. Clear sync logic / consent
+                    syncScheduler.cancel()              // 4. Stop background sync worker
                 }
                 _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Dashboard.route))
             } catch (e: Exception) {
@@ -221,7 +224,7 @@ class ProfileViewModel @Inject constructor(
                     }
                     localDataRepo.clearAllLocalData()
                 }
-                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.profile_all_data_cleared)))
+                _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.profile_all_data_cleared), ToastType.SUCCESS))
             } catch (e: Exception) {
                 val errorText = e.message?.takeIf { it.isNotBlank() }?.let {
                     UiText.Raw(R.string.profile_clear_data_failed_message, it)
@@ -240,13 +243,22 @@ class ProfileViewModel @Inject constructor(
 
     fun onGoogleSignIn(activityContext: Context) {
         viewModelScope.launch {
+            _isActionLoading.value = true
             val result = authRepo.linkGoogle(activityContext)
-            result.onFailure {
-                val errorText = it.message?.takeIf { msg -> msg.isNotBlank() }?.let { msg ->
-                    UiText.Raw(R.string.auth_google_sign_in_failed_with_reason, msg)
-                } ?: UiText.Raw(R.string.auth_google_sign_in_failed)
-                _uiEffects.tryEmit(UiEffect.ShowToast(errorText))
-            }
+            _isActionLoading.value = false
+            result
+                .onSuccess {
+                    // Start background sync for newly authenticated user
+                    syncScheduler.schedule()
+                    // Navigate back to wherever launched ProfileScreen (e.g. the paywall)
+                    _uiEffects.tryEmit(UiEffect.NavigateBack)
+                }
+                .onFailure {
+                    val errorText = it.message?.takeIf { msg -> msg.isNotBlank() }?.let { msg ->
+                        UiText.Raw(R.string.auth_google_sign_in_failed_with_reason, msg)
+                    } ?: UiText.Raw(R.string.auth_google_sign_in_failed)
+                    _uiEffects.tryEmit(UiEffect.ShowToast(errorText, ToastType.ERROR))
+                }
         }
     }
 
@@ -284,6 +296,9 @@ class ProfileViewModel @Inject constructor(
     fun onAnalyticsConsentChanged(enabled: Boolean) {
         viewModelScope.launch {
             analyticsConsentRepo.updateAnalytics(enabled)
+            // Fire the opt-in event BEFORE potentially disabling analytics,
+            // so we capture the user's last preference change.
+            trackingManager.logEvent(AnalyticsEvent.AnalyticsOptInChanged(enabled))
         }
     }
 
