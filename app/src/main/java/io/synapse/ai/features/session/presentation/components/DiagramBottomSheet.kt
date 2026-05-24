@@ -1,5 +1,6 @@
 package io.synapse.ai.features.session.presentation.components
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -49,7 +50,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import coil3.ImageLoader
 import coil3.compose.SubcomposeAsyncImage
+import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import io.synapse.ai.R
@@ -59,6 +62,10 @@ import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.ui.components.CloseButton
 import io.synapse.ai.core.ui.components.SecondaryButton
 import io.synapse.ai.core.ui.components.WavyLoadingIndicator
+import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
+
+// ─── Bottom Sheet ─────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +94,24 @@ fun DiagramBottomSheet(
         )
     }
 
+    val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                add(
+                    OkHttpNetworkFetcherFactory(
+                        callFactory = {
+                            OkHttpClient.Builder()
+                                .connectTimeout(60, TimeUnit.SECONDS)
+                                .readTimeout(60, TimeUnit.SECONDS)
+                                .writeTimeout(60, TimeUnit.SECONDS)
+                                .build()
+                        }
+                    ))
+            }
+            .build()
+    }
+
     val surfaceColor = MaterialTheme.colorScheme.surface
 
     ModalBottomSheet(
@@ -105,9 +130,11 @@ fun DiagramBottomSheet(
                 .fillMaxHeight(0.75f)
                 .navigationBarsPadding(),
         ) {
-            // ── 1. Zoomable diagram — bottom z-layer ──────────────────────────
+
             ZoomableDiagramImage(
                 url = diagramUrl,
+                mermaidCode = mermaid,
+                imageLoader = imageLoader,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = 16.adp, bottom = 116.adp),
@@ -182,7 +209,6 @@ private fun FloatingDiagramHeader(
     surfaceColor: Color,
     modifier: Modifier = Modifier,
 ) {
-
     Box(
         modifier = modifier
             .height(84.adp)
@@ -197,8 +223,8 @@ private fun FloatingDiagramHeader(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Drag handle pill
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
+
             Box(
                 modifier = Modifier
                     .size(width = 40.adp, height = 4.adp)
@@ -230,35 +256,44 @@ private fun FloatingDiagramHeader(
                     maxLines = 1,
                 )
 
-                // Symmetrical spacer so title stays centered
                 Spacer(modifier = Modifier.size(44.adp))
             }
         }
     }
 }
 
-// ─── Zoomable image ───────────────────────────────────────────────────────────
-
 @Composable
 private fun ZoomableDiagramImage(
     url: String,
+    mermaidCode: String,
+    imageLoader: ImageLoader,
     modifier: Modifier = Modifier,
 ) {
+    var useFallback by remember { mutableStateOf(false) }
+
+    if (useFallback) {
+        MindMapScreen(mermaidCode = mermaidCode)
+        return
+    }
+
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var retryTrigger by remember { mutableIntStateOf(0) }
 
     val animatedScale by animateFloatAsState(
         targetValue = scale,
-        animationSpec = spring(stiffness = 300f)
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        )
     )
     val animatedOffsetX by animateFloatAsState(
         targetValue = offset.x,
-        animationSpec = spring(stiffness = 300f)
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
     val animatedOffsetY by animateFloatAsState(
         targetValue = offset.y,
-        animationSpec = spring(stiffness = 300f)
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
     )
 
     val context = LocalContext.current
@@ -268,6 +303,12 @@ private fun ZoomableDiagramImage(
             .diskCacheKey(url)
             .memoryCacheKey(url)
             .crossfade(true)
+            .listener(
+                onError = { _, _ ->
+                    android.util.Log.e("Diagram", "Failed: $url")
+                    useFallback = true
+                }
+            )
             .build()
     }
 
@@ -280,11 +321,11 @@ private fun ZoomableDiagramImage(
                 }
             }
             .pointerInput(Unit) {
-                // Double-tap to reset zoom & pan
                 detectTapGestures(
                     onDoubleTap = {
-                        scale = if (scale == 1f) 3f else 1f
-                        offset = if (scale == 1f) offset else Offset.Zero
+                        val wasZoomedIn = scale > 1.2f
+                        scale = if (wasZoomedIn) 1f else 2.5f
+                        offset = if (wasZoomedIn) Offset.Zero else offset
                     }
                 )
             },
@@ -293,6 +334,7 @@ private fun ZoomableDiagramImage(
         key(retryTrigger) {
             SubcomposeAsyncImage(
                 model = imageRequest,
+                imageLoader = imageLoader,
                 contentDescription = stringResource(R.string.quiz_diagram_cd),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier
@@ -359,21 +401,21 @@ internal fun buildMermaidInkUrl(
     onSurfaceHex: String = "1c1b1f",
 ): String {
 
-    // 1. Strip markdown fences
+    // ── Step 1: strip markdown fences ────────────────────────────────────────
     var clean = mermaidCode
         .removePrefix("```mermaid")
         .removePrefix("```")
         .removeSuffix("```")
         .trim()
 
+    // ── Step 2: sanitize broken AI-generated patterns ─────────────────────────
+    clean = sanitizeMermaid(clean)
     clean = clean.replace(
         Regex("""(?<!\()\["([^"]+)"](?!\))""")
     ) { match -> """(["${match.groupValues[1]}"])""" }
 
-    // 3. Build %%{init}%% with look + themeVariables
-    val alreadyHasInit = "%%{init" in clean
-
-    val mermaidSource = if (!alreadyHasInit) {
+    // ── Step 4: prepend %%{init}%% if not already present ────────────────────
+    if ("%%{init" !in clean) {
         val initBlock = """
             %%{init: {
               'look': 'handDrawn',
@@ -386,25 +428,43 @@ internal fun buildMermaidInkUrl(
               }
             }}%%
         """.trimIndent()
-        "$initBlock\n$clean"
-    } else {
-        if ("look" !in clean) clean =
-            clean.replaceFirst("%%{init:", "%%{init: 'look': 'handDrawn',")
-        clean
+        clean = "$initBlock\n$clean"
     }
 
-    // 4. Base64-URL-safe encode
+    // ── Step 5: Base64-URL-safe encode ────────────────────────────────────────
     val encoded = android.util.Base64.encodeToString(
-        mermaidSource.toByteArray(Charsets.UTF_8),
+        clean.toByteArray(Charsets.UTF_8),
         android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP,
     )
 
-    // 5. Assemble final URL
+    // ── Step 6: assemble URL ──────────────────────────────────────────────────
     val theme = if (darkTheme) "dark" else "default"
     return "https://mermaid.ink/img/$encoded" +
-            "?type=webp" +
-            "&theme=$theme" +
+            "?theme=$theme" +
             "&bgColor=$bgColorHex" +
             "&width=1200" +
-            "&scale=3"
+            "&scale=2"
+}
+
+private fun sanitizeMermaid(code: String): String {
+    var result = code
+    result = result.lines()
+        .filterNot { line ->
+            line.trim().matches(Regex("""[A-Za-z0-9_]+\[.*]\s*:::.*"""))
+        }
+        .joinToString("\n")
+
+    result = result.replace(
+        Regex("""(classDef\s+)default(\s)"""),
+        "$1nodeDefault$2",
+    )
+    // Also update any `class X,Y default` applications
+    result = result.replace(
+        Regex("""(class\s+[\w,\s]+\s)default\b"""),
+        "$1nodeDefault",
+    )
+
+    result = result.replace(Regex("\n{3,}"), "\n\n")
+
+    return result.trim()
 }
