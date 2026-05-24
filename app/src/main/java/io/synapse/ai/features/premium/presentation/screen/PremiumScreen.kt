@@ -12,15 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -36,13 +30,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.CloseButton
 import io.synapse.ai.core.ui.components.LoadingContent
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
@@ -69,7 +62,14 @@ fun SynapsePremiumScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = remember(context) {
+        var currentContext = context
+        while (currentContext is android.content.ContextWrapper) {
+            if (currentContext is Activity) break
+            currentContext = currentContext.baseContext
+        }
+        currentContext as? Activity
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -138,7 +138,7 @@ private fun PremiumReadyContent(
     var bottomSheetHeight by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.synapse.gradients.page)) {
         AmbientOrb(
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             size = 280.adp,
@@ -182,7 +182,7 @@ private fun PremiumReadyContent(
                     shadow = MaterialTheme.synapse.shadows.strong.toShadow()
                 )
                 .background(
-                    brush = MaterialTheme.synapse.gradients.page,
+                    color = MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(topStart = 32.adp, topEnd = 32.adp)
                 )
         ) {
@@ -218,21 +218,11 @@ private fun PremiumReadyContent(
                 .fillMaxWidth()
                 .padding(
                     top = MaterialTheme.synapse.spacing.screen,
-                    end = MaterialTheme.synapse.spacing.screen
+                    start = MaterialTheme.synapse.spacing.screen
                 ),
-            contentAlignment = Alignment.CenterEnd,
+            contentAlignment = Alignment.CenterStart,
         ) {
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier.size(48.adp),
-                shape = CircleShape,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = stringResource(R.string.premium_close),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(0.8f),
-                )
-            }
+            CloseButton(onDismiss)
         }
     }
 }

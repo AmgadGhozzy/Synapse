@@ -27,8 +27,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -41,7 +39,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
@@ -55,16 +52,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.rememberLottieComposition
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.LocalGradientTokens
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.features.premium.presentation.state.PremiumPlanUiModel
 import io.synapse.ai.features.premium.presentation.state.ProFeatureUiModel
 import io.synapse.ai.features.premium.presentation.state.SocialProofData
@@ -432,10 +426,14 @@ fun CtaSection(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier            = modifier.fillMaxWidth(),
     ) {
-        PremiumCtaButton(
-            freeTrialStr = selectedProduct?.freeTrialStr,
-            isPurchasing = isPurchasing,
-            onClick      = onStartTrial,
+        val ctaText = selectedProduct?.freeTrialStr?.let { trial ->
+            if (trial.isNotBlank()) stringResource(R.string.premium_cta_trial_dynamic, trial) else null
+        } ?: stringResource(R.string.premium_cta_subscribe)
+        PrimaryGradientButton(
+            text      = ctaText,
+            enabled   = !isPurchasing,
+            isLoading = isPurchasing,
+            onClick   = onStartTrial,
         )
 
         // billing disclosure note
@@ -448,87 +446,23 @@ fun CtaSection(
             modifier  = Modifier.padding(horizontal = spacing.s16),
         )
 
-        socialProof?.let { proof ->
-            Spacer(Modifier.height(spacing.s12))
-            SocialProofRow(socialProof = proof)
-        }
+//        socialProof?.let { proof ->
+//            Spacer(Modifier.height(spacing.s12))
+//            SocialProofRow(socialProof = proof)
+//        }
 
         Spacer(Modifier.height(spacing.s8))
         TrustLine()
-
-        Text(
-            text      = stringResource(R.string.premium_cta_skip),
-            style     = MaterialTheme.typography.bodyMedium,
-            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
-            textAlign = TextAlign.Center,
-            modifier  = Modifier
-                .clickable(onClick = onDismiss)
-                .padding(top = spacing.s10, bottom = spacing.s6),
-        )
-    }
-}
-
-
-@Composable
-internal fun PremiumCtaButton(
-    freeTrialStr: String?,
-    isPurchasing : Boolean,
-    onClick      : () -> Unit,
-    modifier     : Modifier = Modifier,
-) {
-    val shape = MaterialTheme.shapes.medium
-    val ctaText = if (!freeTrialStr.isNullOrBlank()) {
-        stringResource(R.string.premium_cta_trial_dynamic, freeTrialStr)
-    } else {
-        stringResource(R.string.premium_cta_subscribe)
-    }
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = modifier
-            .fillMaxWidth()
-            .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.cta.toShadow())
-            .height(60.adp)
-            .clip(shape)
-            .background(MaterialTheme.synapse.gradients.primary)
-            .clickable(enabled = !isPurchasing, onClick = onClick)
-    ) {
-        Box(modifier = Modifier.matchParentSize().clipToBounds()) {
-            ShimmerSweep(durationMs = 2_600, delayMs = 1_200)
-        }
-
-        if (isPurchasing) {
-            LottieAnimation(
-                composition  = rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.dot_loading)).value,
-                iterations   = LottieConstants.IterateForever,
-                contentScale = ContentScale.FillWidth,
-                modifier     = Modifier.fillMaxWidth(0.35f).blur(0.5.adp),
-                speed        = 0.8f,
-            )
-        } else {
-            Row(
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-            ) {
-                Icon(
-                    painter            = painterResource(R.drawable.ic_gem),
-                    contentDescription = null,
-                    tint               = Color.White.copy(alpha = 0.90f),
-                    modifier           = Modifier.size(18.adp),
-                )
-                Text(
-                    text  = ctaText,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White.copy(alpha = 0.90f),
-                )
-                Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = stringResource(R.string.a11y_continue),
-                    tint               = Color.White.copy(alpha = 0.90f),
-                    modifier           = Modifier.size(14.adp),
-                )
-            }
-        }
+        Spacer(Modifier.height(spacing.s12))
+//        Text(
+//            text      = stringResource(R.string.premium_cta_skip),
+//            style     = MaterialTheme.typography.bodyMedium,
+//            color     = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f),
+//            textAlign = TextAlign.Center,
+//            modifier  = Modifier
+//                .clickable(onClick = onDismiss)
+//                .padding(top = spacing.s10, bottom = spacing.s6),
+//        )
     }
 }
 

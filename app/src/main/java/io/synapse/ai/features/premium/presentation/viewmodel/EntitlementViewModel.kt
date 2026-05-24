@@ -11,19 +11,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * Exposes gold/premium status to any Compose screen.
- *
- * S-1 FIX: Screens must observe premium state through the ViewModel layer,
- * not by injecting PremiumManager directly. Exposes isPro and entitlement
- * as StateFlow so Compose can use collectAsStateWithLifecycle().
- */
 @HiltViewModel
 class EntitlementViewModel @Inject constructor(
     private val premiumManager: PremiumManager,
 ) : ViewModel() {
 
-    /** True when the user holds an active Pro entitlement. */
     val isPro: StateFlow<Boolean> = premiumManager.isPro
         .stateIn(
             scope = viewModelScope,
@@ -31,7 +23,6 @@ class EntitlementViewModel @Inject constructor(
             initialValue = premiumManager.isPro.value,
         )
 
-    /** Full entitlement details (tier, expiry, status). */
     val entitlement: StateFlow<Entitlement> = premiumManager.entitlement
         .stateIn(
             scope = viewModelScope,
@@ -39,17 +30,10 @@ class EntitlementViewModel @Inject constructor(
             initialValue = premiumManager.entitlement.value,
         )
 
-    init {
-        premiumManager.initialize()
-    }
-
     fun onResume() = premiumManager.verifyWithServer()
-
     fun onRefresh() = premiumManager.verifyWithServer(force = true)
 
     fun onSignOut() {
-        viewModelScope.launch {
-            premiumManager.clearOnSignOut()
-        }
+        viewModelScope.launch { premiumManager.clearOnSignOut() }
     }
 }

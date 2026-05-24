@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.synapse.ai.R
+import io.synapse.ai.core.analytics.TrackingManager
+import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.domain.model.ProductDetails
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -36,7 +39,8 @@ class PremiumViewModel @Inject constructor(
     private val billingRepository: IBillingRepository,
     private val premiumManager: PremiumManager,
     private val authRepository: IAuthRepository,
-    @ApplicationContext private val appContext: Context,
+    private val trackingManager: TrackingManager,
+    @param:ApplicationContext private val appContext: Context,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PremiumUiState>(PremiumUiState.Loading)
@@ -49,9 +53,18 @@ class PremiumViewModel @Inject constructor(
 
     init {
         loadPaywall()
+        observeProStatus()
         observePurchaseResults()
     }
-
+    private fun observeProStatus() {
+        viewModelScope.launch {
+            premiumManager.isPro.collect { isPro ->
+                if (isPro && _uiState.value !is PremiumUiState.AlreadyPremium) {
+                    _uiState.value = PremiumUiState.AlreadyPremium
+                }
+            }
+        }
+    }
     private fun observePurchaseResults() {
         // W-7 FIX: purchaseResults and billingErrors are declared on IBillingRepository.
         // The previous `is BillingRepositoryImpl` type-check broke the abstraction,
@@ -81,7 +94,7 @@ class PremiumViewModel @Inject constructor(
     fun loadPaywall() {
         viewModelScope.launch {
             _uiState.value = PremiumUiState.Loading
-
+            premiumManager.isReady.first { it }
             // Check if already gold
             if (premiumManager.isPro.value) {
                 _uiState.value = PremiumUiState.AlreadyPremium
@@ -132,6 +145,7 @@ class PremiumViewModel @Inject constructor(
                     ?: "",
                 socialProof = socialProofDeferred.await().getOrNull(),
             )
+            trackingManager.logEvent(AnalyticsEvent.PaywallViewed("manual"))
         }
     }
 
@@ -178,6 +192,7 @@ class PremiumViewModel @Inject constructor(
             }
 
             val accountId = authRepository.getUserId()
+            trackingManager.logEvent(AnalyticsEvent.PurchaseStarted(skuId))
 
             // Launch billing flow asynchronously
             launchBillingFlowAsync(activity, productDetails, accountId)
@@ -221,18 +236,25 @@ class PremiumViewModel @Inject constructor(
                 _uiState.update { current ->
                     (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
                 }
+                trackingManager.logEvent(AnalyticsEvent.PurchaseCompleted(skuId))
                 _events.emit(PremiumEvent.PurchaseSuccess(skuId))
             },
             onFailure = { error ->
                 _uiState.update { current ->
                     (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
                 }
+                trackingManager.logEvent(
+                    AnalyticsEvent.PurchaseFailed(skuId, error::class.simpleName ?: "Unknown")
+                )
                 _events.emit(PremiumEvent.PurchaseFailed(error.message ?: "Verification failed"))
             }
         )
     }
 
-    fun restorePurchases() = premiumManager.verifyWithServer()
+    fun restorePurchases() {
+        trackingManager.logEvent(AnalyticsEvent.SubscriptionRestored)
+        premiumManager.verifyWithServer()
+    }
 
     fun dismiss() = viewModelScope.launch { _events.emit(PremiumEvent.Dismissed) }
 
