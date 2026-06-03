@@ -9,5 +9,7 @@ interface IProgressRepository {
     suspend fun saveProgressBatch(list: List<QuestionProgressModel>)
     suspend fun getProgress(questionId: Long): QuestionProgressModel?
     suspend fun getLastReviewedForPack(packId: Long): Long?
+    suspend fun getReviewedEpochDaysForPack(packId: Long): List<Long>
+    suspend fun getAllReviewedEpochDays(): List<io.synapse.ai.data.entity.PackReviewedDay>
     suspend fun getAllProgressForExport(): List<QuestionProgressModel>
 }

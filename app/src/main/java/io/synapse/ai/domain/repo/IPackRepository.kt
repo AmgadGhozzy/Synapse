@@ -7,6 +7,8 @@ interface IPackRepository {
 
     fun observeAllPacks(): Flow<List<PackModel>>
 
+    fun observePackOverviews(): Flow<List<io.synapse.ai.domain.model.PackOverviewModel>>
+
     suspend fun createPack(pack: PackModel): Long
 
     suspend fun getPackById(id: Long): PackModel?

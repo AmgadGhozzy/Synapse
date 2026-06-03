@@ -15,6 +15,10 @@ interface IQuestionRepository {
 
     suspend fun countByPack(packId: Long): Int
 
+    suspend fun getPackProgressStats(packId: Long): io.synapse.ai.domain.model.PackProgressStats
+
+    suspend fun getAllPackProgressStats(): List<io.synapse.ai.domain.model.PackProgressStats>
+
     suspend fun getAllQuestionsForExport(): List<QuestionModel>
 
     suspend fun updateQuestion(question: QuestionModel)
