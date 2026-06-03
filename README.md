@@ -333,8 +333,7 @@ Synapse/
 │   └── functions/
 │       ├── generate-pack/               # AI card generation orchestrator
 │       └── validate-subscription/       # Server-side entitlement validator
-├── fastlane/
-│   └── metadata/android/en-US/images/   # App screenshots and banner for README
+├── screenshots/              # App screenshots for README gallery
 └── README.md
 ```
 
