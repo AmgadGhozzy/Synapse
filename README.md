@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./images/logo/logo.png" width="180" alt="Synapse Logo" />
+<img src="./app/src/main/ic_launcher-playstore.png" width="180" alt="Synapse Logo" />
 
 # 🧠 Synapse — AI-Powered Knowledge Retention
 
@@ -132,14 +132,16 @@ Multiple study modes: **MIXED**, **MCQ_ONLY**, **FLASHCARD_ONLY**, **TF_ONLY**, 
 
 ## 📸 Screenshots
 
-<div align="center">
-
-| | | | |
-|---|---|---|---|
-| <img src="./screenshots/screen-01.png" width="200" alt="Learn Faster" /><br/><sub>**Learn Faster**</sub> | <img src="./screenshots/screen-02.png" width="200" alt="Turn Any Content Into Learning" /><br/><sub>**Turn Any Content Into Learning**</sub> | <img src="./screenshots/screen-03.png" width="200" alt="AI Builds Your Study Pack" /><br/><sub>**AI Builds Your Study Pack**</sub> | <img src="./screenshots/screen-04.png" width="200" alt="Learn by Practicing" /><br/><sub>**Learn by Practicing**</sub> |
-| <img src="./screenshots/screen-05.png" width="200" alt="Understand Every Mistake" /><br/><sub>**Understand Every Mistake**</sub> | <img src="./screenshots/screen-06.png" width="200" alt="Never Forget" /><br/><sub>**Never Forget What You Study**</sub> | <img src="./screenshots/screen-07.png" width="200" alt="Track Real Progress" /><br/><sub>**Track Real Progress**</sub> | <img src="./screenshots/screen-08.png" width="200" alt="Study Smarter" /><br/><sub>**Study Smarter With Synapse**</sub> |
-
-</div>
+<p align="middle">
+    <img src="./fastlane/metadata/android/en-US/images/banner/banner1.png" width="99%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/01.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/02.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/03.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/04.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/05.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/06.png" width="13%" />
+    <img src="./fastlane/metadata/android/en-US/images/phoneScreenshots/07.png" width="13%" />
+</p>
 
 ---
 
@@ -331,7 +333,8 @@ Synapse/
 │   └── functions/
 │       ├── generate-pack/               # AI card generation orchestrator
 │       └── validate-subscription/       # Server-side entitlement validator
-├── screenshots/              # App screenshots for README gallery
+├── fastlane/
+│   └── metadata/android/en-US/images/   # App screenshots and banner for README
 └── README.md
 ```
 
