@@ -17,7 +17,7 @@ import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.data.repo.QuizSessionManager
-import io.synapse.ai.domain.model.PackModel
+import io.synapse.ai.domain.model.PackOverviewModel
 import io.synapse.ai.domain.repo.IPackRepository
 import io.synapse.ai.domain.repo.IProgressRepository
 import io.synapse.ai.domain.repo.IQuestionRepository
@@ -25,8 +25,8 @@ import io.synapse.ai.domain.repo.ISessionRepository
 import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
 import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -50,14 +50,10 @@ class DashboardViewModel @Inject constructor(
     private val appConfigProvider: AppConfigProvider,
     @param:Named("study_settings") private val dataStore: DataStore<Preferences>,
     private val quizSessionManager: QuizSessionManager,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
-
-    private val _showSwipeHint = MutableStateFlow(false)
-    val showSwipeHint: StateFlow<Boolean> = _showSwipeHint.asStateFlow()
 
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
@@ -115,92 +111,97 @@ class DashboardViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
                 combine(
-                    packRepo.observeAllPacks(),
+                    packRepo.observePackOverviews(),
                     premiumManager.isPro,
                     sessionRepo.observeLastSessionFinishedAt(),
                     dataStore.data,
                     appConfigProvider.libraryFreePackLimitFlow,
                 ) { packs, isPremiumUser, _, prefs, packLimit ->
-                    DashboardData(packs, isPremiumUser, prefs[intPreferencesKey("daily_goal")] ?: 20, packLimit)
+                    DashboardData(packs, isPremiumUser, prefs[intPreferencesKey("daily_goal")] ?: 20, packLimit, prefs[booleanPreferencesKey("swipe_hint_shown")] != true)
                 }
-                .collectLatest { data ->
-                    val isPremium = data.isPremium
-                    val totalPackCount = data.packs.size
-                    val isPackLimitReached = totalPackCount >= data.packLimit
+                    .collectLatest { data ->
+                        val isPremium = data.isPremium
+                        val totalPackCount = data.packs.size
+                        val isPackLimitReached = totalPackCount >= data.packLimit
 
-                    val MS_PER_DAY = 86_400_000L
-                    val nowMs = System.currentTimeMillis()
-                    val todayIndex = nowMs / MS_PER_DAY
-                    val todayMidnightMs = todayIndex * MS_PER_DAY
+                        val MS_PER_DAY = 86_400_000L
+                        val nowMs = System.currentTimeMillis()
+                        val todayIndex = nowMs / MS_PER_DAY
+                        val todayMidnightMs = todayIndex * MS_PER_DAY
 
-                    val studiedIndices = sessionRepo.getStudiedDayIndices()
-                    val currentStreak = io.synapse.ai.domain.stats.StreakCalculator.currentStreak(studiedIndices, todayIndex)
+                        val (allActivity, allDisplayItems) = coroutineScope {
+                            val activityDef = async { sessionRepo.getDailyActivity(0, Long.MAX_VALUE) }
+                            val buildBatchDef = async {
+                                PackDisplayItemBuilder.buildBatch(
+                                    packs = data.packs,
+                                    questionRepo = questionRepo,
+                                    progressRepo = progressRepo
+                                )
+                            }
+                            Pair(activityDef.await(), buildBatchDef.await())
+                        }
+                        
+                        val studiedIndices = allActivity.map { it.dayEpochMs / MS_PER_DAY }.sortedDescending()
+                        val currentStreak = io.synapse.ai.domain.stats.StreakCalculator.currentStreak(studiedIndices, todayIndex)
 
-                    val todayStudied = sessionRepo.getDailyActivity(todayMidnightMs, todayMidnightMs + MS_PER_DAY)
-                        .firstOrNull()?.questionsStudied ?: 0
+                        val todayStudied = allActivity.firstOrNull { it.dayEpochMs == todayMidnightMs }?.questionsStudied ?: 0
 
-                    val (thisMondayMs, thisNextMondayMs) = io.synapse.ai.domain.stats.StreakCalculator.currentWeekBounds(nowMs)
-                    val lastMondayMs = thisMondayMs - 7 * MS_PER_DAY
+                        val (thisMondayMs, thisNextMondayMs) = io.synapse.ai.domain.stats.StreakCalculator.currentWeekBounds(nowMs)
+                        val lastMondayMs = thisMondayMs - 7 * MS_PER_DAY
 
-                    val thisWeekActivity = sessionRepo.getDailyActivity(thisMondayMs, thisNextMondayMs)
-                    val lastWeekActivity = sessionRepo.getDailyActivity(lastMondayMs, thisMondayMs)
+                        val thisWeekActivity = allActivity.filter { it.dayEpochMs in thisMondayMs until thisNextMondayMs }
+                        val lastWeekActivity = allActivity.filter { it.dayEpochMs in lastMondayMs until thisMondayMs }
 
-                    val accuracyPct = if (thisWeekActivity.isEmpty()) 0
-                    else (thisWeekActivity.map { it.accuracy }.average() * 100).toInt()
+                        val accuracyPct = if (thisWeekActivity.isEmpty()) 0
+                        else (thisWeekActivity.map { it.accuracy }.average() * 100).toInt()
 
-                    val lastAccuracyPct = if (lastWeekActivity.isEmpty()) 0
-                    else (lastWeekActivity.map { it.accuracy }.average() * 100).toInt()
+                        val lastAccuracyPct = if (lastWeekActivity.isEmpty()) 0
+                        else (lastWeekActivity.map { it.accuracy }.average() * 100).toInt()
 
-                    val accuracyDelta = if (lastWeekActivity.isEmpty()) null
-                    else accuracyPct - lastAccuracyPct
+                        val accuracyDelta = if (lastWeekActivity.isEmpty()) null
+                        else accuracyPct - lastAccuracyPct
 
-                    val totalDurationMs = sessionRepo.getDailyActivity(0, Long.MAX_VALUE).sumOf { it.totalDurationMs }
-                    val timeStudiedMinutes = (totalDurationMs / 60_000L).toInt()
-
-                    val allDisplayItems = data.packs.map { pack ->
-                        PackDisplayItemBuilder.build(pack = pack, questionRepo = questionRepo, progressRepo = progressRepo)
+                        val totalDurationMs = allActivity.sumOf { it.totalDurationMs }
+                        val timeStudiedMinutes = (totalDurationMs / 60_000L).toInt()
+                        val displayedPacks = allDisplayItems.take(2)
+                        val totalDue = allDisplayItems.sumOf { it.cardsToReview }
+                        val totalCardsCount = allDisplayItems.sumOf { it.totalCards }
+                        val masteredCardsCount = allDisplayItems.sumOf { it.masteredCards }
+                        _uiState.update {
+                            DashboardUiState(
+                                greetingRes = resolveGreeting(),
+                                todayStudied = todayStudied,
+                                dailyGoal = data.dailyGoal,
+                                streakDays = currentStreak,
+                                accuracyPercent = accuracyPct,
+                                masteredCardsCount = masteredCardsCount,
+                                totalDue = totalDue,
+                                totalCardsCount = totalCardsCount,
+                                packs = displayedPacks.toImmutableList(),
+                                allPackIds = allDisplayItems.map { it.id }.toImmutableList(),
+                                isPremium = isPremium,
+                                isPackLimitReached = isPackLimitReached,
+                                totalPackCount = totalPackCount,
+                                isLoading = false,
+                                showSwipeHint = data.showSwipeHint,
+                            )
+                        }
                     }
-                    val displayedPacks = allDisplayItems.take(2)
-                    val totalDue = allDisplayItems.sumOf { it.cardsToReview }
-                    val totalCardsCount = allDisplayItems.sumOf { it.totalCards }
-                    val masteredCardsCount = allDisplayItems.sumOf { it.masteredCards }
-                    _uiState.update {
-                        DashboardUiState(
-                            greetingRes = resolveGreeting(),
-                            todayStudied = todayStudied,
-                            dailyGoal = data.dailyGoal,
-                            streakDays = currentStreak,
-                            accuracyPercent = accuracyPct,
-                            masteredCardsCount = masteredCardsCount,
-                            totalDue = totalDue,
-                            totalCardsCount = totalCardsCount,
-                            packs = displayedPacks.toImmutableList(),
-                            allPackIds = allDisplayItems.map { it.id }.toImmutableList(),
-                            isPremium = isPremium,
-                            isPackLimitReached = isPackLimitReached,
-                            totalPackCount = totalPackCount,
-                            isLoading = false,
-                        )
-                    }
-                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
+    fun onSwipeHintComplete() {
+        viewModelScope.launch {
+            dataStore.edit { it[booleanPreferencesKey("swipe_hint_shown")] = true }
+        }
+    }
+
     fun onEditPack(packId: Long) = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Overview.createRoute(packId)))
 
     fun onExportPack(packId: Long) = _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Export.createRoute(packId)))
-
-    fun onSwipeHintDismissed() {
-        viewModelScope.launch {
-            dataStore.edit { prefs ->
-                prefs[booleanPreferencesKey("swipe_hint_dismissed")] = true
-            }
-            _showSwipeHint.value = false
-        }
-    }
 
     private fun resolveGreeting(): Int = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
         in 5..11 -> R.string.synapse_subtitle_greeting_morning
@@ -209,10 +210,10 @@ class DashboardViewModel @Inject constructor(
     }
 
     private data class DashboardData(
-        val packs: List<PackModel>,
+        val packs: List<PackOverviewModel>,
         val isPremium: Boolean,
         val dailyGoal: Int,
         val packLimit: Int,
+        val showSwipeHint: Boolean,
     )
 }
-
