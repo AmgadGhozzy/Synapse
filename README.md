@@ -74,13 +74,31 @@ Built for **medical students**, **law graduates**, **professional certification 
 ## ✨ Key Features
 
 ### ⚡ Zero-Friction Content Ingestion
-Drop in a PDF, photograph a textbook page, or paste a YouTube link. Synapse's AI pipeline parses, extracts key concepts, and structures them into targeted quiz cards — in seconds. No reformatting, no copy-paste, no manual tagging.
+Drop in a **PDF**, photograph a textbook page via **camera/document scanner**, paste a **YouTube link** (transcript extraction), import a **web article**, or type in plain text. Synapse's AI pipeline parses, extracts key concepts, and structures them into targeted quiz cards — in seconds. No reformatting, no copy-paste, no manual tagging.
 
 ### 🤖 AI-Powered Card Generation
-Powered by **Google GenAI** and **Groq**, the generation engine produces Multiple Choice, True/False, and Flashcard formats per concept. Cards are not summaries — they are precision-targeted recall challenges designed to expose gaps in understanding.
+Powered by **Google Gemini** (primary) and **Groq** (low-latency fallback) with SSE streaming, the generation engine produces **Multiple Choice**, **True/False**, and **Flashcard** formats per concept. "Deep Thinking" mode (Pro) uses enhanced models for more nuanced card generation. Cards are precision-targeted recall challenges designed to expose gaps in understanding.
 
-### 🔁 Adaptive Spaced Repetition Engine
-Every card has a live `easeFactor` and `intervalDays` score updated after each review response. The scheduling algorithm surfaces cards at the exact moment your brain is statistically about to forget them, maximizing retention per unit of study time.
+### 🔁 Adaptive Spaced Repetition Engine (SM-2)
+Custom **SM-2 algorithm** (`SynapseSmTwoAlgorithm`) with stale-gap penalty handling for overdue cards, leech detection, and auto-configurable ease factors. Every card has a live `easeFactor` and `intervalDays` updated after each `HARD/GOOD/EASY` rating. A **two-phase answer flow** (submit → rate difficulty) prevents SRS interval gaming.
+
+### 🧠 AI Coach & Insights
+Context-aware insight cards on the dashboard: new user encouragement, streak fire motivators, accuracy trend analysis, and personalized study tips — generated dynamically based on your study patterns.
+
+### 📊 Comprehensive Statistics & Streaks
+Detailed stats with **weekly heatmap**, accuracy tracking, total study time, and average retention with **week-over-week delta**. Beautiful charts powered by **Vico**. Streak tracking with fire emoji progression.
+
+### 📥 Marketplace (Community Packs)
+Browse and download pre-made study packs from the community marketplace. Share your own packs with others. Discover content across various subjects.
+
+### 📄 Export to PDF & Word
+Export your study packs to **PDF** and **Microsoft Word** documents. Optional watermark for free users with a monthly export limit. Pro tier removes watermarks and limits.
+
+### 🎙️ Text-to-Speech (TTS)
+Built-in **Text-to-Speech** engine for listening to question content. Supports multiple voices and languages. Separate `TtsManager` and `TtsRepository` for flexible voice selection.
+
+### 🗺️ Mind Map Mode
+Visualize connections between concepts with an interactive **Mind Map** view during study sessions. Navigate related cards spatially.
 
 ### 🔐 Resilient Subscription & Entitlement System
 Built on a **state-machine driven `EntitlementManager`** with:
@@ -90,23 +108,40 @@ Built on a **state-machine driven `EntitlementManager`** with:
 - Mutex-guarded concurrent validation prevention
 
 ### 📡 Intelligent Offline-First Sync
-**Room DB** serves as the fast, local execution layer. **Supabase Postgres** is the canonical cloud backup. The `SyncMediator` handles push/pull on boot, anonymous-to-authenticated data migration, and soft-delete cascade queuing for offline actions.
+**Room DB** serves as the fast, local execution layer. **Supabase Postgres** is the canonical cloud backup. The `SyncMediator` handles **push/pull on boot**, anonymous-to-authenticated data migration, soft-delete cascade queuing, incremental pull, and Last-Write-Wins conflict resolution.
 
 ### 🆔 Anonymous-First Onboarding
-Users are silently assigned a secure anonymous UUID on first launch — no sign-up wall, no friction. Study locally with full SRS tracking. Upgrade to Google Sign-In at any point and all data migrates seamlessly.
+Users are silently assigned a secure **anonymous UUID** on first launch — no sign-up wall, no friction. Study locally with full SRS tracking. Upgrade to **Google Sign-In** at any point and all data migrates seamlessly.
+
+### 🔔 Daily Reminders & Notifications
+**AlarmManager**-based daily study reminders with boot-reboot restoration. Dedicated `NotificationChannel` for "Study Reminders" with customizable notification preferences.
+
+### 🎉 Gamification & Feedback
+Celebration animations via **Konfetti** particle effects on session completion. Performance tiers (flawless/great/keep-going) with encouraging messages, streak fire emojis, and progress rings.
+
+### 🎨 Custom Adaptive Design System
+Fully custom design tokens (`MaterialTheme.synapse`) with adaptive spacing (`sm/md/lg`), radius, shadows, semantic colors, and gradients. Hard rule: no `.dp` or `.sp` — only `.adp` and `.asp` for adaptive scaling.
+
+### 🌍 Full Localization (English + Arabic)
+Complete **English** and **Arabic** support with full **RTL layout**. 1200+ carefully authored strings with strict naming conventions. No hardcoded strings anywhere.
+
+### 📱 Session Engine & Study Modes
+Multiple study modes: **MIXED**, **MCQ_ONLY**, **FLASHCARD_ONLY**, **TF_ONLY**, **SMART**, and **MISTAKES_ONLY**. Session auto-save, two-phase answer flow, performance summaries with next-review scheduling.
 
 ---
 
 ## 📸 Screenshots
 
-<div align="center">
-
-| | | | |
-|---|---|---|---|
-| <img src="./screenshots/screen-01.png" width="200" alt="Learn Faster" /><br/><sub>**Learn Faster**</sub> | <img src="./screenshots/screen-02.png" width="200" alt="Turn Any Content Into Learning" /><br/><sub>**Turn Any Content Into Learning**</sub> | <img src="./screenshots/screen-03.png" width="200" alt="AI Builds Your Study Pack" /><br/><sub>**AI Builds Your Study Pack**</sub> | <img src="./screenshots/screen-04.png" width="200" alt="Learn by Practicing" /><br/><sub>**Learn by Practicing**</sub> |
-| <img src="./screenshots/screen-05.png" width="200" alt="Understand Every Mistake" /><br/><sub>**Understand Every Mistake**</sub> | <img src="./screenshots/screen-06.png" width="200" alt="Never Forget" /><br/><sub>**Never Forget What You Study**</sub> | <img src="./screenshots/screen-07.png" width="200" alt="Track Real Progress" /><br/><sub>**Track Real Progress**</sub> | <img src="./screenshots/screen-08.png" width="200" alt="Study Smarter" /><br/><sub>**Study Smarter With Synapse**</sub> |
-
-</div>
+<p align="middle">
+    <img src="./images/banner/banner1.png" width="99%" alt="LingoLens Banner" />
+    <img src="./images/phoneScreenshots/01.png" width="13%" />
+    <img src="./images/phoneScreenshots/02.png" width="13%" />
+    <img src="./images/phoneScreenshots/03.png" width="13%" />
+    <img src="./images/phoneScreenshots/04.png" width="13%" />
+    <img src="./images/phoneScreenshots/05.png" width="13%" />
+    <img src="./images/phoneScreenshots/06.png" width="13%" />
+    <img src="./images/phoneScreenshots/07.png" width="13%" />
+</p>
 
 ---
 
@@ -154,49 +189,60 @@ All async operations run on structured **Kotlin Coroutines** with **StateFlow** 
 
 ### Frontend
 | Library | Version | Purpose |
-|---|---|---|
+|---|---|---|---|
 | Jetpack Compose BOM | 2026.03.01 | Declarative, reactive UI |
 | Material 3 | 1.5.0-alpha16 | Design system and dynamic theming |
-| Navigation Compose | 2.7.0 | Type-safe screen navigation |
+| Navigation Compose | 2.8.9 | Type-safe screen navigation |
+| Compose Animation | 1.11.0-beta02 | Rich enter/exit animations |
 | Coil | 2.7.0 | Async image loading |
-| Lottie | 6.6.2 | Complex animations |
 | Vico | 3.0.2 | Charts and statistics |
-| M3Color | 2025.4 | Dynamic color theming |
+| M3Color | 2025.4 | Dynamic Material 3 color schemes |
+| Konfetti | 2.0.5 | Celebration particle effects |
+| Accompanist Permissions | 0.37.0 | Runtime permission handling |
+| Google Fonts (Inter, Cairo) | 1.6.7 | Custom typography |
+| Material 3 Window Size Class | 1.4.0 | Adaptive layout support |
 
 ### Backend & Data
 | Service | Version | Purpose |
-|---|---|---|
-| Supabase | 3.4.1 | Auth, Postgres, Edge Functions |
-| Room | 2.8.4 | Offline-first local persistence |
-| DataStore | 1.1.2 | Lightweight config + entitlement caching |
-| Retrofit | 2.11.0 | HTTP client |
-| OkHttp | 5.0.0-alpha.14 | HTTP client with interceptors |
-| Moshi | 1.15.1 | JSON serialization |
+|---|---|---|---|
+| Supabase | 3.4.1 | Auth, Postgres REST, Edge Functions |
+| Room | 2.8.4 | Offline-first local persistence (SQLite ORM) |
+| DataStore Preferences | 1.1.2 | Lightweight config + entitlement caching |
+| Retrofit | 2.11.0 | HTTP client (TTS API) |
+| OkHttp | 4.12.0 | HTTP client with interceptors (AI: 180s timeout) |
+| Kotlinx Serialization JSON | 1.8.0 | JSON serialization/deserialization |
+| Ktor OkHttp | 3.1.3 | HTTP engine for Supabase SDK |
 
 ### AI & ML
 | Engine | Purpose |
 |---|---|
-| Google GenAI (Gemini) | Primary card generation LLM |
+| Google GenAI (Gemini) | Primary card generation LLM (SSE streaming) |
 | Groq | Low-latency fallback LLM |
-| ML Kit Text Recognition | OCR for images |
+| ML Kit Text Recognition | OCR for images and scanned documents |
+| ML Kit Document Scanner | Camera-based document scanning |
 | ML Kit Translate | Translation support |
 
 ### Infrastructure
 | Tool | Version | Purpose |
-|---|---|---|
+|---|---|---|---|
 | Kotlin | 2.3.10 | Language |
-| KSP | 2.3.6 | Annotation processing |
-| Hilt | 2.57.1 | Compile-time DI |
-| Firebase | 33.9.0 | Analytics, Crashlytics, Config, Messaging |
-| WorkManager | 2.9.0 | Background sync tasks |
-| Ktor | 3.1.3 | HTTP client for Supabase |
+| KSP | 2.3.7 | Annotation processing |
+| Hilt | 2.57.1 | Compile-time dependency injection |
+| Firebase BOM | 33.9.0 | Analytics, Crashlytics, Remote Config, Cloud Messaging |
+| WorkManager | 2.9.0 | Background sync & entitlement validation |
+| Ktor OkHttp | 3.1.3 | HTTP client engine for Supabase SDK |
+| Google Play Billing | 8.3.0 | In-app subscriptions |
+| Android Credential Manager | 1.3.0 | Google Sign-In authentication |
+| Media3 ExoPlayer | 1.7.1 | Video/audio playback |
 
 ### Testing
-| Library | Purpose |
-|---|---|
-| JUnit 5 | Unit testing |
-| MockK | Mocking framework |
-| Kotlinx Coroutines Test | Async testing |
+| Library | Version | Purpose |
+|---|---|---|
+| JUnit 5 (Jupiter) | 5.10.2 | Unit testing |
+| MockK | 1.13.7 | Kotlin mocking framework |
+| Kotlinx Coroutines Test | 1.7.3 | Async coroutine testing |
+| Compose UI Test | — | UI component testing |
+| Baseline Profile | 1.4.1 | AOT compilation optimization |
 
 ---
 
