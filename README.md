@@ -53,7 +53,16 @@ It combines **generative AI**, **OCR**, and **scientifically proven Spaced Repet
 
 Built for **medical students**, **law graduates**, **professional certification candidates**, and anyone who needs to absorb dense knowledge at scale — fast.
 
----
+<p align="middle">
+    <img src="./screenshots/banner1.png" width="99%" />
+    <img src="./screenshots/screen-01.png" width="13%" />
+    <img src="./screenshots/screen-02.png" width="13%" />
+    <img src="./screenshots/screen-03.png" width="13%" />
+    <img src="./screenshots/screen-04.png" width="13%" />
+    <img src="./screenshots/screen-05.png" width="13%" />
+    <img src="./screenshots/screen-06.png" width="13%" />
+    <img src="./screenshots/screen-07.png" width="13%" />
+</p>
 
 ## 🆚 Why Synapse? (Not Anki. Not Quizlet.)
 
@@ -127,21 +136,6 @@ Complete **English** and **Arabic** support with full **RTL layout**. 1200+ care
 
 ### 📱 Session Engine & Study Modes
 Multiple study modes: **MIXED**, **MCQ_ONLY**, **FLASHCARD_ONLY**, **TF_ONLY**, **SMART**, and **MISTAKES_ONLY**. Session auto-save, two-phase answer flow, performance summaries with next-review scheduling.
-
----
-
-## 📸 Screenshots
-
-<p align="middle">
-    <img src="./screenshots/banner1.png" width="99%" />
-    <img src="./screenshots/screen-01.png" width="13%" />
-    <img src="./screenshots/screen-02.png" width="13%" />
-    <img src="./screenshots/screen-03.png" width="13%" />
-    <img src="./screenshots/screen-04.png" width="13%" />
-    <img src="./screenshots/screen-05.png" width="13%" />
-    <img src="./screenshots/screen-06.png" width="13%" />
-    <img src="./screenshots/screen-07.png" width="13%" />
-</p>
 
 ---
 
