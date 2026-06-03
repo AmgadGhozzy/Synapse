@@ -132,16 +132,14 @@ Multiple study modes: **MIXED**, **MCQ_ONLY**, **FLASHCARD_ONLY**, **TF_ONLY**, 
 
 ## 📸 Screenshots
 
-<p align="middle">
-    <img src="./images/banner/banner1.png" width="99%" alt="LingoLens Banner" />
-    <img src="./images/phoneScreenshots/01.png" width="13%" />
-    <img src="./images/phoneScreenshots/02.png" width="13%" />
-    <img src="./images/phoneScreenshots/03.png" width="13%" />
-    <img src="./images/phoneScreenshots/04.png" width="13%" />
-    <img src="./images/phoneScreenshots/05.png" width="13%" />
-    <img src="./images/phoneScreenshots/06.png" width="13%" />
-    <img src="./images/phoneScreenshots/07.png" width="13%" />
-</p>
+<div align="center">
+
+| | | | |
+|---|---|---|---|
+| <img src="./screenshots/screen-01.png" width="200" alt="Learn Faster" /><br/><sub>**Learn Faster**</sub> | <img src="./screenshots/screen-02.png" width="200" alt="Turn Any Content Into Learning" /><br/><sub>**Turn Any Content Into Learning**</sub> | <img src="./screenshots/screen-03.png" width="200" alt="AI Builds Your Study Pack" /><br/><sub>**AI Builds Your Study Pack**</sub> | <img src="./screenshots/screen-04.png" width="200" alt="Learn by Practicing" /><br/><sub>**Learn by Practicing**</sub> |
+| <img src="./screenshots/screen-05.png" width="200" alt="Understand Every Mistake" /><br/><sub>**Understand Every Mistake**</sub> | <img src="./screenshots/screen-06.png" width="200" alt="Never Forget" /><br/><sub>**Never Forget What You Study**</sub> | <img src="./screenshots/screen-07.png" width="200" alt="Track Real Progress" /><br/><sub>**Track Real Progress**</sub> | <img src="./screenshots/screen-08.png" width="200" alt="Study Smarter" /><br/><sub>**Study Smarter With Synapse**</sub> |
+
+</div>
 
 ---
 
