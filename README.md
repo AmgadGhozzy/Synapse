@@ -14,7 +14,7 @@
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=white)
 
-![Version](https://img.shields.io/badge/Version-2.1.3-brightgreen?style=for-the-badge&logo=semantic-release)
+![Version](https://img.shields.io/badge/Version-2.2.6-brightgreen?style=for-the-badge&logo=semantic-release)
 [![License](https://img.shields.io/badge/License-Apache%202.0-orange?style=for-the-badge&logo=apache&logoColor=white)](https://opensource.org/licenses/Apache-2.0)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-ff69b4?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AmgadGhozzy/Synapse/pulls)
 
@@ -99,21 +99,14 @@ Users are silently assigned a secure anonymous UUID on first launch — no sign-
 
 ## 📸 Screenshots
 
-<p align="middle">
-  <img src="./images/phoneScreenshots/01.png" width="18%" alt="Home Dashboard" />
-  <img src="./images/phoneScreenshots/02.png" width="18%" alt="Pack Generation" />
-  <img src="./images/phoneScreenshots/03.png" width="18%" alt="Study Session - MCQ" />
-  <img src="./images/phoneScreenshots/04.png" width="18%" alt="Flashcard Reveal" />
-  <img src="./images/phoneScreenshots/05.png" width="18%" alt="Progress & Stats" />
-</p>
+<div align="center">
 
-| Screen | What it shows |
-|---|---|
-| **Home Dashboard** | Daily goal card, review queue count, active packs |
-| **Pack Generation** | AI source selector (PDF / Image / YouTube), extraction progress |
-| **Study Session — MCQ** | 2-phase answer → review flow with rating buttons |
-| **Flashcard Reveal** | Front/back flip animation with self-rating (Hard / Good / Easy) |
-| **Progress & Stats** | Streak calendar, ease factor distribution, session history |
+| | | | |
+|---|---|---|---|
+| <img src="./screenshots/screen-01.png" width="200" alt="Learn Faster" /><br/><sub>**Learn Faster**</sub> | <img src="./screenshots/screen-02.png" width="200" alt="Turn Any Content Into Learning" /><br/><sub>**Turn Any Content Into Learning**</sub> | <img src="./screenshots/screen-03.png" width="200" alt="AI Builds Your Study Pack" /><br/><sub>**AI Builds Your Study Pack**</sub> | <img src="./screenshots/screen-04.png" width="200" alt="Learn by Practicing" /><br/><sub>**Learn by Practicing**</sub> |
+| <img src="./screenshots/screen-05.png" width="200" alt="Understand Every Mistake" /><br/><sub>**Understand Every Mistake**</sub> | <img src="./screenshots/screen-06.png" width="200" alt="Never Forget" /><br/><sub>**Never Forget What You Study**</sub> | <img src="./screenshots/screen-07.png" width="200" alt="Track Real Progress" /><br/><sub>**Track Real Progress**</sub> | <img src="./screenshots/screen-08.png" width="200" alt="Study Smarter" /><br/><sub>**Study Smarter With Synapse**</sub> |
+
+</div>
 
 ---
 
@@ -294,10 +287,7 @@ Synapse/
 │   └── functions/
 │       ├── generate-pack/               # AI card generation orchestrator
 │       └── validate-subscription/       # Server-side entitlement validator
-├── images/
-│   ├── logo/
-│   ├── banner/
-│   └── phoneScreenshots/
+├── screenshots/              # App screenshots for README gallery
 └── README.md
 ```
 
