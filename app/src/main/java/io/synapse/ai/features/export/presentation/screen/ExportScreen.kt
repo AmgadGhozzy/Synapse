@@ -4,6 +4,8 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
@@ -23,8 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,6 +59,7 @@ import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.CloseButton
+import io.synapse.ai.core.ui.components.ExportActionButton
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.StepIndicator
@@ -85,11 +86,22 @@ fun ExportScreen(
     val context = LocalContext.current
     val snackbarController = rememberSnackbarController()
 
+    val createDocumentLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.onEvent(ExportEvent.DestinationPicked(uri))
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 ExportEffect.NavigateBack -> onNavigateBack()
                 ExportEffect.NavigateToPremium -> onNavigateToPremium()
+                is ExportEffect.LaunchFilePicker -> {
+                    createDocumentLauncher.launch(effect.fileName)
+                }
                 is ExportEffect.ShareFile -> {
                     val intent = Intent(Intent.ACTION_SEND).apply {
                         type = effect.mimeType
@@ -300,11 +312,11 @@ private fun ExportBottomBar(
                 )
                 if (!isPenultimateStep) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                        painter = painterResource(R.drawable.ic_chevron_right),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = MaterialTheme.synapse.spacing.s8)
-                            .size(16.adp),
+                            .padding(start = MaterialTheme.synapse.spacing.s2)
+                            .size(MaterialTheme.synapse.spacing.icon_md),
                     )
                 }
             }
@@ -737,7 +749,7 @@ private fun Step4Export(
                 ExportActionButton(
                     iconRes = if (isWord) R.drawable.ic_file_text else R.drawable.ic_share,
                     titleRes = if (isWord) R.string.share_word else R.string.share_pdf,
-                    subtitle = state.exportedFileName,
+                    subtitle = stringResource(R.string.export_file_name, state.exportedFileName),
                     isPrimary = true,
                     onClick = { viewModel.onEvent(ExportEvent.ShareExport) },
                 )
