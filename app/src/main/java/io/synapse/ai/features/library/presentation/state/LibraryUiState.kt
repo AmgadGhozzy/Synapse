@@ -14,7 +14,7 @@ enum class LibrarySortOption {
 
 @Immutable
 data class LibraryUiState(
-    val packs               : ImmutableList<PackDisplayItem> = persistentListOf(),
+    val feedItems           : ImmutableList<LibraryFeedItem> = persistentListOf(),
     val searchQuery         : String                = "",
     val activeCategory      : String                = ALL_CATEGORY,
     val availableCategories : List<String>          = listOf(ALL_CATEGORY),
