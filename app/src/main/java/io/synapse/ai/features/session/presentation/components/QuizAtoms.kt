@@ -191,7 +191,6 @@ internal fun AnswerFeedbackCard(
     val shape = MaterialTheme.shapes.medium
 
     val bgColor = if (isCorrect) semantic.successBg else semantic.errorBg
-    val borderColor = if (isCorrect) semantic.successBorder else semantic.errorBorder
 
     val iconTint = if (isCorrect) semantic.success else semantic.error
     val iconRes = if (isCorrect) R.drawable.ic_check_circle_2 else R.drawable.ic_x_circle
