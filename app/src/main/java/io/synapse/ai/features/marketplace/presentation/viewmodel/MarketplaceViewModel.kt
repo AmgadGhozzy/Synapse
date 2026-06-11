@@ -1,12 +1,15 @@
 package io.synapse.ai.features.marketplace.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.synapse.ai.R
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.data.repo.PremiumManager
 import io.synapse.ai.features.marketplace.domain.AcquireResult
 import io.synapse.ai.features.marketplace.domain.MarketplaceFilter
 import io.synapse.ai.features.marketplace.domain.usecase.AcquirePackUseCase
@@ -36,25 +39,34 @@ class MarketplaceViewModel @Inject constructor(
     private val getDetailUseCase: GetPackDetailUseCase,
     private val acquirePackUseCase: AcquirePackUseCase,
     private val incrementViewUseCase: IncrementViewUseCase,
+    private val premiumManager: PremiumManager,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    // ── State ─────────────────────────────────────────────────────────────────
+
 
     private val _uiState = MutableStateFlow(MarketplaceUiState())
     val uiState: StateFlow<MarketplaceUiState> = _uiState.asStateFlow()
 
-    // ── Effects (one-shot) ────────────────────────────────────────────────────
+
 
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
-    // ── Internal search debounce flow ─────────────────────────────────────────
+
 
     private val _searchQuery = MutableStateFlow("")
     private var loadJob: Job? = null
 
     init {
-        // Debounce search: only re-fetch 350 ms after the user stops typing
+        // Sync isPro into UI state
+        viewModelScope.launch {
+            premiumManager.isPro.collect { isPro ->
+                _uiState.update { it.copy(isPro = isPro) }
+            }
+        }
+
+        // Debounce search (unchanged)
         viewModelScope.launch {
             _searchQuery
                 .debounce(350)
@@ -64,11 +76,10 @@ class MarketplaceViewModel @Inject constructor(
                     loadPacks()
                 }
         }
-        // Initial load
         loadPacks()
     }
 
-    // ── Event handler ─────────────────────────────────────────────────────────
+
 
     fun onEvent(event: MarketplaceEvent) {
         when (event) {
@@ -85,7 +96,7 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 
-    // ── Private actions ───────────────────────────────────────────────────────
+
 
     private fun loadPacks() {
         loadJob?.cancel()
@@ -143,25 +154,30 @@ class MarketplaceViewModel @Inject constructor(
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 _uiState.update { it.copy(isDetailLoading = false, showDetailSheet = false) }
-                _uiEffects.tryEmit(UiEffect.ShowError(UiText.Dynamic(e.message ?: "Failed to load pack details")))
+                _uiEffects.tryEmit(UiEffect.ShowError(UiText.Dynamic(e.message ?: context.getString(R.string.error_load_pack_details))))
             }
         }
     }
 
     private fun acquirePack(templateId: String) {
+        val selectedPack = _uiState.value.selectedDetail?.pack
+        if (selectedPack?.isPremium == true && !_uiState.value.isPro) {
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.synapse_marketplace_unlock_pro)))
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isAcquiring = true) }
 
             when (val result = acquirePackUseCase(templateId)) {
                 is AcquireResult.Success -> {
-                    acquirePackUseCase.pullPackAfterAcquire(result.packId)
+                    val localId = acquirePackUseCase.pullPackAfterAcquire(result.packId)
                     _uiState.update { it.copy(isAcquiring = false, showDetailSheet = false, selectedDetail = null) }
-                    _uiEffects.tryEmit(UiEffect.Navigate(result.packId))
+                    _uiEffects.tryEmit(UiEffect.Navigate(localId.toString()))
                 }
                 is AcquireResult.AlreadyOwned -> {
-                    acquirePackUseCase.pullPackAfterAcquire(result.packId)
+                    val localId = acquirePackUseCase.pullPackAfterAcquire(result.packId)
                     _uiState.update { it.copy(isAcquiring = false, showDetailSheet = false, selectedDetail = null) }
-                    _uiEffects.tryEmit(UiEffect.Navigate(result.packId))
+                    _uiEffects.tryEmit(UiEffect.Navigate(localId.toString()))
                 }
                 is AcquireResult.ProRequired -> {
                     _uiState.update { it.copy(isAcquiring = false) }
