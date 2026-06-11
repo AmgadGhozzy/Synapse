@@ -1,7 +1,5 @@
 package io.synapse.ai.features.export.presentation.screen
 
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,8 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -21,14 +17,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.features.export.domain.ExportTemplate
 import io.synapse.ai.features.export.presentation.state.ExportUiState
 
@@ -56,7 +53,7 @@ fun TemplateCard(
         shape = MaterialTheme.shapes.medium,
         color = if (isSelected) model.accentColor.copy(alpha = 0.06f)
         else MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.adp, borderColor),
+        border = BorderStroke(if (isSelected) 2.adp else 0.adp, borderColor),
     ) {
         Row(
             modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
@@ -125,13 +122,13 @@ fun ExportSummaryCard(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .dropShadow(
+                MaterialTheme.shapes.medium,
+                MaterialTheme.synapse.shadows.subtle.toShadow(),
+            ),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(
-            MaterialTheme.synapse.spacing.s2 / 2,
-            MaterialTheme.colorScheme.outlineVariant,
-        ),
     ) {
         Column(modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16)) {
             Text(
@@ -197,7 +194,8 @@ fun ExportSummaryCard(
                 Text(
                     text = options.joinToString(" • "),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = MaterialTheme.synapse.spacing.s12),
                 )
             }
         }
@@ -242,80 +240,3 @@ fun FreeTierNotice(
     }
 }
 
-@Composable
-fun ExportActionButton(
-    @DrawableRes iconRes: Int,
-    @StringRes titleRes: Int,
-    isPrimary: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    @StringRes subtitleRes: Int? = null,
-    enabled: Boolean = true,
-) {
-    val resolvedSubtitle = subtitle ?: subtitleRes?.let { stringResource(it) }
-
-    Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        enabled = enabled,
-        shape = MaterialTheme.shapes.medium,
-        color = if (isPrimary) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.surface,
-        border = if (!isPrimary) androidx.compose.foundation.BorderStroke(
-            MaterialTheme.synapse.spacing.s2 / 2,
-            MaterialTheme.colorScheme.outlineVariant,
-        ) else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.adp)
-                    .clip(MaterialTheme.synapse.radius.md)
-                    .background(
-                        if (isPrimary) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f)
-                        else MaterialTheme.colorScheme.primaryContainer,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(iconRes),
-                    contentDescription = null,
-                    tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.adp),
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(titleRes),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isPrimary) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurface,
-                )
-                if (resolvedSubtitle != null) {
-                    Text(
-                        text = resolvedSubtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isPrimary) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                contentDescription = null,
-                tint = if (isPrimary) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(14.adp),
-            )
-        }
-    }
-}
