@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
@@ -84,7 +83,7 @@ fun MarketplacePackCard(
             modifier = Modifier.padding(14.adp)
         ) {
 
-            // Top row
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -159,7 +158,7 @@ fun MarketplacePackCard(
 
                 pack.estimatedMinutes?.let {
                     Text(
-                        text = "• ${it}m",
+                        text = stringResource(R.string.label_duration_minutes, it),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -193,7 +192,7 @@ fun MarketplaceSearchBar(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = painterResource(R.drawable.icon_search),
-                contentDescription = "Search",
+                contentDescription = stringResource(R.string.cd_search),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_lg),
             )
@@ -227,7 +226,7 @@ fun MarketplaceSearchBar(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_x),
-                        contentDescription = "Clear",
+                        contentDescription = stringResource(R.string.cd_clear_search),
                         modifier = Modifier.size(MaterialTheme.synapse.spacing.s16)
                     )
                 }
@@ -245,7 +244,7 @@ fun MarketplaceSearchBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_filter),
-                    contentDescription = "Filters",
+                    contentDescription = stringResource(R.string.cd_filters),
                     tint = if (hasActiveFilters) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
@@ -278,9 +277,7 @@ fun MarketplaceFiltersBottomSheet(
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
-            modifier = Modifier
-                .padding(horizontal = MaterialTheme.synapse.spacing.s24)
-                .padding(bottom = MaterialTheme.synapse.spacing.s48)
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.screen)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -301,7 +298,7 @@ fun MarketplaceFiltersBottomSheet(
             }
             Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
 
-            // Difficulty
+
             Text(
                 stringResource(R.string.synapse_marketplace_difficulty),
                 style = MaterialTheme.typography.titleSmall,
@@ -363,16 +360,12 @@ fun MarketplaceFiltersBottomSheet(
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = CircleShape,
+        shape = MaterialTheme.synapse.radius.pill,
         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        border = if (!selected) androidx.compose.foundation.BorderStroke(
-            MaterialTheme.synapse.spacing.s2 / 2,
-            MaterialTheme.colorScheme.outlineVariant
-        ) else null,
         modifier = Modifier
             .height(MaterialTheme.synapse.spacing.s32 + MaterialTheme.synapse.spacing.s4)
             .dropShadow(
-                shape = CircleShape,
+                shape = MaterialTheme.synapse.radius.pill,
                 shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
             )
     ) {
