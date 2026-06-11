@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,21 +42,24 @@ import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.utils.animatedDashedBorder
+import io.synapse.ai.features.library.presentation.state.LibraryFeedItem
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 
-// ── Filter tab definition (UI-layer only) ─────────────────────────────────────
+
 enum class LibraryFilter(
     val labelRes: Int,
     val sort: LibrarySortOption,
-    val onlyDue: Boolean = false,
+    val predicate: (LibraryFeedItem) -> Boolean = { true },
 ) {
     ALL(R.string.library_filter_all, LibrarySortOption.RECENT),
     RECENT(R.string.library_filter_recent, LibrarySortOption.RECENT),
-    DUE(R.string.library_filter_due, LibrarySortOption.MOST_DUE, onlyDue = true),
+    DUE(R.string.library_filter_due, LibrarySortOption.MOST_DUE, { it is LibraryFeedItem.Pack && it.pack.cardsToReview > 0 }),
+    SUMMARIES(R.string.library_filter_summaries, LibrarySortOption.RECENT, { it is LibraryFeedItem.Summary }),
 }
 
-// ── Add-Pack Cell ─────────────────────────────────────────────────────────────
+
 @Composable
 fun AddPackCell(
     isLocked: Boolean,
@@ -97,7 +101,7 @@ fun AddPackCell(
         else
             PaddingValues(MaterialTheme.synapse.spacing.s16)
 
-        // ── Icon ──────────────────────────────────────────────────────────────
+
         @Composable
         fun PackIcon() {
             Box(
@@ -118,7 +122,7 @@ fun AddPackCell(
             }
         }
 
-        // ── Label ─────────────────────────────────────────────────────────────
+
         @Composable
         fun PackLabel() {
             Column(
@@ -144,7 +148,7 @@ fun AddPackCell(
             }
         }
 
-        // ── Layout ────────────────────────────────────────────────────────────
+
         if (isWide) {
             Row(
                 modifier = Modifier
@@ -174,7 +178,7 @@ fun AddPackCell(
     }
 }
 
-// ── Search Bar ────────────────────────────────────────────────────────────────
+
 @Composable
 fun LibrarySearchBar(
     query: String,
@@ -184,7 +188,12 @@ fun LibrarySearchBar(
     OutlinedTextField(
         value = query,
         onValueChange = onChanged,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .dropShadow(
+                shape = MaterialTheme.shapes.medium,
+                shadow = MaterialTheme.synapse.shadows.subtle.toShadow(),
+            ),
         placeholder = {
             Text(
                 text = stringResource(R.string.library_search_placeholder),
@@ -223,13 +232,13 @@ fun LibrarySearchBar(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
         ),
     )
 }
 
-// ── Filter Tab Row ────────────────────────────────────────────────────────────
+
 @Composable
 fun FilterTabRow(
     activeFilter: LibraryFilter,
@@ -300,7 +309,7 @@ fun FilterTab(
     }
 }
 
-// ── Pack Count Row ────────────────────────────────────────────────────────────
+
 @Composable
 fun PackCountRow(
     packCount: Int,
@@ -329,7 +338,7 @@ fun PackCountRow(
     }
 }
 
-// ── Empty State ───────────────────────────────────────────────────────────────
+
 @Composable
 fun PackEmptyState(
     filter: LibraryFilter,
@@ -349,6 +358,12 @@ fun PackEmptyState(
             R.drawable.ic_check_circle_2,
             R.string.library_empty_title_due,
             R.string.library_empty_sub_due
+        )
+
+        LibraryFilter.SUMMARIES -> EmptyMsg(
+            R.drawable.ic_book_open, // Or whatever icon fits best
+            R.string.library_empty_title_all, // Let's reuse 'all' for now unless there's a specific string
+            R.string.library_empty_sub_all
         )
     }
 
@@ -384,7 +399,7 @@ fun PackEmptyState(
     }
 }
 
-// ── Previews ──────────────────────────────────────────────────────────────────
+
 
 @Preview(name = "Light — Normal", showBackground = true)
 @Preview(name = "Dark — Normal", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
