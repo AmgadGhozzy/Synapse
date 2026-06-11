@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,18 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBackIos
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -40,7 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,10 +49,11 @@ import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
 import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.LoadingIndicator
+import io.synapse.ai.core.ui.components.WavyLoadingIndicator
 import io.synapse.ai.features.marketplace.domain.MarketplacePack
 import io.synapse.ai.features.marketplace.domain.MarketplacePackDetail
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PackDetailsBottomSheet(
     detail: MarketplacePackDetail?,
@@ -133,7 +130,6 @@ private fun PackDetailsContent(
             }
         }
 
-        // Pinned bottom CTA
         AcquireButton(
             isOwned = detail.isOwned,
             isPro = isPro,
@@ -155,7 +151,6 @@ private fun HeroSection(pack: MarketplacePack) {
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        // Ambient blur decoration
         Box(
             modifier = Modifier
                 .size(220.adp)
@@ -174,7 +169,6 @@ private fun HeroSection(pack: MarketplacePack) {
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Emoji card
             Surface(
                 shape = MaterialTheme.synapse.radius.xxxl,
                 color = MaterialTheme.colorScheme.surface,
@@ -214,37 +208,29 @@ private fun HeroSection(pack: MarketplacePack) {
                 Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
             }
 
-            // Tags
-            if (pack.tags.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.Center) {
-                    pack.tags.take(3).forEach { tag ->
-                        Surface(
-                            shape = MaterialTheme.synapse.radius.pill,
-                            color = semantic.primaryBg,
-                            modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s4),
-                        ) {
-                            Text(
-                                text = tag.uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary,
-                                letterSpacing = 1.asp,
-                                modifier = Modifier.padding(horizontal = 12.adp, vertical = 5.adp),
-                            )
-                        }
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4)) {
+                pack.tags.take(3).forEach { tag ->
+                    Surface(
+                        shape = MaterialTheme.synapse.radius.pill,
+                        color = semantic.primaryBg,
+                    ) {
+                        Text(
+                            text = tag.uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 1.asp,
+                            modifier = Modifier.padding(horizontal = 12.adp, vertical = 5.adp),
+                        )
                     }
                 }
-                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
             }
+            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
 
             StatsGrid(pack = pack)
         }
     }
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// Stats grid
-// ─────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun StatsGrid(pack: MarketplacePack) {
@@ -411,6 +397,7 @@ private fun ModuleCard(index: Int, title: String, modifier: Modifier = Modifier)
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AcquireButton(
     isOwned: Boolean,
@@ -421,86 +408,71 @@ fun AcquireButton(
     modifier: Modifier = Modifier,
 ) {
     val locked = isPremium && !isPro
+    val shape = MaterialTheme.shapes.medium
+
     Box(
+        contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    0f to MaterialTheme.colorScheme.background.copy(alpha = 0f),
-                    0.3f to MaterialTheme.colorScheme.background.copy(alpha = 0.9f),
-                    1f to MaterialTheme.colorScheme.background,
-                )
-            )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s24,
                 vertical = MaterialTheme.synapse.spacing.s20
             )
-            .dropShadow(
-                shape = MaterialTheme.synapse.radius.xl,
-                shadow = MaterialTheme.synapse.shadows.cta.toShadow(),
-            )
+            .dropShadow(shape = shape, shadow = MaterialTheme.synapse.shadows.cta.toShadow())
+            .height(60.adp)
+            .clip(shape)
+            .background(if (isPremium) MaterialTheme.synapse.gradients.primary else MaterialTheme.synapse.gradients.primary)
+            .clickable(enabled = !isAcquiring, onClick = onClick)
     ) {
-        Button(
-            onClick  = onClick,
-            enabled  = !isAcquiring,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(MaterialTheme.synapse.spacing.s56),
-            shape = MaterialTheme.synapse.radius.xl,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = when {
-                    isOwned -> MaterialTheme.colorScheme.secondary
-                    locked  -> MaterialTheme.colorScheme.tertiary
-                    else    -> MaterialTheme.colorScheme.primary
-                }
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.adp),
-        ) {
-            if (isAcquiring) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(MaterialTheme.synapse.spacing.s24),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = MaterialTheme.synapse.spacing.s2,
-                )
+        if (isAcquiring) {
+            WavyLoadingIndicator()
+        } else
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
+            ) {
+                when {
+                    isOwned -> {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_chevron_left),
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.90f),
+                            modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xl)
+                        )
+                        Text(
+                            stringResource(R.string.synapse_marketplace_start_studying),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White.copy(alpha = 0.90f),
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
 
-            } else when {
-                isOwned -> {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.ArrowBackIos,
-                        contentDescription = null,
-                        modifier = Modifier.size(MaterialTheme.synapse.spacing.s24)
-                    )
-                    Spacer(Modifier.width(MaterialTheme.synapse.spacing.s8))
-                    Text(
-                        stringResource(R.string.synapse_marketplace_start_studying),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.8.sp
-                    )
-                }
-                locked -> {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_crown),
-                        contentDescription = null,
-                        modifier = Modifier.size(MaterialTheme.synapse.spacing.s24)
-                    )
-                    Spacer(Modifier.width(MaterialTheme.synapse.spacing.s8))
-                    Text(
-                        stringResource(R.string.synapse_marketplace_unlock_pro),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.8.sp
-                    )
-                }
-                else -> {
-                    Text(
-                        stringResource(R.string.synapse_marketplace_get_pack),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.8.sp
-                    )
+                    locked -> {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_crown),
+                            contentDescription = null,
+                            modifier = Modifier.size(MaterialTheme.synapse.spacing.s24)
+                        )
+                        Text(
+                            stringResource(R.string.synapse_marketplace_unlock_pro),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White.copy(alpha = 0.90f),
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+
+                    else -> {
+                        Text(
+                            stringResource(R.string.synapse_marketplace_get_pack),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White.copy(alpha = 0.90f),
+                            letterSpacing = 0.8.sp
+                        )
+                    }
                 }
             }
-        }
     }
 }
