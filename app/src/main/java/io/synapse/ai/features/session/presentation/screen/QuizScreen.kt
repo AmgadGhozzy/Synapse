@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.tts.TtsManager
+import io.synapse.ai.core.tts.TtsState
 import io.synapse.ai.core.ui.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
@@ -68,8 +70,10 @@ fun QuizScreen(
     onNavigateToSummary: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SessionViewModel = hiltViewModel(),
+    ttsManager: TtsManager = androidx.hilt.navigation.compose.hiltViewModel<io.synapse.ai.core.tts.TtsManagerViewModel>().manager,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val ttsState by ttsManager.state.collectAsStateWithLifecycle()
     val snackbarController = rememberSnackbarController()
     val soundManager = LocalSoundManager.current
     val uiSoundDebouncer = remember { UiSoundEffectDebouncer() }
@@ -84,8 +88,14 @@ fun QuizScreen(
         viewModel.uiEffects.collect { effect ->
             when (effect) {
                 is UiEffect.NavigateBack -> onBack()
-                is UiEffect.Navigate -> onNavigateToSummary()
-                is UiEffect.ShowToast -> snackbarController.success(effect.text.asString(context))
+                is UiEffect.Navigate -> {
+                    if (effect.route == "synapse/session/summary") {
+                        onNavigateToSummary()
+                    } else {
+                        onBack()
+                    }
+                }
+                is UiEffect.ShowToast -> snackbarController.showToast(effect.type, effect.text.asString(context))
                 is UiEffect.ShowError -> snackbarController.error(effect.text.asString(context))
                 is UiEffect.PlaySound -> {
                     if (uiSoundDebouncer.shouldPlay(effect.soundId)) {
@@ -98,9 +108,7 @@ fun QuizScreen(
     }
 
     Scaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .systemBarsPadding(),
+        modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { snackbarController.SnackbarHost() },
         containerColor = Color.Transparent,
@@ -115,6 +123,8 @@ fun QuizScreen(
 
             else -> QuizContent(
                 uiState = uiState,
+                ttsState = ttsState,
+                onSpeak = ttsManager::speak,
                 optionFormat = optionFormat,
                 trueLabel = trueLabel,
                 falseLabel = falseLabel,
@@ -128,18 +138,19 @@ fun QuizScreen(
                 onFlashcardSrsReveal = { qId ->
                     viewModel.submitAnswer(qId, AnswerPayload.FlashcardReveal)
                 },
+                onFlashcardSwipeRated = { qId, rating ->
+                    viewModel.submitAnswer(qId, AnswerPayload.FlashcardReveal)
+                    viewModel.submitReviewRating(qId, rating)
+                },
                 onCardFlip = { qId ->
                     viewModel.onCardFlipped()
                     viewModel.submitAnswer(qId, AnswerPayload.FlashcardReveal)
                 },
                 onRatingSubmitted = { qId, rating ->
-                    // Phase 2 for MCQ / TF: submit the user's recall-difficulty rating.
-                    // The ViewModel will call engine.nextQuestion() after this completes,
-                    // so no separate "advance" call is needed from the UI.
                     viewModel.submitReviewRating(qId, rating)
                 },
                 onDismissLeech = { viewModel.dismissLeechAlert() },
-                onShowHint = { /* TODO: open PremiumBottomSheet */ },
+                onShowHint = {},
                 modifier = Modifier.padding(innerPadding),
             )
         }
@@ -150,22 +161,17 @@ fun QuizScreen(
 @Composable
 internal fun QuizContent(
     uiState          : SessionUiState,
+    ttsState         : TtsState = TtsState.Idle,
+    onSpeak          : ((String) -> Unit)? = null,
     optionFormat     : String,
     trueLabel        : String,
     falseLabel       : String,
     onBack           : () -> Unit,
     onMcqAnswer      : (Long, Int) -> Unit,
     onTfAnswer       : (Long, Boolean) -> Unit,
-    /**
-     * Flashcard: user flipped the card.
-     */
     onFlashcardSrsReveal: (questionId: Long) -> Unit,
+    onFlashcardSwipeRated: (questionId: Long, rating: ReviewRating) -> Unit,
     onCardFlip       : (questionId: Long) -> Unit,
-    /**
-     * Phase 2 callback for MCQ / TF questions.
-     * Called when the user taps Hard / Good / Easy.
-     * The ViewModel will call submitReviewRating → engine.nextQuestion internally.
-     */
     onRatingSubmitted: (questionId: Long, rating: ReviewRating) -> Unit,
     onDismissLeech   : () -> Unit,
     onShowHint       : () -> Unit,
@@ -179,14 +185,15 @@ internal fun QuizContent(
     val isAnswered = uiState.lastAnswerCorrect != null
 
     var showHint by remember(question.id) { mutableStateOf(false) }
+    var showDiagram by remember(question.id) { mutableStateOf(false) }
 
-    val hasHint by remember(question.id) {
-        derivedStateOf { !question.hint.isNullOrBlank() }
-    }
+    val hasHint = !question.hint.isNullOrBlank()
 
-    val isLastQuestion by remember {
-        derivedStateOf { uiState.questionIndex + 1 >= uiState.totalQuestions }
-    }
+    val module = uiState.modules.find { it.title == question.moduleTitle }
+    val diagram = module?.diagram
+    val hasDiagram = diagram?.content != null
+
+    val isLastQuestion = uiState.questionIndex + 1 >= uiState.totalQuestions
 
     val handleFlashcardFlip = {
         if (!isFlipped) {
@@ -213,6 +220,14 @@ internal fun QuizContent(
         rememberTopAppBarState(),
     )
 
+    LaunchedEffect(isAnswered) {
+        if (!isAnswered) {
+            scrollBehavior.state.heightOffset = 0f
+        } else {
+            scrollBehavior.state.heightOffset = scrollBehavior.state.heightOffsetLimit
+        }
+    }
+
     Scaffold(
         modifier = modifier
             .fillMaxSize()
@@ -222,6 +237,7 @@ internal fun QuizContent(
         topBar = {
             QuizTopBar(
                 title = uiState.packTitle,
+                moduleTitle = question.moduleTitle,
                 questionIndex = uiState.questionIndex + 1,
                 totalQuestions = uiState.totalQuestions,
                 progress = uiState.progressPercent,
@@ -229,7 +245,9 @@ internal fun QuizContent(
                 showAccuracy = !isFlashcard && uiState.answeredCount > 0,
                 onClose = onBack,
                 scrollBehavior = scrollBehavior,
-                modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.screen),
+                modifier = Modifier
+                    .padding(top = 12.adp)
+                    .padding(horizontal = MaterialTheme.synapse.spacing.screen),
             )
         },
         bottomBar = {
@@ -239,6 +257,7 @@ internal fun QuizContent(
                 isAnswered = isAnswered,
                 isLastQuestion = isLastQuestion,
                 hasHint = hasHint,
+                hasDiagram = hasDiagram,
                 questionId = question.id,
                 lastAnswerCorrect = uiState.lastAnswerCorrect,
                 lastExplanation = uiState.lastExplanation,
@@ -250,10 +269,13 @@ internal fun QuizContent(
                     showHint = willShow
                     if (willShow) onShowHint()
                 },
+                onShowDiagram = { showDiagram = true },
                 onFlip = handleFlashcardFlip,
                 onSrsRating = { qId, rating ->
                     onRatingSubmitted(qId, rating)
                 },
+                showHint = showHint,
+                hint = question.hint,
             )
         },
     ) { innerPadding ->
@@ -261,7 +283,8 @@ internal fun QuizContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(MaterialTheme.synapse.spacing.screen),
+                .padding(bottom = MaterialTheme.synapse.spacing.screen)
+                .padding(horizontal = MaterialTheme.synapse.spacing.screen),
         ) {
             AnimatedContent(
                 targetState = question.id,
@@ -275,14 +298,20 @@ internal fun QuizContent(
                     FlashcardContentArea(
                         question = question,
                         isFlipped = isFlipped,
+                        hasDiagram = hasDiagram,
+                        onShowDiagram = { showDiagram = true },
                         onFlip = handleFlashcardFlip,
-                        onSwipeLeft  = { onFlashcardSrsReveal(targetId) },
-                        onSwipeRight = { onFlashcardSrsReveal(targetId) },
+                        onSwipeLeft  = { onFlashcardSwipeRated(targetId, ReviewRating.HARD) },
+                        onSwipeRight = { onFlashcardSwipeRated(targetId, ReviewRating.EASY) },
+                        ttsState     = ttsState,
+                        onSpeak      = onSpeak,
                     )
                 } else {
                     ScrollableQuestionArea(
                         question = question,
                         uiState = uiState,
+                        ttsState = ttsState,
+                        onSpeak = onSpeak,
                         onMcqAnswer = onMcqAnswer,
                         onTfAnswer = onTfAnswer,
                     )
@@ -290,16 +319,29 @@ internal fun QuizContent(
             }
         }
     }
+
+    if (showDiagram && diagram != null) {
+        io.synapse.ai.features.session.presentation.components.DiagramBottomSheet(
+            title = module.title.orEmpty(),
+            mermaid = diagram.content,
+            explanation = diagram.explanation,
+            onDismiss = { showDiagram = false },
+        )
+    }
 }
 
 @Composable
 private fun FlashcardContentArea(
     question    : QuestionUiModel,
     isFlipped   : Boolean,
+    hasDiagram  : Boolean,
+    onShowDiagram: () -> Unit,
     onFlip      : () -> Unit,
     onSwipeLeft : () -> Unit,
     onSwipeRight: () -> Unit,
     modifier    : Modifier = Modifier,
+    ttsState    : TtsState = TtsState.Idle,
+    onSpeak     : ((String) -> Unit)? = null,
 ) {
     val content = question.content as? QuestionUiContent.Flashcard ?: return
     Box(
@@ -312,6 +354,8 @@ private fun FlashcardContentArea(
             onFlip = onFlip,
             onSwipeLeft = onSwipeLeft,
             onSwipeRight = onSwipeRight,
+            ttsState = ttsState,
+            onSpeak = onSpeak,
         )
     }
 }
@@ -320,6 +364,8 @@ private fun FlashcardContentArea(
 private fun ScrollableQuestionArea(
     question   : QuestionUiModel,
     uiState    : SessionUiState,
+    ttsState   : TtsState = TtsState.Idle,
+    onSpeak    : ((String) -> Unit)? = null,
     onMcqAnswer: (Long, Int) -> Unit,
     onTfAnswer : (Long, Boolean) -> Unit,
     modifier   : Modifier = Modifier,
@@ -336,6 +382,8 @@ private fun ScrollableQuestionArea(
                 isInputEnabled = uiState.isInputEnabled,
                 lastAnswerCorrect = uiState.lastAnswerCorrect,
                 onOptionSelected = { idx -> onMcqAnswer(question.id, idx) },
+                ttsState = ttsState,
+                onSpeak = onSpeak,
             )
 
             is QuestionUiContent.TrueFalse -> TrueFalsePanel(
@@ -344,6 +392,8 @@ private fun ScrollableQuestionArea(
                 isInputEnabled = uiState.isInputEnabled,
                 lastAnswerCorrect = uiState.lastAnswerCorrect,
                 onAnswer = { v -> onTfAnswer(question.id, v) },
+                ttsState = ttsState,
+                onSpeak = onSpeak,
             )
 
             else -> Unit
@@ -361,7 +411,8 @@ private fun QuizMcqPreview() {
                 uiState = previewSessionUiState, onBack = {},
                 optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsReveal = { _ -> }, onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
+                onFlashcardSrsReveal = { _ -> }, onFlashcardSwipeRated = { _, _ -> },
+                onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
                 onDismissLeech = {}, onShowHint = {},
             )
         }
@@ -382,7 +433,8 @@ private fun QuizFlashcardPreview() {
                 uiState = previewSessionUiState.copy(currentQuestion = previewFlashcardQuestion),
                 optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsReveal = { _ -> }, onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
+                onFlashcardSrsReveal = { _ -> }, onFlashcardSwipeRated = { _, _ -> },
+                onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
                 onDismissLeech = {}, onShowHint = {},
             )
         }
@@ -406,7 +458,8 @@ private fun QuizLeechPreview() {
                 ),
                 optionFormat = "Option %s", trueLabel = "True", falseLabel = "False",
                 onBack = {}, onMcqAnswer = { _, _ -> }, onTfAnswer = { _, _ -> },
-                onFlashcardSrsReveal = { _ -> }, onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
+                onFlashcardSrsReveal = { _ -> }, onFlashcardSwipeRated = { _, _ -> },
+                onCardFlip = { _ -> }, onRatingSubmitted = { _, _ -> },
                 onDismissLeech = {}, onShowHint = {},
             )
         }
