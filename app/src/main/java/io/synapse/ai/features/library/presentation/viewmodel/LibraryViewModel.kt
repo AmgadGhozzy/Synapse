@@ -9,13 +9,16 @@ import io.synapse.ai.core.ui.state.PackDisplayItem
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
+import io.synapse.ai.core.ui.state.toDisplayItem
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.domain.model.PackModel
+import io.synapse.ai.domain.model.PackOverviewModel
 import io.synapse.ai.domain.repo.IAuthRepository
 import io.synapse.ai.domain.repo.IPackRepository
 import io.synapse.ai.domain.repo.IProgressRepository
 import io.synapse.ai.domain.repo.IQuestionRepository
+import io.synapse.ai.domain.repo.ISummaryRepository
+import io.synapse.ai.features.library.presentation.state.LibraryFeedItem
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 import io.synapse.ai.features.library.presentation.state.LibraryUiState
 import io.synapse.ai.navigation.SynapseScreen
@@ -41,6 +44,7 @@ class LibraryViewModel @Inject constructor(
     private val questionRepo: IQuestionRepository,
     private val progressRepo: IProgressRepository,
     private val authRepo    : IAuthRepository,
+    private val summaryRepo : ISummaryRepository,
     private val premiumManager: PremiumManager,
     private val appConfigProvider: AppConfigProvider,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -54,28 +58,32 @@ class LibraryViewModel @Inject constructor(
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
 
     val uiState: StateFlow<LibraryUiState> = combine(
-        packRepo.observeAllPacks(),
+        combine(packRepo.observePackOverviews(), summaryRepo.observeSummaries(), ::Pair),
         _searchQuery,
         _activeCategory,
         _sortBy,
         combine(authRepo.userState, premiumManager.isPro, appConfigProvider.libraryFreePackLimitFlow, ::Triple)
-    ) { packs, query, category, sort, (userState, isPremium, packLimit) ->
+    ) { (packs, summaries), query, category, sort, (userState, isPremium, packLimit) ->
 
         val isPremiumValue = isPremium
         val totalPackCount  = packs.size
         val isLimitReached  = totalPackCount >= packLimit
 
-        val items      = enrichPacks(packs)
-        val categories = buildCategoryList(items)
-        val filtered   = items
-            .filter { pack ->
-                (query.isBlank() || pack.title.contains(query, ignoreCase = true)) &&
-                        (category == LibraryUiState.ALL_CATEGORY || pack.category == category)
+        val packItems  = enrichPacks(packs)
+        val summaryItems = summaries.map { it.toDisplayItem() }
+        val feedItems  = packItems.map { LibraryFeedItem.Pack(it) } + 
+                         summaryItems.map { LibraryFeedItem.Summary(it) }
+                         
+        val categories = buildCategoryList(feedItems)
+        val filtered   = feedItems
+            .filter { item ->
+                (query.isBlank() || item.titleForSort.contains(query, ignoreCase = true)) &&
+                        (category == LibraryUiState.ALL_CATEGORY || item.category == category)
             }
-            .let { sortPacks(it, sort) }
+            .let { sortFeed(it, sort) }
 
         LibraryUiState(
-            packs               = filtered.toImmutableList(),
+            feedItems           = filtered.toImmutableList(),
             searchQuery         = query,
             activeCategory      = category,
             availableCategories = categories,
@@ -98,25 +106,25 @@ class LibraryViewModel @Inject constructor(
             initialValue = LibraryUiState(),
         )
 
-    // ── User events ──────────────────────────────────────────────
+
     fun onSearchQueryChanged(query: String)    { _searchQuery.value    = query    }
     fun onCategoryChanged(category: String)    { _activeCategory.value = category }
     fun onSortChanged(sort: LibrarySortOption) { _sortBy.value         = sort     }
 
     fun onPackTapped(packId: Long) {
-        val pack = uiState.value.packs.find { it.id == packId }
-        if (pack != null && pack.cardsToReview == 0) {
+        val item = uiState.value.feedItems.find { it.id == packId } as? LibraryFeedItem.Pack
+        if (item != null && item.pack.cardsToReview == 0) {
             _uiEffects.tryEmit(UiEffect.ShowToast(UiText.Raw(R.string.dashboard_pack_all_caught_up), ToastType.INFO))
             return
         }
         _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Quiz.createRoute(packId)))
     }
 
-    /**
-     * Tapping the AddPackCell.
-     * Free-tier users who have reached the limit are routed to the
-     * gold screen.  All others go to the Add-PDF wizard.
-     */
+    fun onSummaryTapped(summaryId: Long) {
+        _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.SummaryViewer.createRoute(summaryId)))
+    }
+
+
     fun onImportFromPdf() {
         if (uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.Navigate(SynapseScreen.Premium.route))
@@ -147,28 +155,26 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // ── Private helpers ──────────────────────────────────────────
-    private suspend fun enrichPacks(packs: List<PackModel>): List<PackDisplayItem> =
+
+    private suspend fun enrichPacks(packs: List<PackOverviewModel>): List<PackDisplayItem> =
         withContext(ioDispatcher) {
-            packs.map { pack ->
-                PackDisplayItemBuilder.build(
-                    pack         = pack,
-                    questionRepo = questionRepo,
-                    progressRepo = progressRepo,
-                )
-            }
+            PackDisplayItemBuilder.buildBatch(
+                packs        = packs,
+                questionRepo = questionRepo,
+                progressRepo = progressRepo,
+            )
         }
 
-    private fun sortPacks(
-        packs: List<PackDisplayItem>,
+    private fun sortFeed(
+        feedItems: List<LibraryFeedItem>,
         sort : LibrarySortOption,
-    ): List<PackDisplayItem> = when (sort) {
-        LibrarySortOption.RECENT       -> packs.sortedByDescending { it.id }
-        LibrarySortOption.ALPHABETICAL -> packs.sortedBy { it.title.lowercase() }
-        LibrarySortOption.MOST_DUE     -> packs.sortedByDescending { it.cardsToReview }
+    ): List<LibraryFeedItem> = when (sort) {
+        LibrarySortOption.RECENT       -> feedItems.sortedByDescending { it.id }
+        LibrarySortOption.ALPHABETICAL -> feedItems.sortedBy { it.titleForSort }
+        LibrarySortOption.MOST_DUE     -> feedItems.sortedByDescending { if (it is LibraryFeedItem.Pack) it.pack.cardsToReview else 0 }
     }
 
-    private fun buildCategoryList(items: List<PackDisplayItem>): List<String> =
+    private fun buildCategoryList(items: List<LibraryFeedItem>): List<String> =
         listOf(LibraryUiState.ALL_CATEGORY) +
                 items.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
 }
