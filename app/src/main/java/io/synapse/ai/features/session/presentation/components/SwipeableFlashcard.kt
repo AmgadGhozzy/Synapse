@@ -61,6 +61,8 @@ import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.asp
+import io.synapse.ai.core.tts.TtsState
+import io.synapse.ai.core.ui.components.TtsButton
 import io.synapse.ai.features.session.presentation.screen.previewFlashcardQuestion
 import io.synapse.ai.features.session.presentation.state.QuestionUiContent
 import kotlinx.coroutines.coroutineScope
@@ -89,6 +91,8 @@ internal fun SwipeableFlashcard(
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
     modifier: Modifier = Modifier,
+    ttsState: TtsState = TtsState.Idle,
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
@@ -103,6 +107,7 @@ internal fun SwipeableFlashcard(
     val flipTranslationZ = remember { Animatable(0f) }
 
     val swipeThresholdPx = remember(density) { with(density) { SWIPE_THRESHOLD_DP.dp.toPx() } }
+    val buttonAreaSizePx = with(density) { 80.adp.toPx() }
 
     // Enhanced flip: bounce back → spin → spring overshoot landing
     suspend fun animateFlip(targetAngle: Float) {
@@ -224,15 +229,19 @@ internal fun SwipeableFlashcard(
                     )
                 }
                 .pointerInput(isAnswered) {
-                    detectTapGestures(onTap = {
-                        if (!isAnswered) {
-                            onFlip()
-                        } else {
-                            scope.launch {
-                                if (flipAngle.value > 90f) {
-                                    animateFlip(0f)
-                                } else {
-                                    animateFlip(180f)
+                    detectTapGestures(onTap = { offset ->
+                        val isInsideTtsButton = offset.x >= (size.width - buttonAreaSizePx) && offset.y <= buttonAreaSizePx
+
+                        if (!isInsideTtsButton) {
+                            if (!isAnswered) {
+                                onFlip()
+                            } else {
+                                scope.launch {
+                                    if (flipAngle.value > 90f) {
+                                        animateFlip(0f)
+                                    } else {
+                                        animateFlip(180f)
+                                    }
                                 }
                             }
                         }
@@ -307,12 +316,16 @@ internal fun SwipeableFlashcard(
                 isFront = true,
                 visible = showFront,
                 cardShape = cornerRadius,
+                ttsState = ttsState,
+                onSpeak = onSpeak,
             )
             FlashcardFace(
                 text = content.back,
                 isFront = false,
                 visible = !showFront,
                 cardShape = cornerRadius,
+                ttsState = ttsState,
+                onSpeak = onSpeak,
             )
         }
 
@@ -335,6 +348,8 @@ private fun FlashcardFace(
     visible: Boolean,
     cardShape: Dp,
     modifier: Modifier = Modifier,
+    ttsState: TtsState = TtsState.Idle,
+    onSpeak: ((String) -> Unit)? = null,
 ) {
     val backgroundModifier = if (isFront) {
         Modifier.background(
@@ -368,6 +383,20 @@ private fun FlashcardFace(
             .then(backgroundModifier),
     ) {
         DecorativeCircles(isFront = isFront)
+
+        if (onSpeak != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 16.adp, end = 16.adp)
+            ) {
+                TtsButton(
+                    text = text,
+                    ttsState = ttsState,
+                    onSpeak = onSpeak,
+                )
+            }
+        }
 
         Column(
             modifier = Modifier
