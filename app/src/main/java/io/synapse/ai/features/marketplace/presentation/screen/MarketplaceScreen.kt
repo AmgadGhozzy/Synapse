@@ -52,7 +52,7 @@ fun MarketplaceScreen(
     val snackbarController = rememberSnackbarController()
     val context = LocalContext.current
 
-    // One-time effects
+
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
@@ -82,7 +82,7 @@ fun MarketplaceScreen(
         )
     }
 
-    // Pack detail bottom sheet
+
     if (state.showDetailSheet) {
         PackDetailsBottomSheet(
             detail = state.selectedDetail,
@@ -178,22 +178,20 @@ private fun MarketplaceContent(
                     stringResource(R.string.synapse_marketplace_results_count, state.packs.size)
                 else
                     stringResource(R.string.synapse_marketplace_all_packs),
-                modifier = Modifier.padding(horizontal = spacing.s24, vertical = spacing.s16),
+                modifier = Modifier.padding(horizontal = spacing.s16, vertical = spacing.s12),
             )
         }
 
-        val rows = state.packs.chunked(2)
-
         items(
-            items = rows,
+            items = state.packs.chunked(2),
             key = { row -> row.first().id }
         ) { rowPacks ->
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = spacing.s12),
-                horizontalArrangement = Arrangement.spacedBy(spacing.s12)
+                    .padding(horizontal = spacing.s14),
+                horizontalArrangement = Arrangement.spacedBy(spacing.s14)
             ) {
 
                 rowPacks.forEach { pack ->
@@ -204,7 +202,6 @@ private fun MarketplaceContent(
                     )
                 }
 
-                // fill empty space لو فردي
                 if (rowPacks.size == 1) {
                     Spacer(modifier = Modifier.weight(1f))
                 }
