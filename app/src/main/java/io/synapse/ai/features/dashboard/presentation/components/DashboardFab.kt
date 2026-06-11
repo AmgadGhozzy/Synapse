@@ -45,7 +45,7 @@ fun DashboardFab(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
-    val fabShape = MaterialTheme.shapes.large
+    val fabShape = MaterialTheme.shapes.medium
 
     AnimatedVisibility(
         visible = isVisible,
