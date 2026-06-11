@@ -9,9 +9,13 @@ import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
 import io.synapse.ai.data.repo.AppConfigProvider
 import io.synapse.ai.data.repo.AppSettingsRepository
-import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.core.analytics.TrackingManager
+import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingUiState
+import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.data.sync.SyncScheduler
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,19 +31,29 @@ import javax.inject.Inject
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val settingsRepository: AppSettingsRepository,
-    private val authRepo: IAuthRepository,
     private val appConfigProvider: AppConfigProvider,
+    private val trackingManager: TrackingManager,
+    private val authRepo: IAuthRepository,
+    private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
 
-    private val _currentStep = MutableStateFlow(0)
+    init {
+        trackingManager.logEvent(AnalyticsEvent.OnboardingStarted)
+    }
 
-    val uiState: StateFlow<OnboardingUiState> = _currentStep
-        .map { step -> OnboardingUiState(currentStep = step) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = OnboardingUiState()
-        )
+    private val _currentStep = MutableStateFlow(0)
+    private val _isLoading = MutableStateFlow(false)
+
+    val uiState: StateFlow<OnboardingUiState> = combine(
+        _currentStep,
+        _isLoading
+    ) { step, loading ->
+        OnboardingUiState(currentStep = step, isLoading = loading)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = OnboardingUiState()
+    )
 
     private val _events = MutableSharedFlow<OnboardingEvent>()
     val events: SharedFlow<OnboardingEvent> = _events.asSharedFlow()
@@ -57,24 +71,6 @@ class OnboardingViewModel @Inject constructor(
 
     fun onGetStarted() = complete()
 
-    fun onGoogleSignIn(activityContext: Context) {
-        viewModelScope.launch {
-            val result = authRepo.linkGoogle(activityContext)
-            result.onSuccess {
-                complete()
-            }
-            result.onFailure {
-                _events.emit(
-                    OnboardingEvent.ShowError(
-                        it.message?.takeIf { message -> message.isNotBlank() }?.let { message ->
-                            UiText.Raw(R.string.auth_google_sign_in_failed_with_reason, message)
-                        } ?: UiText.Raw(R.string.auth_google_sign_in_failed)
-                    )
-                )
-            }
-        }
-    }
-
     fun onTermsTapped() {
         viewModelScope.launch {
             _uiEffects.emit(UiEffect.OpenExternal(appConfigProvider.appTerms))
@@ -87,9 +83,30 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
+    fun onGoogleSignIn(activityContext: Context) {
+        viewModelScope.launch {
+            if (_isLoading.value) return@launch
+            _isLoading.update { true }
+            val result = authRepo.linkGoogle(activityContext)
+            _isLoading.update { false }
+            result
+                .onSuccess {
+                    syncScheduler.schedule()
+                    complete()
+                }
+                .onFailure {
+                    val errorText = it.message?.takeIf { msg -> msg.isNotBlank() }?.let { msg ->
+                        UiText.Raw(R.string.auth_google_sign_in_failed_with_reason, msg)
+                    } ?: UiText.Raw(R.string.auth_google_sign_in_failed)
+                    _events.emit(OnboardingEvent.ShowError(errorText))
+                }
+        }
+    }
+
     private fun complete() {
         viewModelScope.launch {
             settingsRepository.setFirstLaunchComplete()
+            trackingManager.logEvent(AnalyticsEvent.OnboardingCompleted)
             _events.emit(OnboardingEvent.Complete)
         }
     }
