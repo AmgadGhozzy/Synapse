@@ -108,14 +108,14 @@ class PremiumViewModel @Inject constructor(
             // Connect to Google Play
             runCatching { billingRepository.connect() }
                 .onFailure { e ->
-                    _uiState.value = PremiumUiState.Error("Failed to connect: ${e.message}")
+                    _uiState.value = PremiumUiState.Error(appContext.getString(R.string.error_connection_prefix, e.message))
                     return@launch
                 }
 
             // Get config result
             val configResult = configDeferred.await()
             val config = configResult.getOrElse {
-                _uiState.value = PremiumUiState.Error("Failed to load paywall config")
+                _uiState.value = PremiumUiState.Error(appContext.getString(R.string.error_load_paywall))
                 return@launch
             }
 
@@ -213,7 +213,7 @@ class PremiumViewModel @Inject constructor(
                 _uiState.update { current ->
                     (current as? PremiumUiState.Ready)?.copy(isPurchasing = false) ?: current
                 }
-                _events.emit(PremiumEvent.PurchaseFailed(e.message ?: "Billing failed"))
+                _events.emit(PremiumEvent.PurchaseFailed(e.message ?: appContext.getString(R.string.error_billing_failed)))
             }
         }
     }
@@ -246,7 +246,7 @@ class PremiumViewModel @Inject constructor(
                 trackingManager.logEvent(
                     AnalyticsEvent.PurchaseFailed(skuId, error::class.simpleName ?: "Unknown")
                 )
-                _events.emit(PremiumEvent.PurchaseFailed(error.message ?: "Verification failed"))
+                _events.emit(PremiumEvent.PurchaseFailed(error.message ?: appContext.getString(R.string.error_verification_failed)))
             }
         )
     }
