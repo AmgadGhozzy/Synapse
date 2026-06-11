@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import io.synapse.ai.R
 import io.synapse.ai.core.theme.AppTheme
 import io.synapse.ai.core.theme.SemanticColors
 import io.synapse.ai.core.theme.SynapseTheme
@@ -71,7 +72,8 @@ fun MindMapScreen(mermaidCode: String) {
 
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 view?.postDelayed({ isLoading = false }, 800)
-                            }
+                    }
+                        
                         }
 
                         settings.apply {
@@ -101,7 +103,7 @@ fun MindMapScreen(mermaidCode: String) {
                 } catch (e: Throwable) {
                     // Fallback for missing or broken WebView
                     TextView(context).apply {
-                        text = "WebView is currently unavailable on this device."
+                        text = context.getString(R.string.error_webview_unavailable)
                         setTextColor(android.graphics.Color.RED)
                     }
                 }
@@ -216,7 +218,6 @@ private fun buildMindMapHtml(
       animation: revealMap .55s ease forwards;
     }
 
-    /* ── TEXT FIX (Cleaned) ─────────────────────────────────────────────────── */
     /* ── TEXT FIX (Always White) ─────────────────────────────────── */
     .mermaid svg .nodeLabel,
     .mermaid svg foreignObject,
