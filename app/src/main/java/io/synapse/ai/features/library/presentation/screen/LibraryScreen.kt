@@ -36,6 +36,7 @@ import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.components.DeletePackDialog
 import io.synapse.ai.core.ui.components.ErrorBanner
 import io.synapse.ai.core.ui.components.GridPackCard
+import io.synapse.ai.core.ui.components.GridSummaryCard
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.buildPackCardActions
 import io.synapse.ai.core.ui.components.rememberSnackbarController
@@ -47,6 +48,7 @@ import io.synapse.ai.features.library.presentation.components.LibraryFilter
 import io.synapse.ai.features.library.presentation.components.LibrarySearchBar
 import io.synapse.ai.features.library.presentation.components.PackCountRow
 import io.synapse.ai.features.library.presentation.components.PackEmptyState
+import io.synapse.ai.features.library.presentation.state.LibraryFeedItem
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 import io.synapse.ai.features.library.presentation.state.LibraryUiState
 import io.synapse.ai.features.library.presentation.viewmodel.LibraryViewModel
@@ -62,7 +64,7 @@ fun LibraryScreen(
     val snackbarController = rememberSnackbarController()
     val listState = rememberLazyGridState()
     val context = LocalContext.current
-    // TODO: implement remediation screen
+
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
@@ -89,13 +91,14 @@ fun LibraryScreen(
             onEditPack = viewModel::onEditPack,
             onExportPack = viewModel::onExportPack,
             onDeletePack = viewModel::onDeletePack,
+            onSummaryTapped = viewModel::onSummaryTapped,
             onImportPdf = viewModel::onImportFromPdf,
             modifier = Modifier.padding(innerPadding),
         )
     }
 }
 
-// ── Content ───────────────────────────────────────────────────────────────────
+
 @Composable
 private fun LibraryContent(
     uiState: LibraryUiState,
@@ -106,17 +109,15 @@ private fun LibraryContent(
     onEditPack: (Long) -> Unit,
     onExportPack: (Long) -> Unit,
     onDeletePack: (Long) -> Unit,
+    onSummaryTapped: (Long) -> Unit,
     onImportPdf: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var activeFilter by remember { mutableStateOf(LibraryFilter.ALL) }
     var isErrorDismissed by remember(uiState.error) { mutableStateOf(false) }
 
-    val displayedPacks by remember(uiState.packs, activeFilter) {
-        derivedStateOf {
-            if (activeFilter.onlyDue) uiState.packs.filter { it.cardsToReview > 0 }
-            else uiState.packs
-        }
+    val displayedItems by remember(uiState.feedItems, activeFilter) {
+        derivedStateOf { uiState.feedItems.filter(activeFilter.predicate) }
     }
 
     var openSwipedPackId by remember { mutableStateOf<Long?>(null) }
@@ -174,9 +175,9 @@ private fun LibraryContent(
                     },
                 )
                 PackCountRow(
-                    packCount = displayedPacks.size,
-                    totalDue = if (activeFilter == LibraryFilter.DUE) displayedPacks.sumOf { it.cardsToReview } else 0,
-                    showDueSum = activeFilter == LibraryFilter.DUE && displayedPacks.isNotEmpty(),
+                    packCount = displayedItems.size,
+                    totalDue = if (activeFilter == LibraryFilter.DUE) displayedItems.filterIsInstance<LibraryFeedItem.Pack>().sumOf { it.pack.cardsToReview } else 0,
+                    showDueSum = activeFilter == LibraryFilter.DUE && displayedItems.isNotEmpty(),
                 )
             }
         }
@@ -191,38 +192,53 @@ private fun LibraryContent(
             }
         }
 
-        if (displayedPacks.isEmpty() && !uiState.isLoading) {
+        if (displayedItems.isEmpty() && !uiState.isLoading) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 PackEmptyState(filter = activeFilter)
             }
         }
 
-        items(displayedPacks, key = { it.id }) { pack ->
-            val index = displayedPacks.indexOf(pack)
-            val onEditCard = remember(pack.id) { { onEditPack(pack.id) } }
-            val onExportCard = remember(pack.id) { { onExportPack(pack.id) } }
-            val onDeleteCard = remember(pack.id) { { pendingDeletePackId = pack.id } }
-            val actions = buildPackCardActions(
-                onEdit = onEditCard,
-                onExport = onExportCard,
-                onDelete = onDeleteCard
-            )
-            GridPackCard(
-                pack = pack,
-                animDelayMs = staggerDelay(index),
-                onClick = { onPackTapped(pack.id) },
-                actions = actions,
-                isSwiped = openSwipedPackId == pack.id,
-                onSwipeOpen = { openSwipedPackId = pack.id },
-                onSwipeClose = { if (openSwipedPackId == pack.id) openSwipedPackId = null },
-                enableSwipeActions = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateItem(),
-            )
+        items(displayedItems, key = { it.id }) { item ->
+            val index = displayedItems.indexOf(item)
+            
+            when (item) {
+                is LibraryFeedItem.Pack -> {
+                    val pack = item.pack
+                    val onEditCard = remember(pack.id) { { onEditPack(pack.id) } }
+                    val onExportCard = remember(pack.id) { { onExportPack(pack.id) } }
+                    val onDeleteCard = remember(pack.id) { { pendingDeletePackId = pack.id } }
+                    val actions = buildPackCardActions(
+                        onEdit = onEditCard,
+                        onExport = onExportCard,
+                        onDelete = onDeleteCard
+                    )
+                    GridPackCard(
+                        pack = pack,
+                        animDelayMs = staggerDelay(index),
+                        onClick = { onPackTapped(pack.id) },
+                        actions = actions,
+                        isSwiped = openSwipedPackId == pack.id,
+                        onSwipeOpen = { openSwipedPackId = pack.id },
+                        onSwipeClose = { if (openSwipedPackId == pack.id) openSwipedPackId = null },
+                        enableSwipeActions = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(),
+                    )
+                }
+                is LibraryFeedItem.Summary -> {
+                    GridSummaryCard(
+                        summary = item.summary,
+                        onClick = { onSummaryTapped(item.summary.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem(),
+                    )
+                }
+            }
         }
 
-        item(span = { GridItemSpan(if (displayedPacks.size % 2 == 0) maxLineSpan else 1) }) {
+        item(span = { GridItemSpan(if (displayedItems.size % 2 == 0) maxLineSpan else 1) }) {
             AddPackCell(
                 isLocked = uiState.isPackLimitReached,
                 packCount = uiState.totalPackCount,
@@ -240,7 +256,7 @@ private fun LibraryScreenPreview() {
     SynapseTheme {
         LibraryContent(
             uiState = LibraryUiState(
-                packs = PackDisplayItem.Mocks.toImmutableList(),
+                feedItems = PackDisplayItem.Mocks.map { LibraryFeedItem.Pack(it) }.toImmutableList(),
                 searchQuery = "",
                 activeCategory = LibraryUiState.ALL_CATEGORY,
                 availableCategories = listOf("All", "Science", "History", "Law"),
@@ -253,7 +269,8 @@ private fun LibraryScreenPreview() {
             onEditPack = {},
             onExportPack = {},
             onDeletePack = {},
-            onImportPdf = {},
+            onSummaryTapped = {},
+            onImportPdf = {}
         )
     }
 }
