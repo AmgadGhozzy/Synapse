@@ -15,8 +15,8 @@ enum class ExportStep { TEMPLATE, OPTIONS, HEADER, EXPORT }
 
 /** Returns the ordered steps for the selected template. */
 fun stepsFor(template: ExportTemplate): List<ExportStep> = when (template) {
-    ExportTemplate.STUDY, ExportTemplate.TEACHER -> listOf(ExportStep.TEMPLATE, ExportStep.OPTIONS, ExportStep.EXPORT)
-    ExportTemplate.EXAM -> listOf(ExportStep.TEMPLATE, ExportStep.OPTIONS, ExportStep.HEADER, ExportStep.EXPORT)
+    ExportTemplate.STUDY -> listOf(ExportStep.TEMPLATE, ExportStep.OPTIONS, ExportStep.EXPORT)
+    ExportTemplate.EXAM, ExportTemplate.TEACHER -> listOf(ExportStep.TEMPLATE, ExportStep.OPTIONS, ExportStep.HEADER, ExportStep.EXPORT)
 }
 
 /** Returns localized labels for the steps. */
@@ -49,11 +49,12 @@ data class ExportUiState(
     val exportedUri: Uri? = null,
     val exportedFileName: String = "",
     val error: String? = null,
+    val pendingExportType: String? = null,
 
     // ── Monetisation ──
     val isPro: Boolean = false,
     val freeTierExportsUsed: Int = 0,
-    val freeTierExportLimit: Int = 3,
+    val freeTierExportLimit: Int = 10,
 ) {
     val currentStep: ExportStep get() = steps[currentStepIndex]
     val isFirstStep: Boolean get() = currentStepIndex == 0
@@ -71,14 +72,18 @@ sealed interface ExportEvent {
     data object NextStep : ExportEvent
     data object PreviousStep : ExportEvent
     data object StartExport : ExportEvent
+    data object StartWordExport : ExportEvent
+    data class DestinationPicked(val uri: Uri) : ExportEvent
     data object ShareExport : ExportEvent
+    data object ClearExport : ExportEvent
     data object DismissError : ExportEvent
 }
 
 // ── UI Effects (VM → Screen) ──────────────────────────────────────────────────
 
 sealed interface ExportEffect {
-    data class ShareFile(val uri: Uri, val mimeType: String = "application/pdf") : ExportEffect
+    data class ShareFile(val uri: Uri, val mimeType: String) : ExportEffect
     data object NavigateToPremium : ExportEffect
     data object NavigateBack : ExportEffect
+    data class LaunchFilePicker(val mimeType: String, val fileName: String) : ExportEffect
 }
