@@ -6,42 +6,33 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseOutCubic
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -54,45 +45,44 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.core.ui.components.ConfettiAnimationType
-import io.synapse.ai.core.ui.components.ConfettiView
+import io.synapse.ai.core.ui.components.GoogleSignInButton
 import io.synapse.ai.core.ui.components.GuidedPrimaryButton
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SecondaryButton
 import io.synapse.ai.core.ui.components.StatusIconHeader
+import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.session.presentation.state.SessionSummaryUiState
 import io.synapse.ai.features.session.presentation.viewmodel.SessionViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+
+// ─── Entry point ─────────────────────────────────────────────────────────────
 
 @Composable
 fun SessionSummaryScreen(
-    onAddPack: () -> Unit,
-    onPasteText: () -> Unit,
-    onGoToDashboard: () -> Unit,
+    onAddSource: () -> Unit,
+    onReviewMistakes: (packId: Long) -> Unit,
+    onContinuePack: (packId: Long) -> Unit,
+    onGoToLibrary: () -> Unit,
+    onNavigateToSession: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SessionViewModel = hiltViewModel(),
 ) {
@@ -102,12 +92,21 @@ fun SessionSummaryScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        viewModel.onPushConsentResult(isGranted)
+    ) { isGranted -> viewModel.onPushConsentResult(isGranted) }
+
+    // Collect one-shot navigation effects emitted by onReviewMistakes() / onContinuePack()
+    LaunchedEffect(viewModel) {
+        viewModel.uiEffects.collect { effect ->
+            when (effect) {
+                is UiEffect.NavigateToNewSession -> onNavigateToSession()
+                else -> Unit
+            }
+        }
     }
 
+    // Push-permission smart prompt: triggered only after first-ever session
     if (uiState.showPushRationale) {
-        NotificationRationaleDialog(
+        SmartNotificationSheet(
             onConfirm = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -115,13 +114,12 @@ fun SessionSummaryScreen(
                     viewModel.onPushConsentResult(true)
                 }
             },
-            onDismiss = {
-                viewModel.dismissPushRationale()
-            }
+            onDismiss = { viewModel.dismissPushRationale() },
         )
     }
 
-    BackHandler(onBack = onGoToDashboard)
+    BackHandler(onBack = onGoToLibrary)
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -129,9 +127,11 @@ fun SessionSummaryScreen(
     ) { innerPadding ->
         SessionSummaryContent(
             summary = summary,
-            onAddPack = onAddPack,
-            onPasteText = onPasteText,
-            onGoToDashboard = onGoToDashboard,
+            onAddSource = onAddSource,
+            onReviewMistakes = onReviewMistakes,
+            onContinuePack = onContinuePack,
+            onGoToLibrary = onGoToLibrary,
+            onGoogleSignIn = { viewModel.onGoogleSignIn(context) },
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -140,956 +140,496 @@ fun SessionSummaryScreen(
 @Composable
 internal fun SessionSummaryContent(
     summary: SessionSummaryUiState,
-    onAddPack: () -> Unit,
-    onPasteText: () -> Unit,
-    onGoToDashboard: () -> Unit,
+    onAddSource: () -> Unit,
+    onReviewMistakes: (packId: Long) -> Unit,
+    onContinuePack: (packId: Long) -> Unit,
+    onGoToLibrary: () -> Unit,
+    onGoogleSignIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val incorrectCount = summary.answeredCount - summary.correctCount
     val accuracyPct = (summary.accuracy * 100).toInt()
-    val incorrect = summary.answeredCount - summary.correctCount
-    val xp = summary.correctCount * 5 + incorrect
-    val isSuccess = accuracyPct >= 70
+    // Use mistakeQuestionIds as the source of truth — keeps visibility in sync
+    // with what the ViewModel can actually act on (demo sessions never populate this)
+    val hasMistakes = summary.mistakeQuestionIds.isNotEmpty()
 
+    // Staggered entrance animations
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { visible = true }
-    val heroVisible by produceState(false) {
-        if (visible) {
-            delay(0); value = true
-        }
-    }
-    val statsVisible by produceState(false) {
-        if (visible) {
-            delay(120); value = true
-        }
-    }
-    val leechVisible by produceState(false) {
-        if (visible) {
-            delay(240); value = true
-        }
-    }
-    val ctaVisible by produceState(false) {
-        if (visible) {
-            delay(320); value = true
-        }
-    }
-
-    val scrollState = rememberScrollState()
+    val heroVisible by produceState(false) { delay(0); value = visible }
+    val scoreVisible by produceState(false) { delay(160); value = visible }
+    val barVisible by produceState(false) { delay(280); value = visible }
+    val ctaVisible by produceState(false) { delay(400); value = visible }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (isSuccess) {
-            ConfettiView(
-                animationType = ConfettiAnimationType.KONFETTI,
-                modifier = Modifier.fillMaxSize(),
-            )
-        }
 
+        // Scrollable body
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = MaterialTheme.synapse.spacing.screen)
-                .padding(
-                    top = MaterialTheme.synapse.spacing.screen,
-                    bottom = MaterialTheme.synapse.spacing.screenContentBottom
-                ),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.adp)
+                .padding(top = 32.adp, bottom = 200.adp),
+            verticalArrangement = Arrangement.spacedBy(20.adp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
+            // ── Layer 1: Celebration hero ─────────────────────────
             AnimatedVisibility(
                 visible = heroVisible,
                 enter = slideInVertically(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow,
-                    ),
+                    animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
                     initialOffsetY = { -it / 3 },
                 ) + fadeIn(tween(400)),
             ) {
-                SummaryHero(
-                    accuracyPct = accuracyPct,
-                    packTitle = summary.packTitle,
-                    duration = summary.durationFormatted,
-                )
+                CelebrationHero(accuracyPct = accuracyPct)
             }
 
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
             AnimatedVisibility(
-                visible = statsVisible,
-                enter = slideInVertically(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessMediumLow,
-                    ),
-                    initialOffsetY = { it / 2 },
-                ) + fadeIn(tween(350)),
+                visible = scoreVisible,
+                enter = fadeIn(tween(360)) +
+                        slideInVertically(tween(360, easing = EaseOutCubic)) { it / 3 },
             ) {
-                StatsGrid(
+                ScoreFractionCard(
                     correctCount = summary.correctCount,
                     answeredCount = summary.answeredCount,
-                    accuracyPct = accuracyPct,
-                    xp = xp,
-                    duration = summary.durationFormatted,
-                    visible = visible,
                 )
             }
-            if (summary.newQuestionCount > 0 || summary.reviewedQuestionCount > 0) {
-                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(240, 320)) + slideInVertically(tween(240, 320)) { it / 3 },
-                ) {
-                    SessionBreakdownRow(
-                        newCount = summary.newQuestionCount,
-                        reviewedCount = summary.reviewedQuestionCount,
-                    )
-                }
-            }
 
+            // ── Segmented performance bar ─────────────────────────
             if (summary.answeredCount > 0) {
-                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
                 AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(tween(280, 400)) + slideInVertically(tween(280, 400)) { it / 3 },
+                    visible = barVisible,
+                    enter = fadeIn(tween(320, 80)) +
+                            slideInVertically(tween(320, 80)) { it / 4 },
                 ) {
-                    PerformanceBar(
+                    SegmentedProgressBar(
                         correctCount = summary.correctCount,
                         answeredCount = summary.answeredCount,
+                        modifier = Modifier.padding(horizontal = 12.adp),
                     )
                 }
             }
 
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s16))
-
+            // ── SRS feedback chip ──────────────────────────────────
             AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(tween(280, 500)) + slideInVertically(tween(280, 500)) { it / 3 },
+                visible = barVisible,
+                enter = fadeIn(tween(300, 160)),
             ) {
-                LearningMeaningCard(summary = summary)
-            }
-
-            if (summary.leechQuestionTexts.isNotEmpty()) {
-                Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-                AnimatedVisibility(
-                    visible = leechVisible,
-                    enter = slideInVertically(
-                        animationSpec = tween(380, easing = EaseOutCubic),
-                        initialOffsetY = { it / 4 },
-                    ) + fadeIn(tween(380)),
-                ) {
-                    LeechSummaryCard(
-                        leechCount = summary.leechCount,
-                        leechQuestionTexts = summary.leechQuestionTexts,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s24))
-
-            AnimatedVisibility(
-                visible = ctaVisible,
-                enter = scaleIn(
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium,
-                    ),
-                    initialScale = 0.82f,
-                ) + fadeIn(tween(300)),
-            ) {
-                ActionHookCard(
-                    summary = summary,
-                    onAddPack = onAddPack,
-                    onPasteText = onPasteText,
-                    onGoToDashboard = onGoToDashboard,
-                )
+                SrsChip()
             }
         }
 
-        ScrollDownIndicator(
-            scrollState = scrollState,
-            ctaVisible = ctaVisible,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        // ── Layer 3: Pinned CTA funnel (solid bg to prevent overlap) ──
+        AnimatedVisibility(
+            visible = ctaVisible,
+            enter = scaleIn(
+                animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium),
+                initialScale = 0.88f,
+            ) + fadeIn(tween(280)),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            PinnedCtaPanel(
+                summary = summary,
+                hasMistakes = hasMistakes,
+                incorrectCount = incorrectCount,
+                onAddSource = onAddSource,
+                onReviewMistakes = onReviewMistakes,
+                onContinuePack = onContinuePack,
+                onGoToLibrary = onGoToLibrary,
+                onGoogleSignIn = onGoogleSignIn,
+            )
+        }
     }
 }
 
+// ─── Layer 1: Celebration Hero ────────────────────────────────────────────────
+
 @Composable
-private fun SummaryHero(
+private fun CelebrationHero(
     accuracyPct: Int,
-    packTitle: String,
-    duration: String,
     modifier: Modifier = Modifier,
 ) {
-    val typo = MaterialTheme.typography
-    val semantic = MaterialTheme.synapse.semantic
+    val (headline, iconRes) = when {
+        accuracyPct == 100 -> R.string.summary_headline_mastermind to R.drawable.ic_trophy
+        accuracyPct >= 70 -> R.string.summary_headline_great_work to R.drawable.ic_trophy
+        else -> R.string.summary_headline_keep_going to R.drawable.ic_target
+    }
 
-    val heroColor = when {
-        accuracyPct >= 80 -> semantic.success
-        accuracyPct >= 50 -> semantic.accent
-        else -> semantic.error
+    val accentColor = when {
+        accuracyPct == 100 -> MaterialTheme.synapse.semantic.success
+        accuracyPct >= 70 -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.synapse.semantic.accent
     }
-    val headlineRes = when {
-        accuracyPct >= 80 -> R.string.summary_headline_outstanding
-        accuracyPct >= 50 -> R.string.summary_headline_good_work
-        else -> R.string.summary_headline_keep_practicing
-    }
-    val supportRes = when {
-        accuracyPct >= 80 -> R.string.summary_support_outstanding
-        accuracyPct >= 50 -> R.string.summary_support_good_work
-        else -> R.string.summary_support_keep_practicing
-    }
-    val iconRes = if (accuracyPct >= 80) R.drawable.ic_trophy else R.drawable.ic_target
-    val iconCd = if (accuracyPct >= 80) R.string.summary_cd_trophy else R.string.summary_cd_target
 
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.adp),
     ) {
         StatusIconHeader(
             iconRes = iconRes,
-            iconCd = iconCd,
-            accentColor = heroColor,
+            iconCd = headline,
+            accentColor = accentColor,
         )
 
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s20))
-
         Text(
-            text = stringResource(headlineRes),
+            text = stringResource(headline),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
-
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
-
-        Text(
-            text = stringResource(supportRes),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-
-        if (packTitle.isNotBlank()) {
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s10))
-            Text(
-                text = packTitle,
-                style = typo.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s12))
-
-        Row(
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(
-                    horizontal = MaterialTheme.synapse.spacing.s12,
-                    vertical = MaterialTheme.synapse.spacing.s6
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_clock),
-                contentDescription = stringResource(R.string.summary_cd_clock),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(12.adp),
-            )
-            Text(
-                text = duration,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
     }
 }
 
+// ─── Layer 2: Score Fraction Card ─────────────────────────────────────────────
+
 @Composable
-private fun StatsGrid(
+private fun ScoreFractionCard(
     correctCount: Int,
     answeredCount: Int,
-    accuracyPct: Int,
-    xp: Int,
-    duration: String,
-    visible: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val semantic = MaterialTheme.synapse.semantic
-    val primaryColor = MaterialTheme.colorScheme.primary
-
-    data class StatDef(
-        val labelRes: Int,
-        val value: String,
-        val accentColor: Color,
-        val bgColor: Color,
-        val borderColor: Color,
-        val delay: Int
-    )
-
-    val stats = listOf(
-        StatDef(
-            R.string.summary_stat_score,
-            stringResource(R.string.summary_score_format, correctCount, answeredCount),
-            primaryColor,
-            primaryColor.copy(alpha = 0.09f),
-            primaryColor.copy(alpha = 0.20f),
-            60
-        ),
-        StatDef(
-            R.string.summary_stat_accuracy,
-            stringResource(R.string.summary_accuracy_format, accuracyPct),
-            when {
-                accuracyPct >= 80 -> semantic.success
-                accuracyPct >= 60 -> semantic.accent
-                else -> semantic.error
-            },
-            when {
-                accuracyPct >= 80 -> semantic.successBg
-                accuracyPct >= 60 -> semantic.accentBg
-                else -> semantic.errorBg
-            },
-            when {
-                accuracyPct >= 80 -> semantic.successBorder
-                accuracyPct >= 60 -> semantic.accentBorder
-                else -> semantic.errorBorder
-            },
-            140
-        ),
-        StatDef(
-            R.string.summary_stat_xp,
-            stringResource(R.string.summary_xp_format, xp),
-            semantic.accent,
-            semantic.accentBg,
-            semantic.accentBorder,
-            220
-        ),
-        StatDef(
-            R.string.summary_stat_duration,
-            duration,
-            semantic.error,
-            semantic.errorBg,
-            semantic.errorBorder,
-            300
-        ),
-    )
-
-    Column(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-    ) {
-        listOf(0, 2).forEach { rowStart ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Max),
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-            ) {
-                stats.subList(rowStart, rowStart + 2).forEach { stat ->
-                    AnimatedVisibility(
-                        visible = visible,
-                        enter = fadeIn(tween(240, stat.delay)) + slideInVertically(
-                            tween(
-                                240,
-                                stat.delay
-                            )
-                        ) { it / 2 },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                    ) {
-                        StatCard(
-                            label = stringResource(stat.labelRes),
-                            value = stat.value,
-                            accentColor = stat.accentColor,
-                            bgColor = stat.bgColor,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(
-    label: String,
-    value: String,
-    accentColor: Color,
-    bgColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    val shape = MaterialTheme.synapse.radius.xxl
-
-    Box(
-        modifier = modifier
-            .dropShadow(
-                shape = shape,
-                shadow = MaterialTheme.synapse.shadows.subtle.toShadow(customColor = accentColor),
-            ),
+        shape = RoundedCornerShape(24.adp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.adp,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(shape)
-                .background(MaterialTheme.colorScheme.surface)
-                .background(bgColor)
-                .padding(MaterialTheme.synapse.spacing.s16),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Black,
-                color = accentColor,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(MaterialTheme.synapse.spacing.s6))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SessionBreakdownRow(
-    newCount: Int,
-    reviewedCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val semantic = MaterialTheme.synapse.semantic
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Max),
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-    ) {
-        BreakdownChip(
-            iconRes = R.drawable.ic_zap,
-            label = stringResource(R.string.summary_new_cards, newCount),
-            accentColor = semantic.success,
-            bgColor = semantic.successBg,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-        )
-        BreakdownChip(
-            iconRes = R.drawable.ic_clock,
-            label = stringResource(R.string.summary_reviewed_cards, reviewedCount),
-            accentColor = semantic.primary,
-            bgColor = semantic.primaryBg,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-        )
-    }
-}
-
-@Composable
-private fun BreakdownChip(
-    iconRes: Int,
-    label: String,
-    accentColor: Color,
-    bgColor: Color,
-    modifier: Modifier = Modifier,
-) {
-    val typo = MaterialTheme.typography
-    val shape = MaterialTheme.shapes.medium
-
-    Row(
-        modifier = modifier
-            .fillMaxSize()
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surface)
-            .background(bgColor)
-            .padding(
-                horizontal = MaterialTheme.synapse.spacing.s14,
-                vertical = MaterialTheme.synapse.spacing.s12
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
-    ) {
-        Icon(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            tint = accentColor,
-            modifier = Modifier.size(14.adp),
-        )
-        Text(
-            text = label,
-            style = typo.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = accentColor,
-        )
-    }
-}
-
-@Composable
-private fun PerformanceBar(
-    correctCount: Int,
-    answeredCount: Int,
-    modifier: Modifier = Modifier,
-) {
-    val semantic = MaterialTheme.synapse.semantic
-    val incorrect = answeredCount - correctCount
-
-    val correctColor = semantic.success
-    val incorrectColor = semantic.error
-
-    val animCorrect by animateFloatAsState(
-        targetValue = correctCount.toFloat() / answeredCount,
-        animationSpec = tween(700, 100, FastOutSlowInEasing),
-    )
-    val animIncorrect by animateFloatAsState(
-        targetValue = incorrect.toFloat() / answeredCount,
-        animationSpec = tween(700, 260, FastOutSlowInEasing),
-    )
-    val remainder = (1f - animCorrect - animIncorrect).coerceAtLeast(0f)
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.adp)
-                .clip(MaterialTheme.synapse.radius.sm),
+                .padding(24.adp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.adp),
         ) {
-            if (animCorrect > 0f) Box(
-                Modifier
-                    .weight(animCorrect)
-                    .fillMaxSize()
-                    .background(correctColor)
-            )
-            if (animIncorrect > 0f) Box(
-                Modifier
-                    .weight(animIncorrect)
-                    .fillMaxSize()
-                    .background(incorrectColor)
-            )
-            if (remainder > 0.001f) Box(
-                Modifier
-                    .weight(remainder)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-            )
-        }
-
-        Spacer(Modifier.height(MaterialTheme.synapse.spacing.s8))
-
-        Text(
-            text = buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = correctColor)) {
-                    append(stringResource(R.string.summary_correct_count, correctCount))
-                }
-                withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                    append(stringResource(R.string.summary_performance_separator))
-                }
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = incorrectColor)) {
-                    append(stringResource(R.string.summary_incorrect_count, incorrect))
-                }
-            },
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun LearningMeaningCard(
-    summary: SessionSummaryUiState,
-    modifier: Modifier = Modifier,
-) {
-    val typo = MaterialTheme.typography
-    val primary = MaterialTheme.colorScheme.primary
-    val shape = MaterialTheme.synapse.radius.xxl
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = shape,
-        color = primary.copy(alpha = 0.07f),
-    ) {
-        Column(
-            modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
-        ) {
+            // Large X / Y fraction
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(34.adp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(primary.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_zap),
-                        contentDescription = stringResource(R.string.summary_cd_zap),
-                        tint = primary,
-                        modifier = Modifier.size(16.adp),
-                    )
-                }
-                if (summary.isDemoSession) {
-                    Text(
-                        text = stringResource(R.string.summary_learning_title),
-                        style = typo.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                } else {
-                    Text(
-                        text = buildAnnotatedString {
-                            withStyle(
-                                SpanStyle(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = primary
-                                )
-                            ) {
-                                append(stringResource(R.string.summary_srs_label))
-                            }
-                            append(" ${stringResource(R.string.summary_srs_body)}")
-                        },
-                        style = typo.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            if (summary.isDemoSession) {
                 Text(
-                    text = stringResource(R.string.summary_learning_body),
-                    style = typo.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = "$correctCount",
+                    fontSize = 64.sp,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.synapse.semantic.success,
+                    lineHeight = 64.sp,
+                    modifier = Modifier.alignByBaseline()
                 )
-
                 Text(
-                    text = stringResource(
-                        if (summary.reviewedQuestionCount > 0) R.string.summary_learning_detail_review
-                        else R.string.summary_learning_detail_new,
-                    ),
-                    style = typo.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = " / $answeredCount",
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    lineHeight = 64.sp,
+                    modifier = Modifier.padding(bottom = 6.adp).alignByBaseline(),
                 )
             }
+            Text(
+                text = stringResource(R.string.summary_label_correct),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+            )
         }
     }
 }
 
+// ─── Segmented Progress Bar ────────────────────────────────────────────────────
 @Composable
-private fun LeechSummaryCard(
-    leechCount: Int,
-    leechQuestionTexts: List<String>,
+private fun SegmentedProgressBar(
+    correctCount: Int,
+    answeredCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    val typo = MaterialTheme.typography
-    val errorColor = MaterialTheme.colorScheme.error
-    val shape = MaterialTheme.synapse.radius.xxl
+    if (answeredCount == 0) return
 
-    var isExpanded by remember { mutableStateOf(false) }
-
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        animationSpec = tween(240, easing = FastOutSlowInEasing)
+    val correctFraction = correctCount.toFloat() / answeredCount
+    val animCorrect by animateFloatAsState(
+        targetValue = correctFraction,
+        animationSpec = tween(700, easing = EaseOutCubic)
     )
 
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = shape,
-        color = errorColor.copy(alpha = 0.07f),
-    ) {
-        Column(
-            modifier = Modifier
-                .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow)),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded }
-                    .padding(MaterialTheme.synapse.spacing.s16),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(38.adp)
-                        .clip(MaterialTheme.synapse.radius.sm)
-                        .background(errorColor.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_alert_triangle),
-                        contentDescription = stringResource(R.string.summary_leech_cd_alert),
-                        tint = errorColor,
-                        modifier = Modifier.size(17.adp),
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.summary_leech_title,
-                            leechCount,
-                            leechCount
-                        ),
-                        style = typo.labelMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = errorColor,
-                    )
-                    Text(
-                        text = stringResource(if (isExpanded) R.string.summary_leech_tap_hide else R.string.summary_leech_tap_view),
-                        style = typo.labelMedium,
-                        color = errorColor.copy(alpha = 0.58f),
-                    )
-                }
-
-                Icon(
-                    painter = painterResource(R.drawable.ic_chevron_down),
-                    contentDescription = stringResource(R.string.summary_leech_cd_chevron),
-                    tint = errorColor.copy(alpha = 0.65f),
-                    modifier = Modifier
-                        .size(17.adp)
-                        .graphicsLayer { rotationZ = chevronRotation },
-                )
-            }
-
-            if (isExpanded) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.s16),
-                    color = errorColor.copy(alpha = 0.14f),
-                    thickness = 1.adp,
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.synapse.spacing.s12),
-                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
-                ) {
-                    leechQuestionTexts.forEach { text ->
-                        LeechRow(title = text, tint = errorColor)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LeechRow(
-    title: String,
-    tint: Color,
-    modifier: Modifier = Modifier,
-) {
+    // The bar
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .background(tint.copy(alpha = 0.07f))
-            .padding(
-                horizontal = MaterialTheme.synapse.spacing.s12,
-                vertical = MaterialTheme.synapse.spacing.s10
-            ),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
+            .height(12.adp)
+            .clip(RoundedCornerShape(6.adp))
+            .background(MaterialTheme.synapse.semantic.error),
     ) {
-        Box(
-            modifier = Modifier
-                .size(6.adp)
-                .clip(CircleShape)
-                .background(tint)
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-@Composable
-private fun ActionHookCard(
-    summary: SessionSummaryUiState,
-    onAddPack: () -> Unit,
-    onPasteText: () -> Unit,
-    onGoToDashboard: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val shape = MaterialTheme.shapes.medium
-    if (summary.isDemoSession) {
-        Surface(
-            modifier = modifier.fillMaxWidth(),
-            shape = shape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        ) {
-            Column(
-                modifier = Modifier.padding(MaterialTheme.synapse.spacing.s16),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s14),
-            ) {
-                Text(
-                    text = stringResource(
-                        if (summary.isDemoSession) R.string.summary_action_title_demo
-                        else R.string.summary_action_title_default,
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-
-                Text(
-                    text = stringResource(
-                        if (summary.isDemoSession) R.string.summary_action_body_demo
-                        else R.string.summary_action_body_default,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-
-                GuidedPrimaryButton(
-                    text = stringResource(R.string.summary_cta_add_pack),
-                    iconRes = R.drawable.ic_file_plus,
-                    enabled = true,
-                    onClick = onAddPack,
-                    showPulse = summary.isDemoSession,
-                )
-
-                PasteTextOption(onClick = onPasteText)
-
-                SecondaryButton(
-                    text = stringResource(R.string.summary_cta_dashboard),
-                    onClick = onGoToDashboard,
-                )
-            }
+        if (animCorrect > 0f) {
+            Box(
+                modifier = Modifier
+                    .weight(animCorrect)
+                    .fillMaxSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.synapse.semantic.success,
+                                MaterialTheme.synapse.semantic.success
+                            )
+                        ),
+                        RoundedCornerShape(6.adp)
+                    )
+            )
         }
-    } else {
-        SecondaryButton(
-            text = stringResource(R.string.summary_cta_dashboard),
-            onClick = onGoToDashboard,
-        )
+        if (animCorrect < 1f) {
+            Box(modifier = Modifier
+                .weight(1f - animCorrect)
+                .fillMaxSize())
+        }
     }
 }
 
+// ─── SRS Chip ─────────────────────────────────────────────────────────────────
+
 @Composable
-private fun PasteTextOption(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TextButton(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
+private fun SrsChip(modifier: Modifier = Modifier) {
+    val primary = MaterialTheme.colorScheme.primary
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(50),
+        color = primary.copy(alpha = 0.12f),
     ) {
         Row(
+            modifier = Modifier.padding(horizontal = 12.adp, vertical = 6.adp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s8),
+            horizontalArrangement = Arrangement.spacedBy(6.adp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_type),
+                painter = painterResource(R.drawable.ic_zap),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primary,
                 modifier = Modifier.size(16.adp),
             )
             Text(
-                text = stringResource(R.string.summary_cta_paste_text),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
+                text = stringResource(R.string.summary_srs_updated),
+                style = MaterialTheme.typography.labelMedium,
+                color = primary,
             )
         }
     }
 }
 
 @Composable
-fun ScrollDownIndicator(
-    scrollState: ScrollState,
-    ctaVisible: Boolean,
-    modifier: Modifier = Modifier
+private fun PinnedCtaPanel(
+    summary: SessionSummaryUiState,
+    hasMistakes: Boolean,
+    incorrectCount: Int,
+    onAddSource: () -> Unit,
+    onReviewMistakes: (packId: Long) -> Unit,
+    onContinuePack: (packId: Long) -> Unit,
+    onGoToLibrary: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val coroutineScope = rememberCoroutineScope()
-    AnimatedVisibility(
-        visible = scrollState.canScrollForward && ctaVisible,
-        enter = fadeIn() + slideInVertically { it / 2 },
-        exit = fadeOut(),
+    Surface(
         modifier = modifier
-            .padding(bottom = MaterialTheme.synapse.spacing.s20)
+            .fillMaxWidth()
+            .dropShadow(
+                shape = RoundedCornerShape(topStart = 32.adp, topEnd = 32.adp),
+                shadow = MaterialTheme.synapse.shadows.medium.toShadow()
+            ),
+        shape = RoundedCornerShape(topStart = 32.adp, topEnd = 32.adp),
+        color = MaterialTheme.colorScheme.surface
     ) {
-        val infiniteTransition = rememberInfiniteTransition()
-        val offsetY by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 10f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(800, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 8.adp)
+                .padding(20.adp),
+            verticalArrangement = Arrangement.spacedBy(10.adp),
+        ) {
+            if (summary.isDemoSession) {
+                DemoConversionPanel(
+                    onAddSource = onAddSource,
+                    onGoToLibrary = onGoToLibrary,
+                    onGoogleSignIn = onGoogleSignIn,
+                )
+            } else {
+                RegularCtaPanel(
+                    summary = summary,
+                    hasMistakes = hasMistakes,
+                    incorrectCount = incorrectCount,
+                    onReviewMistakes = onReviewMistakes,
+                    onContinuePack = onContinuePack,
+                    onGoToLibrary = onGoToLibrary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DemoConversionPanel(
+    onAddSource: () -> Unit,
+    onGoToLibrary: () -> Unit,
+    onGoogleSignIn: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.adp),
+    ) {
+        Text(
+            text = stringResource(R.string.summary_demo_headline),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = stringResource(R.string.summary_demo_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        )
+        Spacer(Modifier.height(4.adp))
+
+        // Primary — pulsing gradient button
+        GuidedPrimaryButton(
+            text = stringResource(R.string.summary_demo_cta),
+            iconRes = R.drawable.ic_file_plus,
+            enabled = true,
+            onClick = onAddSource,
+            showPulse = true,
         )
 
-        Box(
+        GoogleSignInButton(
+            isLoading = false,
+            subtitle = stringResource(R.string.google_sign_in_save_progress),
+            onClick = onGoogleSignIn,
             modifier = Modifier
-                .graphicsLayer { translationY = offsetY }
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.95f))
-                .clickable {
-                    coroutineScope.launch {
-                        scrollState.animateScrollTo(scrollState.maxValue)
-                    }
-                }
-                .padding(MaterialTheme.synapse.spacing.s10),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .height(56.adp),
+        )
+
+        // Tertiary
+        TextButton(
+            onClick = onGoToLibrary,
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_chevron_down),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md)
+            Text(
+                text = stringResource(R.string.summary_back_to_library),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
             )
         }
     }
 }
 
 @Composable
-private fun NotificationRationaleDialog(
+private fun RegularCtaPanel(
+    summary: SessionSummaryUiState,
+    hasMistakes: Boolean,
+    incorrectCount: Int,
+    onReviewMistakes: (packId: Long) -> Unit,
+    onContinuePack: (packId: Long) -> Unit,
+    onGoToLibrary: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.adp),
+    ) {
+
+        // ── Primary CTA ─────────────────────────────────────────
+        if (hasMistakes) {
+            Button(
+                onClick = { onReviewMistakes(summary.sessionId) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(60.adp),
+                shape = MaterialTheme.shapes.medium,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.synapse.semantic.error,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text(
+                    text = if (incorrectCount == 1) stringResource(
+                        R.string.summary_review_mistakes_one,
+                        incorrectCount
+                    ) else stringResource(R.string.summary_review_mistakes_plural, incorrectCount),
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        } else {
+            // Perfect score — still offer continuation (SRS due cards)
+            PrimaryGradientButton(
+                text = stringResource(R.string.summary_continue_all_correct),
+                onClick = { onContinuePack(summary.packId ?: 0L) },
+                enabled = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.adp),
+            )
+        }
+
+        // ── Secondary CTA ────────────────────────────────────────
+        SecondaryButton(
+            onClick = { onContinuePack(summary.packId ?: 0L) },
+            text = stringResource(R.string.summary_continue_same_pack),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.adp),
+        )
+
+        // ── Tertiary ─────────────────────────────────────────
+        TextButton(
+            onClick = onGoToLibrary,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                text = stringResource(R.string.summary_back_to_library),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SmartNotificationSheet(
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(28.adp),
         title = {
-            Text(
-                text = stringResource(R.string.push_rationale_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.adp)) {
+                Text(
+                    text = stringResource(R.string.summary_smart_reminder_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         },
         text = {
             Text(
-                text = stringResource(R.string.push_rationale_body),
-                style = MaterialTheme.typography.bodyMedium
+                text = stringResource(R.string.summary_smart_reminder_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
             )
         },
         confirmButton = {
             PrimaryGradientButton(
-                text = stringResource(R.string.push_rationale_confirm),
+                text = stringResource(R.string.summary_smart_reminder_enable),
                 onClick = onConfirm,
                 enabled = true,
-                modifier = Modifier.padding(MaterialTheme.synapse.spacing.s8)
+                modifier = Modifier.padding(bottom = 4.adp),
             )
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    text = stringResource(R.string.push_rationale_dismiss),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = stringResource(R.string.summary_smart_reminder_later),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                 )
             }
         },
-        shape = MaterialTheme.synapse.radius.xxl,
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = MaterialTheme.synapse.spacing.s12
+        tonalElevation = 0.adp,
     )
 }
