@@ -1,13 +1,17 @@
 package io.synapse.ai.features.export.presentation.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.core.analytics.TrackingManager
+import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.domain.repo.IPackRepository
 import io.synapse.ai.domain.repo.IQuestionRepository
 import io.synapse.ai.domain.usecase.ExportPackToPdfUseCase
+import io.synapse.ai.domain.usecase.ExportPackToWordUseCase
 import io.synapse.ai.features.export.data.ExportLimitTracker
 import io.synapse.ai.features.export.data.InstitutionPreferences
 import io.synapse.ai.features.export.domain.ExportResult
@@ -29,6 +33,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,11 +44,15 @@ class ExportViewModel @Inject constructor(
     private val packRepository: IPackRepository,
     private val questionRepository: IQuestionRepository,
     private val exportUseCase: ExportPackToPdfUseCase,
+    private val wordExportUseCase: ExportPackToWordUseCase,
     private val exportLimitTracker: ExportLimitTracker,
     private val premiumManager: PremiumManager,
     private val institutionPreferences: InstitutionPreferences,
+    private val trackingManager: TrackingManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
+
+    private var exportStartMs = 0L
 
     private val packId: Long = checkNotNull(savedStateHandle[SynapseScreen.Export.ARG_PACK_ID])
 
@@ -59,7 +70,11 @@ class ExportViewModel @Inject constructor(
 
     private fun loadInitialData() {
         viewModelScope.launch {
-            val isPro = premiumManager.isPro.value
+            premiumManager.isPro.collect { isPro ->
+                _uiState.update { it.copy(isPro = isPro) }
+            }
+        }
+        viewModelScope.launch {
             val usedCount = withContext(ioDispatcher) { exportLimitTracker.currentCount() }
             val pack = withContext(ioDispatcher) { packRepository.getPackById(packId) }
             val questionCount = withContext(ioDispatcher) {
@@ -70,11 +85,13 @@ class ExportViewModel @Inject constructor(
                 it.copy(
                     packTitle = pack?.title ?: "",
                     questionCount = questionCount,
-                    isPro = isPro,
                     freeTierExportsUsed = usedCount,
                     options = it.options.copy(institutionHeader = savedHeader)
                 )
             }
+            // Fire export_opened after data is ready
+            trackingManager.logEvent(AnalyticsEvent.ExportOpened(questionCount))
+            trackingManager.setCrashKey("export_template", _uiState.value.options.template.name.lowercase())
         }
     }
 
@@ -95,7 +112,10 @@ class ExportViewModel @Inject constructor(
             ExportEvent.NextStep -> advanceStep()
             ExportEvent.PreviousStep -> retreatStep()
             ExportEvent.StartExport -> startExport()
+            ExportEvent.StartWordExport -> startWordExport()
+            is ExportEvent.DestinationPicked -> executeExport(event.uri)
             ExportEvent.ShareExport -> shareExported()
+            ExportEvent.ClearExport -> _uiState.update { it.copy(exportedUri = null, exportedFileName = "") }
             ExportEvent.DismissError -> _uiState.update { it.copy(error = null) }
         }
     }
@@ -103,10 +123,12 @@ class ExportViewModel @Inject constructor(
     // ── Step navigation ───────────────────────────────────────────────────────
 
     private fun applyTemplate(template: ExportTemplate) {
+        val templateKey = template.name.lowercase()
+        trackingManager.logEvent(AnalyticsEvent.TemplateSelected(templateKey))
+        trackingManager.setCrashKey("export_template", templateKey)
         _uiState.update { current ->
             val newOptions = current.options.copy(template = template)
             val newSteps = stepsFor(template)
-            // Clamp step index in case we switched from 4-step to 3-step
             val clampedIndex = current.currentStepIndex.coerceAtMost(newSteps.lastIndex)
             current.copy(
                 options = newOptions,
@@ -141,18 +163,76 @@ class ExportViewModel @Inject constructor(
         val state = _uiState.value
         if (state.isExporting) return
 
-        // Gate free-tier on-demand (final check — preflight done at screen entry)
         if (!state.isPro && state.freeTierExportsUsed >= state.freeTierExportLimit) {
             _effects.tryEmit(ExportEffect.NavigateToPremium)
             return
         }
 
-        _uiState.update { it.copy(isExporting = true, error = null) }
+        val fileName = buildFileName("pdf")
+        exportStartMs = System.currentTimeMillis()
+        trackingManager.logEvent(
+            AnalyticsEvent.PdfExportStarted(
+                templateType   = _uiState.value.options.template.name.lowercase(),
+                includeAnswers = _uiState.value.options.includeAnswers,
+            )
+        )
+        _uiState.update { it.copy(pendingExportType = "pdf") }
+        _effects.tryEmit(ExportEffect.LaunchFilePicker("application/pdf", fileName))
+    }
+
+    private fun startWordExport() {
+        val state = _uiState.value
+        if (state.isExporting) return
+
+        if (!state.isPro && state.freeTierExportsUsed >= state.freeTierExportLimit) {
+            _effects.tryEmit(ExportEffect.NavigateToPremium)
+            return
+        }
+
+        val fileName = buildFileName("doc")
+        exportStartMs = System.currentTimeMillis()
+        trackingManager.logEvent(
+            AnalyticsEvent.PdfExportStarted(
+                templateType   = _uiState.value.options.template.name.lowercase(),
+                includeAnswers = _uiState.value.options.includeAnswers,
+            )
+        )
+        _uiState.update { it.copy(pendingExportType = "word") }
+        _effects.tryEmit(ExportEffect.LaunchFilePicker("application/msword", fileName))
+    }
+
+    private fun buildFileName(ext: String): String {
+        val title = _uiState.value.packTitle
+        val safeTitle = title.replace(Regex("[^a-zA-Z0-9_\\-\\u0600-\\u06ff ]"), "_")
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        return "${safeTitle}_${timestamp}.$ext"
+    }
+
+    private fun executeExport(outputUri: Uri) {
+        val pendingType = _uiState.value.pendingExportType ?: return
+        _uiState.update { it.copy(pendingExportType = null, isExporting = true, error = null) }
 
         viewModelScope.launch {
-            val result = exportUseCase(packId, state.options)
+            val currentOptions = _uiState.value.options
+            val result = when (pendingType) {
+                "pdf" -> exportUseCase(packId, currentOptions, outputUri)
+                "word" -> wordExportUseCase.invoke(packId, currentOptions, outputUri)
+                else -> return@launch
+            }
             when (result) {
                 is ExportResult.Success -> {
+                    val durationMs = System.currentTimeMillis() - exportStartMs
+                    val templateKey = currentOptions.template.name.lowercase()
+                    trackingManager.logEvent(
+                        AnalyticsEvent.PdfExportSuccess(
+                            templateType  = templateKey,
+                            questionCount = _uiState.value.questionCount,
+                            durationMs    = durationMs,
+                        )
+                    )
+                    if (durationMs > AnalyticsEvent.SLOW_PDF_RENDER_THRESHOLD_MS) {
+                        trackingManager.logEvent(AnalyticsEvent.PdfRenderSlow(durationMs))
+                    }
                     _uiState.update {
                         it.copy(
                             isExporting = false,
@@ -163,6 +243,13 @@ class ExportViewModel @Inject constructor(
                     }
                 }
                 is ExportResult.Failure -> {
+                    trackingManager.logEvent(
+                        AnalyticsEvent.PdfExportFailed(
+                            templateType = currentOptions.template.name.lowercase(),
+                            reason       = result.cause::class.simpleName ?: "Unknown",
+                        )
+                    )
+                    trackingManager.logException(result.cause, "PDF export failed")
                     _uiState.update {
                         it.copy(
                             isExporting = false,
@@ -174,8 +261,13 @@ class ExportViewModel @Inject constructor(
         }
     }
 
+    // ── Share ─────────────────────────────────────────────────────────────────
+
     private fun shareExported() {
         val uri = _uiState.value.exportedUri ?: return
-        _effects.tryEmit(ExportEffect.ShareFile(uri))
+        val isWord = _uiState.value.exportedFileName.endsWith(".doc")
+        val mimeType = if (isWord) "application/msword" else "application/pdf"
+        trackingManager.logEvent(AnalyticsEvent.ShareClicked(if (isWord) "word" else "pdf"))
+        _effects.tryEmit(ExportEffect.ShareFile(uri, mimeType))
     }
 }
