@@ -16,10 +16,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +42,7 @@ import io.synapse.ai.core.framework.audio.SoundManager
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.ui.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SynapseTopBar
+import io.synapse.ai.features.premium.presentation.screen.SynapsePremiumScreen
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.navigation.AppState
 import io.synapse.ai.navigation.BarConfig
@@ -61,7 +66,7 @@ fun SynapseApp(
     val subtitleOverride by rootViewModel.subtitleOverride.collectAsStateWithLifecycle()
     val sharedUri by rootViewModel.sharedUri.collectAsStateWithLifecycle()
 
-    androidx.compose.runtime.LaunchedEffect(sharedUri, onboardingDone) {
+    LaunchedEffect(sharedUri, onboardingDone) {
         if (onboardingDone && sharedUri != null) {
             val uri = sharedUri!!
             rootViewModel.consumeSharedUri()
@@ -89,6 +94,7 @@ private val BarExit =
     slideOutVertically(tween(220, easing = MotionTokens.EmphasizedAccelerate)) { it } +
             fadeOut(tween(180, easing = MotionTokens.StandardAccelerate))
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SynapseShell(
     appState: AppState,
@@ -99,8 +105,12 @@ private fun SynapseShell(
 ) {
     val barConfig: BarConfig = appState.barConfig
     val profileState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    val paywallVisible by rootViewModel.paywallVisible.collectAsStateWithLifecycle()
 
     val routeReady = appState.currentRoute != null
+
+    // Bottom-sheet state — skipPartiallyExpanded so it always opens fully
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(
         modifier            = Modifier.fillMaxSize(),
@@ -160,7 +170,10 @@ private fun SynapseShell(
                             ),
                     )
                     SynapseTopBar(
-                        title            = stringResource(appState.currentScreen.titleRes),
+                        title            = appState.currentScreen.titleRes
+                            .takeIf { it != 0 }
+                            ?.let { stringResource(it) }
+                            ?: "",
                         subtitle         = when (subtitleOverride) {
                             is SubtitleOverrideState.Resource -> stringResource(subtitleOverride.resId)
                             SubtitleOverrideState.Default     -> appState.currentScreen.subtitleRes
@@ -172,16 +185,31 @@ private fun SynapseShell(
                         userInitial      = profileState.avatarInitial.toString(),
                         isPremium        = profileState.isPremium,
                         onProfileClick   = {
-                            appState.navController.navigate(SynapseScreen.Profile.route) {
+                            appState.navController.navigate(SynapseScreen.Profile.createRoute(reopenPaywall = false)) {
                                 launchSingleTop = true
                             }
                         },
-                        onPremiumClick   = {
-                            appState.navController.navigate(SynapseScreen.Premium.route) {
-                                launchSingleTop = true
-                            }
-                        },
+                        onPremiumClick   = { rootViewModel.showPaywall() },
                         modifier         = Modifier.onSizeChanged { topBarHeightPx = it.height }
+                    )
+                }
+            }
+            if (paywallVisible) {
+                ModalBottomSheet(
+                    onDismissRequest = rootViewModel::hidePaywall,
+                    sheetState       = sheetState,
+                    dragHandle       = null,
+                    containerColor   = MaterialTheme.colorScheme.background,
+                ) {
+                    SynapsePremiumScreen(
+                        onDismiss           = rootViewModel::hidePaywall,
+                        onPurchaseSuccess   = { rootViewModel.hidePaywall() },
+                        onNavigateToProfile = {
+                            rootViewModel.hidePaywall()
+                            appState.navController.navigate(SynapseScreen.Profile.createRoute(reopenPaywall = true)) {
+                                launchSingleTop = true
+                            }
+                        },
                     )
                 }
             }
