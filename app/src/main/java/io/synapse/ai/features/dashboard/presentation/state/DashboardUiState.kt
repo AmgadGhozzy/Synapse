@@ -18,6 +18,8 @@ data class DashboardUiState(
     val totalDue: Int = 0,
     val totalCardsCount: Int = 0,
 
+    val showSwipeHint: Boolean = false,
+
     val packs: ImmutableList<PackDisplayItem> = persistentListOf(),
     val allPackIds: ImmutableList<Long> = persistentListOf(),
     val isPremium: Boolean = false,
