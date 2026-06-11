@@ -1,10 +1,8 @@
 package io.synapse.ai.features.onboarding.presentation.screen
 
-import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.CubicBezierEasing
@@ -30,7 +28,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,10 +42,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -86,9 +80,10 @@ import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.core.ui.components.GoogleSignInButton
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
+import io.synapse.ai.core.ui.components.GoogleSignInButton
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingStepData
@@ -97,7 +92,7 @@ import io.synapse.ai.features.onboarding.presentation.viewmodel.OnboardingViewMo
 
 private val StepEasing = CubicBezierEasing(0.25f, 0.46f, 0.45f, 0.94f)
 
-// ─── Tag constants for ClickableText annotations ─────────────────────────────
+
 private const val TAG_TERMS   = "TERMS"
 private const val TAG_PRIVACY = "PRIVACY"
 
@@ -122,7 +117,7 @@ fun OnboardingScreen(
         }
     }
 
-    // ── One-shot UI effects (open URL) ────────────────────────────────────────
+
     LaunchedEffect(Unit) {
         viewModel.uiEffects.collect { effect ->
             when (effect) {
@@ -142,28 +137,28 @@ fun OnboardingScreen(
         containerColor = Color.Transparent,
     ) { innerPadding ->
         OnboardingContent(
-            uiState        = uiState,
-            onNext         = viewModel::onNext,
-            onSkip         = viewModel::onSkip,
-            onGetStarted   = viewModel::onGetStarted,
-            onGoogleSignIn = viewModel::onGoogleSignIn,
-            onTermsTapped  = viewModel::onTermsTapped,
+            uiState         = uiState,
+            onNext          = viewModel::onNext,
+            onSkip          = viewModel::onSkip,
+            onGetStarted    = viewModel::onGetStarted,
+            onTermsTapped   = viewModel::onTermsTapped,
             onPrivacyTapped = viewModel::onPrivacyTapped,
-            modifier       = Modifier.padding(innerPadding),
+            onGoogleSignIn  = { viewModel.onGoogleSignIn(context) },
+            modifier        = Modifier.padding(innerPadding),
         )
     }
 }
 
-// ─── Stateless shell (previewable) ───────────────────────────────────────────
+
 @Composable
 internal fun OnboardingContent(
     uiState: OnboardingUiState,
     onNext: () -> Unit,
     onSkip: () -> Unit,
     onGetStarted: () -> Unit,
-    onGoogleSignIn: (Context) -> Unit,
     onTermsTapped: () -> Unit,
     onPrivacyTapped: () -> Unit,
+    onGoogleSignIn: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     if (uiState.steps.isEmpty()) return
@@ -175,7 +170,7 @@ internal fun OnboardingContent(
     ) {
 
         Column(modifier = Modifier.fillMaxSize()) {
-            // Skip
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -189,7 +184,7 @@ internal fun OnboardingContent(
                 SkipButton(onSkip = onSkip)
             }
 
-            // Animated step content
+
             Box(
                 modifier         = Modifier
                     .weight(1f)
@@ -214,16 +209,17 @@ internal fun OnboardingContent(
                 }
             }
 
-            // Bottom controls — static, outside animation ─────────────────────
+
             BottomControls(
                 totalSteps      = uiState.steps.size,
                 currentStep     = uiState.currentStep,
                 isLastStep      = uiState.isLastStep,
+                isLoading       = uiState.isLoading,
                 onNext          = onNext,
                 onGetStarted    = onGetStarted,
-                onGoogleSignIn  = onGoogleSignIn,
                 onTermsTapped   = onTermsTapped,
                 onPrivacyTapped = onPrivacyTapped,
+                onGoogleSignIn  = onGoogleSignIn,
                 modifier        = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = MaterialTheme.synapse.spacing.screen)
@@ -233,7 +229,7 @@ internal fun OnboardingContent(
     }
 }
 
-// ─── Step content (per-slide) ────────────────────────────────────────────────
+
 
 @Composable
 private fun StepContent(
@@ -381,7 +377,7 @@ private fun IllustrationCircle(
     }
 }
 
-// ─── Step label pill ──────────────────────────────────────────────────────────
+
 @Composable
 private fun StepLabelPill(
     label: String,
@@ -397,11 +393,6 @@ private fun StepLabelPill(
         modifier = modifier
             .clip(MaterialTheme.synapse.radius.pill)
             .background(animatedAccent.copy(alpha = 0.10f))
-            .border(
-                width = 1.adp,
-                color = animatedAccent.copy(alpha = 0.22f),
-                shape = MaterialTheme.synapse.radius.pill,
-            )
             .padding(
                 horizontal = MaterialTheme.synapse.spacing.s12,
                 vertical   = MaterialTheme.synapse.spacing.s4,
@@ -425,7 +416,7 @@ private fun StepLabelPill(
     }
 }
 
-// ─── Skip button ──────────────────────────────────────────────────────────────
+
 
 @Composable
 private fun SkipButton(
@@ -444,18 +435,19 @@ private fun SkipButton(
     )
 }
 
-// ─── Bottom controls ──────────────────────────────────────────────────────────
+
 
 @Composable
 private fun BottomControls(
     totalSteps: Int,
     currentStep: Int,
     isLastStep: Boolean,
+    isLoading: Boolean,
     onNext: () -> Unit,
     onGetStarted: () -> Unit,
-    onGoogleSignIn: (Context) -> Unit,
     onTermsTapped: () -> Unit,
     onPrivacyTapped: () -> Unit,
+    onGoogleSignIn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -466,26 +458,25 @@ private fun BottomControls(
         StepDots(totalSteps = totalSteps, currentStep = currentStep)
 
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s16)) {
-            val context = LocalContext.current
+
+            PrimaryGradientButton(
+                text      = stringResource(
+                    if (isLastStep) R.string.onboarding_start_learning
+                    else R.string.onboarding_next
+                ),
+                iconRes   = if (!isLastStep) R.drawable.ic_chevron_right else null,
+                enabled   = !isLoading,
+                isLoading = isLoading,
+                onClick   = if (isLastStep) onGetStarted else onNext,
+            )
 
             if (isLastStep) {
                 GoogleSignInButton(
-                    onClick  = { onGoogleSignIn(context) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.adp),
+                    isLoading = isLoading,
+                    onClick = onGoogleSignIn,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-
-            CtaButton(
-                labelRes         = if (isLastStep) R.string.onboarding_get_started
-                else R.string.onboarding_next,
-                showTrailingIcon = !isLastStep,
-                onClick          = if (isLastStep) onGetStarted else onNext,
-                modifier         = Modifier
-                    .fillMaxWidth()
-                    .height(56.adp),
-            )
 
             // Legal consent text — only visible on the last step
             if (isLastStep) {
@@ -499,18 +490,17 @@ private fun BottomControls(
     }
 }
 
-// ─── Legal consent clickable text ────────────────────────────────────────────
+
 @Composable
 private fun LegalConsentText(
     onTermsTapped: () -> Unit,
     onPrivacyTapped: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val beforeTerms  = stringResource(R.string.onboarding_legal_before_terms)
-    val partTerms    = stringResource(R.string.onboarding_legal_part_terms)
-    val and          = stringResource(R.string.onboarding_legal_and)
-    val partPrivacy  = stringResource(R.string.onboarding_legal_part_privacy)
-    val afterPrivacy = stringResource(R.string.onboarding_legal_after_privacy)
+    val beforeTerms = stringResource(R.string.legal_prefix)
+    val partTerms   = stringResource(R.string.legal_terms)
+    val and         = stringResource(R.string.legal_and)
+    val partPrivacy = stringResource(R.string.legal_privacy)
 
     val linkColor    = MaterialTheme.colorScheme.primary
     val defaultStyle = MaterialTheme.typography.bodySmall
@@ -550,7 +540,6 @@ private fun LegalConsentText(
         ) { append(partPrivacy) }
         pop()
 
-        append(afterPrivacy)
     }
 
     Text(
@@ -563,7 +552,7 @@ private fun LegalConsentText(
     )
 }
 
-// ─── Step dots ───────────────────────────────────────────────────────────────
+
 @Composable
 private fun StepDots(
     totalSteps: Int,
@@ -606,63 +595,6 @@ private fun StepDots(
     }
 }
 
-// ─── CTA button ───────────────────────────────────────────────────────────────
-@Composable
-private fun CtaButton(
-    @StringRes labelRes: Int,
-    showTrailingIcon: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-
-    val scale by animateFloatAsState(
-        targetValue   = if (isPressed) 0.97f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessHigh),
-    )
-
-    val shadowToken = MaterialTheme.synapse.shadows.strong
-
-    Box(
-        modifier = modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .dropShadow(
-                shape = MaterialTheme.shapes.large,
-                shadow = shadowToken.toShadow()
-            )
-            .clip(MaterialTheme.shapes.large)
-            .background(MaterialTheme.synapse.gradients.primary)
-            .clickable(
-                interactionSource = interactionSource,
-                indication        = null,
-                onClick           = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s6),
-        ) {
-            Text(
-                text       = stringResource(labelRes),
-                style      = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color      = Color.White.copy(alpha = 0.95f),
-            )
-            if (showTrailingIcon) {
-                Icon(
-                    imageVector        = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                    contentDescription = null,
-                    tint               = Color.White.copy(alpha = 0.95f),
-                    modifier           = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
-                )
-            }
-        }
-    }
-}
-
-
 @Composable
 private fun stepAccentColor(stepIndex: Int): Color = when (stepIndex) {
     0    -> MaterialTheme.colorScheme.primary
@@ -680,7 +612,6 @@ private fun OnboardingStep1Preview() {
             onNext          = {},
             onSkip          = {},
             onGetStarted    = {},
-            onGoogleSignIn  = {},
             onTermsTapped   = {},
             onPrivacyTapped = {},
         )
@@ -697,7 +628,6 @@ private fun OnboardingStep2Preview() {
             onNext          = {},
             onSkip          = {},
             onGetStarted    = {},
-            onGoogleSignIn  = {},
             onTermsTapped   = {},
             onPrivacyTapped = {},
         )
@@ -714,7 +644,6 @@ private fun OnboardingStep3Preview() {
             onNext          = {},
             onSkip          = {},
             onGetStarted    = {},
-            onGoogleSignIn  = {},
             onTermsTapped   = {},
             onPrivacyTapped = {},
         )
