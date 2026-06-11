@@ -27,13 +27,15 @@ import io.synapse.ai.features.library.presentation.screen.LibraryScreen
 import io.synapse.ai.features.marketplace.presentation.screen.MarketplaceScreen
 import io.synapse.ai.features.onboarding.presentation.screen.OnboardingScreen
 import io.synapse.ai.features.overview.presentation.screen.PackOverviewScreen
-import io.synapse.ai.features.premium.presentation.screen.SynapsePremiumScreen
 import io.synapse.ai.features.profile.presentation.components.AboutScreen
 import io.synapse.ai.features.profile.presentation.screen.ProfileScreen
 import io.synapse.ai.features.session.presentation.screen.QuizScreen
 import io.synapse.ai.features.session.presentation.screen.SessionSummaryScreen
 import io.synapse.ai.features.session.presentation.viewmodel.SessionViewModel
 import io.synapse.ai.features.stats.presentation.screen.StatsScreen
+import io.synapse.ai.features.summary.presentation.screen.SummaryGeneratorScreen
+import io.synapse.ai.features.summary.presentation.screen.SummaryScreen
+import io.synapse.ai.features.summary.presentation.viewmodel.SummaryViewModel
 import io.synapse.ai.navigation.core.AnimatedNavHost
 import io.synapse.ai.navigation.core.NavTransitions
 import io.synapse.ai.navigation.core.navigateToStart
@@ -68,18 +70,18 @@ fun SynapseNavGraph(
     }
 
     AnimatedNavHost(
-        navController    = navController,
+        navController = navController,
         startDestination = startDestination,
-        modifier         = modifier,
+        modifier = modifier,
     ) {
 
         // ── Onboarding ──────────────────────────────────────────────────
         composable(
-            route              = SynapseScreen.Onboarding.route,
-            enterTransition    = NavTransitions.fadeThroughEnter(),
-            exitTransition     = NavTransitions.fadeThroughExit(),
+            route = SynapseScreen.Onboarding.route,
+            enterTransition = NavTransitions.fadeThroughEnter(),
+            exitTransition = NavTransitions.fadeThroughExit(),
             popEnterTransition = NavTransitions.fadeThroughEnter(),
-            popExitTransition  = NavTransitions.fadeThroughExit(),
+            popExitTransition = NavTransitions.fadeThroughExit(),
         ) {
             OnboardingScreen(
                 onComplete = {
@@ -95,7 +97,7 @@ fun SynapseNavGraph(
 
         // ── Main nested graph ───────────────────────────────────────────
         navigation(
-            route            = "synapse/main",
+            route = "synapse/main",
             startDestination = SynapseScreen.Dashboard.route,
         ) {
             // SynapseNavGraph.kt
@@ -113,9 +115,9 @@ fun SynapseNavGraph(
                     }
                     val vm: DashboardViewModel = hiltViewModel(parentEntry)
                     DashboardScreen(
-                        viewModel     = vm,
+                        viewModel = vm,
                         rootViewModel = rootViewModel,
-                        onNavigate    = { route ->
+                        onNavigate = { route ->
                             if (route == SynapseScreen.Library.route) {
                                 navController.navigateToStart(route)
                             } else {
@@ -132,12 +134,12 @@ fun SynapseNavGraph(
 
             tabComposable(SynapseScreen.Marketplace.route) {
                 MarketplaceScreen(
-                    onNavigateToPack    = { remotePackId ->
+                    onNavigateToPack = { remotePackId ->
                         // Switch to the Library tab properly using MD3 semantics
                         navController.navigateToStart(SynapseScreen.Library.route)
                     },
                     onNavigateToPremium = {
-                        navController.navigate(SynapseScreen.Premium.route)
+                        rootViewModel.showPaywall()
                     },
                 )
             }
@@ -147,25 +149,43 @@ fun SynapseNavGraph(
             }
 
             // Profile: inherits horizontal push/pop from NavHost default ✅
-            composable(route = SynapseScreen.Profile.route) {
-                ProfileScreen(onNavigate = { navController.navigate(it) })
+            composable(
+                route = SynapseScreen.Profile.route,
+                arguments = listOf(
+                    androidx.navigation.navArgument(SynapseScreen.Profile.ARG_REOPEN_PAYWALL) {
+                        type = androidx.navigation.NavType.BoolType
+                        defaultValue = false
+                    }
+                )
+            ) { entry ->
+                val reopenPaywall =
+                    entry.arguments?.getBoolean(SynapseScreen.Profile.ARG_REOPEN_PAYWALL) == true
+                ProfileScreen(
+                    onNavigate = { navController.navigate(it) },
+                    onNavigateBack = {
+                        navController.popBackStack()
+                        if (reopenPaywall) {
+                            rootViewModel.showPaywall()
+                        }
+                    },
+                )
             }
         }
 
         // ── Quiz Flow (Shared ViewModel) ──────────────────────────────
         navigation(
-            route            = SynapseScreen.Quiz.route,
+            route = SynapseScreen.Quiz.route,
             startDestination = SynapseScreen.QuizContent.route,
-            arguments        = listOf(
+            arguments = listOf(
                 navArgument(SynapseScreen.Quiz.ARG_PACK_ID) { type = NavType.LongType },
             ),
         ) {
             composable(
-                route              = SynapseScreen.QuizContent.route,
-                enterTransition    = NavTransitions.verticalEnter(),
-                exitTransition     = NavTransitions.verticalExit(),
+                route = SynapseScreen.QuizContent.route,
+                enterTransition = NavTransitions.verticalEnter(),
+                exitTransition = NavTransitions.verticalExit(),
                 popEnterTransition = NavTransitions.verticalPopEnter(),
-                popExitTransition  = NavTransitions.verticalPopExit(),
+                popExitTransition = NavTransitions.verticalPopExit(),
             ) { entry ->
                 val isDemoSession = entry.arguments
                     ?.getLong(SynapseScreen.Quiz.ARG_PACK_ID) == SynapseScreen.Quiz.DEMO_PACK_ID
@@ -180,8 +200,8 @@ fun SynapseNavGraph(
                 val vm: SessionViewModel = hiltViewModel(parentEntry)
 
                 QuizScreen(
-                    viewModel           = vm,
-                    onBack              = {
+                    viewModel = vm,
+                    onBack = {
                         if (isDemoSession) {
                             navController.navigate(SynapseScreen.Dashboard.route) {
                                 popUpTo(SynapseScreen.Quiz.route) { inclusive = true }
@@ -198,11 +218,11 @@ fun SynapseNavGraph(
             }
 
             composable(
-                route              = SynapseScreen.SessionSummary.route,
-                enterTransition    = NavTransitions.verticalEnter(),
-                exitTransition     = NavTransitions.verticalExit(),
+                route = SynapseScreen.SessionSummary.route,
+                enterTransition = NavTransitions.verticalEnter(),
+                exitTransition = NavTransitions.verticalExit(),
                 popEnterTransition = NavTransitions.verticalPopEnter(),
-                popExitTransition  = NavTransitions.verticalPopExit(),
+                popExitTransition = NavTransitions.verticalPopExit(),
             ) { entry ->
                 val parentEntry = remember(entry) {
                     navController.getBackStackEntry(SynapseScreen.Quiz.route)
@@ -214,8 +234,8 @@ fun SynapseNavGraph(
                 val vm: SessionViewModel = hiltViewModel(parentEntry)
 
                 SessionSummaryScreen(
-                    viewModel        = vm,
-                    onAddSource      = {
+                    viewModel = vm,
+                    onAddSource = {
                         navController.navigate(
                             SynapseScreen.AddPdf.createRoute(SynapseScreen.AddPdf.SOURCE_FILE)
                         ) {
@@ -226,10 +246,19 @@ fun SynapseNavGraph(
                     onReviewMistakes = { _ ->
                         vm.onReviewMistakes()
                     },
-                    onContinuePack   = { _ ->
+                    onContinuePack = { _ ->
                         vm.onContinuePack()
                     },
-                    onGoToLibrary    = {
+                    onNavigateToSession = {
+                        // Pop the summary screen; QuizContent is already on the back-stack
+                        // and the shared ViewModel (parentEntry scope) already holds the
+                        // new session plan — so it will render the first question immediately.
+                        navController.popBackStack(
+                            route = SynapseScreen.QuizContent.route,
+                            inclusive = false,
+                        )
+                    },
+                    onGoToLibrary = {
                         navController.navigate(SynapseScreen.Library.route) {
                             popUpTo("synapse/main") { inclusive = false }
                             launchSingleTop = true
@@ -241,34 +270,46 @@ fun SynapseNavGraph(
 
         // ── AddPdf — modal slide-up ─────────────────────────────────────
         composable(
-            route              = SynapseScreen.AddPdf.route,
-            arguments          = listOf(
+            route = SynapseScreen.AddPdf.route,
+            arguments = listOf(
                 navArgument(SynapseScreen.AddPdf.ARG_SOURCE) {
-                    type         = NavType.StringType
+                    type = NavType.StringType
                     defaultValue = SynapseScreen.AddPdf.SOURCE_FILE
                 },
                 navArgument(SynapseScreen.AddPdf.ARG_URI) {
-                    type         = NavType.StringType
-                    nullable     = true
+                    type = NavType.StringType
+                    nullable = true
                     defaultValue = null
                 }
             ),
-            enterTransition    = NavTransitions.verticalEnter(),
-            exitTransition     = NavTransitions.verticalExit(),
+            enterTransition = NavTransitions.verticalEnter(),
+            exitTransition = NavTransitions.verticalExit(),
             popEnterTransition = NavTransitions.verticalPopEnter(),
-            popExitTransition  = NavTransitions.verticalPopExit(),
+            popExitTransition = NavTransitions.verticalPopExit(),
         ) {
             AddPdfScreen(
-                onNavigateBack        = { navController.popBackStack() },
-                onNavigateToSession   = { packId ->
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSession = { packId ->
                     navController.navigate(SynapseScreen.Quiz.createRoute(packId))
                 },
-                onNavigateToExport    = { packId ->
+                onNavigateToExport = { packId ->
                     navController.navigate(SynapseScreen.Export.createRoute(packId))
                 },
-                onNavigateToPremium   = {
-                    navController.popBackStack()
-                    navController.navigate(SynapseScreen.Premium.route)
+                onNavigateToSummaryConfig = { type, name, content, config ->
+                    navController.navigate(
+                        SynapseScreen.SummaryGenerator.createRoute(
+                            type = type,
+                            name = name,
+                            content = content,
+                            depth = config.depth.name,
+                            focus = config.focus.joinToString(","),
+                            language = config.language,
+                            readAloud = config.readAloud
+                        )
+                    )
+                },
+                onNavigateToPremium = {
+                    rootViewModel.showPaywall()
                 },
                 onNavigateToDashboard = {
                     navController.popBackStack()
@@ -277,20 +318,6 @@ fun SynapseNavGraph(
             )
         }
 
-        // ── Premium — modal slide-up ────────────────────────────────────
-        composable(
-            route              = SynapseScreen.Premium.route,
-            enterTransition    = NavTransitions.verticalEnter(),
-            exitTransition     = NavTransitions.verticalExit(),
-            popEnterTransition = NavTransitions.verticalPopEnter(),
-            popExitTransition  = NavTransitions.verticalPopExit(),
-        ) {
-            SynapsePremiumScreen(
-                onDismiss           = { navController.popBackStack() },
-                onPurchaseSuccess   = { navController.popBackStack() },
-                onNavigateToProfile = { navController.navigate(SynapseScreen.Profile.route) },
-            )
-        }
 
         composable(route = SynapseScreen.About.route) {
             AboutScreen(onNavigateBack = { navController.popBackStack() })
@@ -298,18 +325,18 @@ fun SynapseNavGraph(
 
         // ── Overview — pack overview with vertical motion ────────────────────────
         composable(
-            route              = SynapseScreen.Overview.route,
-            arguments          = listOf(
+            route = SynapseScreen.Overview.route,
+            arguments = listOf(
                 navArgument(SynapseScreen.Overview.ARG_PACK_ID) { type = NavType.LongType },
             ),
-            enterTransition    = NavTransitions.verticalEnter(),
-            exitTransition     = NavTransitions.verticalExit(),
+            enterTransition = NavTransitions.verticalEnter(),
+            exitTransition = NavTransitions.verticalExit(),
             popEnterTransition = NavTransitions.verticalPopEnter(),
-            popExitTransition  = NavTransitions.verticalPopExit(),
+            popExitTransition = NavTransitions.verticalPopExit(),
         ) {
             PackOverviewScreen(
-                onNavigateBack        = { navController.popBackStack() },
-                onNavigateToExport  = { packId ->
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToExport = { packId ->
                     navController.navigate(SynapseScreen.Export.createRoute(packId))
                 },
             )
@@ -317,19 +344,173 @@ fun SynapseNavGraph(
 
         // ── Export — PDF builder wizard ──────────────────────────────────────────
         composable(
-            route              = SynapseScreen.Export.route,
-            arguments          = listOf(
+            route = SynapseScreen.Export.route,
+            arguments = listOf(
                 navArgument(SynapseScreen.Export.ARG_PACK_ID) { type = NavType.LongType },
             ),
-            enterTransition    = NavTransitions.verticalEnter(),
-            exitTransition     = NavTransitions.verticalExit(),
+            enterTransition = NavTransitions.verticalEnter(),
+            exitTransition = NavTransitions.verticalExit(),
             popEnterTransition = NavTransitions.verticalPopEnter(),
-            popExitTransition  = NavTransitions.verticalPopExit(),
+            popExitTransition = NavTransitions.verticalPopExit(),
         ) {
             ExportScreen(
-                onNavigateBack        = { navController.popBackStack() },
-                onNavigateToPremium   = { navController.navigate(SynapseScreen.Premium.route) },
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToPremium = { rootViewModel.showPaywall() },
             )
+        }
+        // ── Summary Flow ────────────────────────────────────────────────────────
+        composable(
+            route = SynapseScreen.SummaryGenerator.route,
+            arguments = listOf(
+                navArgument(SynapseScreen.SummaryGenerator.ARG_SOURCE_TYPE) {
+                    type = NavType.StringType
+                },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_SOURCE_NAME) {
+                    type = NavType.StringType
+                },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_SOURCE_CONTENT) {
+                    type = NavType.StringType
+                },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_DEPTH) { type = NavType.StringType },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_FOCUS) { type = NavType.StringType },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_LANGUAGE) {
+                    type = NavType.StringType
+                },
+                navArgument(SynapseScreen.SummaryGenerator.ARG_READ_ALOUD) {
+                    type = NavType.BoolType
+                },
+            ),
+            enterTransition = NavTransitions.verticalEnter(),
+            exitTransition = NavTransitions.verticalExit(),
+            popEnterTransition = NavTransitions.verticalPopEnter(),
+            popExitTransition = NavTransitions.verticalPopExit(),
+        ) { entry ->
+            val args = entry.arguments
+            val sourceType = args?.getString(SynapseScreen.SummaryGenerator.ARG_SOURCE_TYPE) ?: ""
+            val sourceName = args?.getString(SynapseScreen.SummaryGenerator.ARG_SOURCE_NAME) ?: ""
+            val sourceContent =
+                args?.getString(SynapseScreen.SummaryGenerator.ARG_SOURCE_CONTENT) ?: ""
+            val depthStr = args?.getString(SynapseScreen.SummaryGenerator.ARG_DEPTH) ?: "STANDARD"
+            val focusStr = args?.getString(SynapseScreen.SummaryGenerator.ARG_FOCUS) ?: ""
+            val language = args?.getString(SynapseScreen.SummaryGenerator.ARG_LANGUAGE) ?: "auto"
+            val readAloud = args?.getBoolean(SynapseScreen.SummaryGenerator.ARG_READ_ALOUD) ?: true
+
+            val vm: SummaryViewModel = hiltViewModel()
+
+            // 1. Initialize config once — separate from effect collection
+            LaunchedEffect(Unit) {
+                val config = io.synapse.ai.features.summary.presentation.state.SummaryConfig(
+                    depth = io.synapse.ai.features.summary.presentation.state.SummaryDepth.valueOf(
+                        depthStr
+                    ),
+                    focus = focusStr.split(",").filter { it.isNotBlank() }.toSet(),
+                    language = language,
+                    readAloud = readAloud
+                )
+                vm.onEvent(
+                    io.synapse.ai.features.summary.presentation.state.SummaryEvent.ConfigChanged(
+                        config
+                    )
+                )
+            }
+
+            // 2. Collect effects in a separate coroutine so it never blocks setup
+            LaunchedEffect(vm) {
+                vm.effect.collect { effect ->
+                    when (effect) {
+                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateToSummary -> {
+                            navController.navigate(SynapseScreen.SummaryViewer.createRoute(effect.id)) {
+                                popUpTo(SynapseScreen.SummaryGenerator.route) { inclusive = true }
+                            }
+                        }
+
+                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateBack -> {
+                            navController.popBackStack()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+
+            SummaryGeneratorScreen(
+                sourceType = sourceType,
+                sourceContent = sourceContent,
+                viewModel = vm,
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = SynapseScreen.SummaryViewer.route,
+            arguments = listOf(
+                navArgument(SynapseScreen.SummaryViewer.ARG_SUMMARY_ID) {
+                    type = NavType.LongType
+                },
+            ),
+            enterTransition = NavTransitions.verticalEnter(),
+            exitTransition = NavTransitions.verticalExit(),
+            popEnterTransition = NavTransitions.verticalPopEnter(),
+            popExitTransition = NavTransitions.verticalPopExit(),
+        ) { entry ->
+            val summaryId = entry.arguments?.getLong(SynapseScreen.SummaryViewer.ARG_SUMMARY_ID)
+                ?: return@composable
+            val vm: SummaryViewModel = hiltViewModel()
+
+            LaunchedEffect(summaryId) {
+                vm.onEvent(
+                    io.synapse.ai.features.summary.presentation.state.SummaryEvent.LoadSummary(
+                        summaryId
+                    )
+                )
+            }
+
+            val state by vm.state.collectAsStateWithLifecycle()
+
+            LaunchedEffect(vm) {
+                vm.effect.collect { effect ->
+                    when (effect) {
+                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateBack -> {
+                            navController.popBackStack()
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+
+            if (state.summary != null) {
+                SummaryScreen(
+                    summary = state.summary!!,
+                    audioState = state.audioState,
+                    readAloudState = state.readAloudState,
+                    activeSentenceIdProvider = { state.activeSentenceId },
+                    resumeFromMs = state.resumeFromMs,
+                    onBack = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.BackClicked) },
+                    onShare = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.ShareClicked) },
+                    onInitiateReadAloud = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.InitiateReadAloud) },
+                    onPlayPause = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.PlayPauseAudio) },
+                    onSeekTo = { pos -> vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudio(pos)) },
+                    onSeekBack = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudioBack) },
+                    onSeekForward = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudioForward) },
+                    onSpeedChange = { speed ->
+                        vm.onEvent(
+                            io.synapse.ai.features.summary.presentation.state.SummaryEvent.ChangeAudioSpeed(
+                                speed
+                            )
+                        )
+                    },
+                    onRestart = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.RestartAudio) },
+                    onAcceptResume = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.AcceptResumeAudio) },
+                    onDismissResume = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.DismissResumeAudio) },
+                )
+            } else {
+                // Summary is loading from Room — show spinner
+                androidx.compose.foundation.layout.Box(
+                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                ) {
+                    io.synapse.ai.core.ui.components.LoadingIndicator()
+                }
+            }
         }
     }
 }
@@ -338,10 +519,10 @@ private fun NavGraphBuilder.tabComposable(
     route: String,
     content: @Composable (NavBackStackEntry) -> Unit,
 ) = composable(
-    route              = route,
-    enterTransition    = NavTransitions.fadeThroughEnter(),
-    exitTransition     = NavTransitions.fadeThroughExit(),
+    route = route,
+    enterTransition = NavTransitions.fadeThroughEnter(),
+    exitTransition = NavTransitions.fadeThroughExit(),
     popEnterTransition = NavTransitions.fadeThroughEnter(),
-    popExitTransition  = NavTransitions.fadeThroughExit(),
-    content            = { content(it) },
+    popExitTransition = NavTransitions.fadeThroughExit(),
+    content = { content(it) },
 )
