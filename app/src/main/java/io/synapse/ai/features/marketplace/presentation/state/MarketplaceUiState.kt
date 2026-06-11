@@ -5,11 +5,11 @@ import io.synapse.ai.features.marketplace.domain.MarketplaceFilter
 import io.synapse.ai.features.marketplace.domain.MarketplacePack
 import io.synapse.ai.features.marketplace.domain.MarketplacePackDetail
 
-// ── UI State ──────────────────────────────────────────────────────────────────
 
 @Immutable
 data class MarketplaceUiState(
     val isLoading: Boolean = true,
+    val isPro: Boolean = false,
     val packs: List<MarketplacePack> = emptyList(),
     val featuredPacks: List<MarketplacePack> = emptyList(),
     val filter: MarketplaceFilter = MarketplaceFilter(),
@@ -19,12 +19,10 @@ data class MarketplaceUiState(
     val isAcquiring: Boolean = false,
     val error: String? = null,
 ) {
-    /** All distinct categories present in the loaded pack list. */
     val availableCategories: List<String>
         get() = packs.mapNotNull { it.category }.distinct().sorted()
 }
 
-// ── Events (UI → ViewModel) ───────────────────────────────────────────────────
 
 sealed interface MarketplaceEvent {
     data object LoadPacks                                     : MarketplaceEvent
