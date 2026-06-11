@@ -17,7 +17,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
-// ── DTO → Domain ──────────────────────────────────────────────────────────────
+
 
 internal fun MarketplacePackDto.toDomain(): MarketplacePack = MarketplacePack(
     id               = id,
@@ -58,9 +58,7 @@ internal fun PreviewQuestionDto.toDomain(localPackId: Long = 0L): QuestionModel 
     )
 }
 
-// ── Domain → Room Entity (for caching) ───────────────────────────────────────
-
-internal fun MarketplacePack.toCacheEntity(): PackEntity = PackEntity(
+internal fun MarketplacePack.toCacheEntity(packType: String = "marketplace"): PackEntity = PackEntity(
     uuid             = id,
     title            = title,
     sourceType       = "marketplace",
@@ -74,10 +72,10 @@ internal fun MarketplacePack.toCacheEntity(): PackEntity = PackEntity(
     isPremium        = isPremium,
     estimatedMinutes = estimatedMinutes,
     tags             = lenientJson.encodeToString(tags),
-    packType         = "marketplace",
+    packType         = packType
 )
 
-// ── Room Entity → Domain ──────────────────────────────────────────────────────
+
 
 internal fun PackEntity.toMarketplaceDomain(): MarketplacePack = MarketplacePack(
     id               = uuid ?: id.toString(),
@@ -96,7 +94,7 @@ internal fun PackEntity.toMarketplaceDomain(): MarketplacePack = MarketplacePack
     downloadCount    = 0,
 )
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 private fun parseModulesFromJsonArray(jsonArray: kotlinx.serialization.json.JsonArray?): List<PackModule> {
     if (jsonArray == null) return emptyList()
