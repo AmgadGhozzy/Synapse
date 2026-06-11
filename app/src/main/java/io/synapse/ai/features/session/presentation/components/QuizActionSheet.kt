@@ -407,13 +407,7 @@ internal fun HintButton(
             painter           = painterResource(R.drawable.ic_lightbulb),
             contentDescription = stringResource(R.string.quiz_hint_label),
             tint              = semantic.gold,
-            modifier          = Modifier.size(15.adp),
-        )
-        Text(
-            text       = stringResource(R.string.quiz_hint_label),
-            style      = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color      = semantic.gold,
+            modifier          = Modifier.size(16.adp),
         )
     }
 }
@@ -440,13 +434,7 @@ internal fun DiagramButton(
             painter           = painterResource(R.drawable.ic_tree_structure),
             contentDescription = "Diagram",
             tint              = semantic.primary,
-            modifier          = Modifier.size(15.adp),
-        )
-        Text(
-            text       = "Diagram",
-            style      = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color      = semantic.primary,
+            modifier          = Modifier.size(16.adp),
         )
     }
 }
