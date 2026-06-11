@@ -38,6 +38,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -271,10 +272,11 @@ fun TimeDisplayRow(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
+    val context = LocalContext.current
     val timeLabel = remember(hour, minute) {
         val h = if (hour % 12 == 0) 12 else hour % 12
         val m = minute.toString().padStart(2, '0')
-        val amPm = if (hour < 12) "AM" else "PM"
+        val amPm = if (hour < 12) context.getString(R.string.settings_time_am) else context.getString(R.string.settings_time_pm)
         "$h:$m $amPm"
     }
     Row(
