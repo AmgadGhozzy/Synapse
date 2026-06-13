@@ -6,11 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.aboutlibraries)
+
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
+    alias(libs.plugins.androidx.baselineprofile)
 }
 
 val localProperties = Properties()
@@ -27,8 +28,8 @@ android {
         applicationId = "io.synapse.ai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 73
-        versionName = "2.2.3"
+        versionCode = 76
+        versionName = "2.2.6"
 //        ndk {
 //            abiFilters.add("arm64-v8a")
 //            abiFilters.add("armeabi-v7a")
@@ -54,6 +55,10 @@ android {
             )
         }
     }
+
+    baselineProfile {
+        dexLayoutOptimization = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -70,9 +75,8 @@ android {
     packaging {
         resources {
             excludes += setOf(
-//                "/META-INF/{AL2.0,LGPL2.1}",
-//                "/META-INF/*.version",
-//                "/META-INF/kotlin-project-structure-metadata.json",
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/*.version",
                 "**/dump_syms*"
             )
         }
@@ -86,6 +90,9 @@ android {
 }
 
 dependencies {
+
+    // Baseline Profile
+    baselineProfile(project(":baselineprofile"))
 
     // Firebase
     implementation(platform(libs.firebase.bom))
@@ -122,13 +129,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     implementation(libs.kotlinx.serialization.json)
-    api(libs.converter.moshi)
-    api(libs.moshi)
 
     // Networking
     api(libs.okhttp)
-    api(libs.okhttp.sse)
-    api(libs.retrofit)
 
     // Supabase
     implementation(libs.supabase.client)
@@ -155,6 +158,7 @@ dependencies {
     api(libs.androidx.lifecycle.viewmodel.compose)
     api(libs.androidx.lifecycle.viewmodel.ktx)
     api(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.media3.exoplayer)
 
     // Compose
     api(libs.compose.ui)
@@ -162,29 +166,16 @@ dependencies {
     api(libs.compose.ui.tooling.preview)
     api(libs.compose.material3)
     api(libs.compose.animation)
-    api(libs.coil.compose)
-    api(libs.compose.material.icons.extended) {
-        exclude(group = "androidx.compose.material.icons", module = "filled")
-        exclude(group = "androidx.compose.material.icons", module = "outlined")
-        exclude(group = "androidx.compose.material.icons", module = "round")
-        exclude(group = "androidx.compose.material.icons", module = "sharp")
-        exclude(group = "androidx.compose.material.icons", module = "twotone")
-    }
+    implementation("io.coil-kt.coil3:coil-compose:3.4.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
 
-    api(libs.lottie.compose)
-    api(libs.konfetti.compose)
-    
-    // About Libraries
-    implementation(libs.aboutlibraries.core)
-    implementation(libs.aboutlibraries.compose.m3)
-    implementation(libs.aboutlibraries.compose.core)
+    implementation(libs.androidx.compose.ui.text.google.fonts)
 
     // Vico Charts
     api(libs.vico.compose.m3)
     
     // Kotlin
     api(libs.kotlin.stdlib)
-    api(libs.androidx.exifinterface)
 
 
     // Testing

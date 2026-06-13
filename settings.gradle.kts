@@ -40,3 +40,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Synapse"
 include(":app")
+include(":baselineprofile")
