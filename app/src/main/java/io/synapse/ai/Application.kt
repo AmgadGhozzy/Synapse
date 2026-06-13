@@ -25,8 +25,18 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+
 @HiltAndroidApp
-class Application : Application() {
+class Application : Application(), Configuration.Provider {
+
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
