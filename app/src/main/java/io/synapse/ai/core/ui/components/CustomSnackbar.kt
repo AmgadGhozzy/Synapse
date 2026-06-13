@@ -8,10 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar
@@ -29,8 +25,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
+import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.ui.state.ToastType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -184,7 +182,7 @@ fun SnackbarHost(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    bottom = 80.dp,
+                    bottom = 90.adp,
                     start  = MaterialTheme.synapse.spacing.screen,
                     end    = MaterialTheme.synapse.spacing.screen,
                 )
@@ -208,21 +206,21 @@ private fun ModernSnackbar(
 ) {
     val semantic = MaterialTheme.synapse.semantic
 
-    val (containerColor, contentColor, icon) = when (type) {
+    val (containerColor, contentColor, iconRes) = when (type) {
         SnackbarType.SUCCESS -> Triple(
             semantic.success,
             semantic.onSuccess,
-            Icons.Filled.CheckCircle
+            R.drawable.ic_check_circle_2
         )
         SnackbarType.ERROR -> Triple(
             semantic.error,
             semantic.onError,
-            Icons.Filled.Error
+            R.drawable.ic_error
         )
         SnackbarType.INFO -> Triple(
             semantic.accent,
             semantic.onAccent,
-            Icons.Filled.Info
+            R.drawable.ic_info
         )
         SnackbarType.DEFAULT -> Triple(
             MaterialTheme.colorScheme.inverseOnSurface,
@@ -263,13 +261,13 @@ private fun ModernSnackbar(
         actionContentColor = contentColor
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.adp, horizontal = 4.adp),
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s12),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            icon?.let {
+            iconRes?.let {
                 Icon(
-                    imageVector = it,
+                    painter = painterResource(it),
                     contentDescription = null,
                     modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_md),
                     tint = contentColor
