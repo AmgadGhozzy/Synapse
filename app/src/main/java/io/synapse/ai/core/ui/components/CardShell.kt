@@ -17,7 +17,6 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.dp
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
@@ -39,11 +38,11 @@ fun CardShell(
                 shadow = MaterialTheme.synapse.shadows.medium.toShadow(customColor = color)
             )
             .border(
-                width = 1.dp,
+                width = 1.adp,
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.35f),
-                        Color.White.copy(alpha = 0.08f)
+                        Color.White.copy(alpha = 0.2f),
+                        Color.White.copy(alpha = 0.05f)
                     )
                 ),
                 shape = shape

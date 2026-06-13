@@ -50,6 +50,7 @@ data class SpacingTokens(
     val icon_md: Dp = 22.dp,
     val icon_lg: Dp = 24.dp,
     val icon_xl: Dp = 26.dp,
+    val icon_xxl: Dp = 28.dp,
 )
 
 fun buildAdaptiveSpacing(scale: Float): SpacingTokens {
@@ -91,6 +92,7 @@ fun buildAdaptiveSpacing(scale: Float): SpacingTokens {
         icon_md = dp(22f),
         icon_lg = dp(24f),
         icon_xl = dp(26f),
+        icon_xxl = dp(28f),
     )
 }
 
