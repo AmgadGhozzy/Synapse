@@ -24,3 +24,7 @@ local.properties
 !/.gradle-local/wrapper/
 
 !/.gradle-local/
+!/AGENTS.md
+!/GEMINI.md
+!/ARCHITECTURE_REFACTOR.md
+!/.env
