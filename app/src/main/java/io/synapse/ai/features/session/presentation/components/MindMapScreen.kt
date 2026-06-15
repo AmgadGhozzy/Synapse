@@ -228,8 +228,8 @@ private fun buildMindMapHtml(
     .mermaid svg text,
     .mermaid svg tspan {
       overflow: visible !important;
-      color: #FFFFFF !important; /* لون أبيض دائم */
-      fill: #FFFFFF !important;  /* لون أبيض دائم */
+      color: #FFFFFF !important;
+      fill: #FFFFFF !important;
     }
     
     .mermaid svg foreignObject div {
