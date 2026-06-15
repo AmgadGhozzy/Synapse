@@ -16,8 +16,9 @@ import io.synapse.ai.core.theme.Indigo500
 import io.synapse.ai.core.theme.Indigo600
 import io.synapse.ai.core.theme.Indigo700
 import io.synapse.ai.core.theme.Indigo950
+import io.synapse.ai.core.theme.Orange100
+import io.synapse.ai.core.theme.Orange200
 import io.synapse.ai.core.theme.Orange400
-import io.synapse.ai.core.theme.Orange50
 import io.synapse.ai.core.theme.Orange600
 import io.synapse.ai.core.theme.Slate200
 import io.synapse.ai.core.theme.Slate50
@@ -27,7 +28,6 @@ import io.synapse.ai.core.theme.Transparent
 import io.synapse.ai.core.theme.Violet400
 import io.synapse.ai.core.theme.Violet500
 import io.synapse.ai.core.theme.White
-import io.synapse.ai.core.theme.Yellow100
 
 @Immutable
 data class SynapseGradients(
@@ -64,8 +64,8 @@ private object LightGradients {
     val streakHero = Brush.linearGradient(
         colors = listOf(
             White,
-            Orange50,
-            Yellow100
+            Orange100,
+            Orange200
         )
     )
 

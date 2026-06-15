@@ -11,12 +11,12 @@ import dagger.hilt.android.HiltAndroidApp
 import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.data.ConsentRepository
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
-import io.synapse.ai.core.framework.audio.SoundManager
-import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.data.sync.SyncScheduler
+import io.synapse.ai.core.audio.SoundManager
+import io.synapse.ai.domains.config.data.AppConfigProvider
+import io.synapse.ai.domains.premium.data.PremiumManager
+import io.synapse.ai.domains.study.data.sync.SyncScheduler
 import io.synapse.ai.di.NetworkEntryPoint
-import io.synapse.ai.domain.repo.IAuthRepository
+import io.synapse.ai.domains.auth.repository.IAuthRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -183,3 +183,7 @@ class Application : Application(), Configuration.Provider {
         const val CHANNEL_REMINDERS = "study_reminders"
     }
 }
+
+
+
+

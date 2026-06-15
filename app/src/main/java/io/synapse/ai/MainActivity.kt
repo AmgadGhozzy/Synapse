@@ -1,6 +1,9 @@
 package io.synapse.ai
 
 import android.content.Intent
+import android.graphics.Color
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -16,12 +19,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
-import io.synapse.ai.core.framework.audio.SoundManager
+import io.synapse.ai.core.audio.SoundManager
 import io.synapse.ai.core.theme.LimitedFontScale
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.tokens.Cairo
 import io.synapse.ai.core.theme.tokens.InterBold
-import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.domains.premium.data.PremiumManager
 import io.synapse.ai.features.premium.presentation.viewmodel.EntitlementViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel
 import io.synapse.ai.features.profile.presentation.viewmodel.StudySettingsViewModel
@@ -56,12 +59,12 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
             ),
             navigationBarStyle = SystemBarStyle.auto(
-                android.graphics.Color.TRANSPARENT,
-                android.graphics.Color.TRANSPARENT,
+                Color.TRANSPARENT,
+                Color.TRANSPARENT,
             ),
         )
 
@@ -117,8 +120,8 @@ class MainActivity : ComponentActivity() {
 
     private fun handleIntent(intent: Intent) {
         if (intent.action == Intent.ACTION_SEND) {
-            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java)
+            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
             } else {
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(Intent.EXTRA_STREAM)
@@ -142,3 +145,5 @@ class MainActivity : ComponentActivity() {
         const val FULLY_DRAWN_TIMEOUT_MS = 10_000L
     }
 }
+
+

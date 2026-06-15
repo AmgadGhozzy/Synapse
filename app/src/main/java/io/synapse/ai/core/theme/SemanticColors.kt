@@ -41,36 +41,36 @@ val LightSynapseSemanticColors = SemanticColors(
     // ── Success ──
     success = BrandColors.SuccessLight,
     onSuccess = BrandColors.OnSuccessLight,
-    successBg = Emerald50,
-    successContainer = Emerald100,
-    successBorder = Emerald200,
+    successBg = BrandColors.SuccessLight.copy(alpha = 0.10f),
+    successContainer = BrandColors.SuccessLight.copy(alpha = 0.20f),
+    successBorder = BrandColors.SuccessLight.copy(alpha = 0.30f),
 
     // ── Error ──
     error = BrandColors.ErrorLight,
     onError = BrandColors.OnErrorLight,
-    errorBg = Red50,
-    errorContainer = Red100,
-    errorBorder = Red200,
+    errorBg = BrandColors.ErrorLight.copy(alpha = 0.10f),
+    errorContainer = BrandColors.ErrorLight.copy(alpha = 0.20f),
+    errorBorder = BrandColors.ErrorLight.copy(alpha = 0.30f),
 
     // ── Accent (Violet) ──
     accent = BrandColors.SecondaryLight,
     onAccent = BrandColors.OnSecondaryLight,
-    accentBg = Violet50,
-    accentContainer = Violet100,
-    accentBorder = Violet200,
+    accentBg = BrandColors.SecondaryLight.copy(alpha = 0.10f),
+    accentContainer = BrandColors.SecondaryLight.copy(alpha = 0.20f),
+    accentBorder = BrandColors.SecondaryLight.copy(alpha = 0.30f),
 
     gold = BrandColors.TertiaryLight,
     onGold = BrandColors.OnTertiaryLight,
-    goldBg = Amber50,
-    goldContainer = Amber100,
-    goldBorder = Amber200,
+    goldBg = BrandColors.TertiaryLight.copy(alpha = 0.10f),
+    goldContainer = BrandColors.TertiaryLight.copy(alpha = 0.20f),
+    goldBorder = BrandColors.TertiaryLight.copy(alpha = 0.30f),
 
     // ── Primary (Indigo) ──
     primary = BrandColors.PrimaryLight,
     onPrimary = BrandColors.OnPrimaryLight,
-    primaryBg = Indigo50,
-    primaryContainer = Indigo100,
-    primaryBorder = Indigo200,
+    primaryBg = BrandColors.PrimaryLight.copy(alpha = 0.10f),
+    primaryContainer = BrandColors.PrimaryLight.copy(alpha = 0.20f),
+    primaryBorder = BrandColors.PrimaryLight.copy(alpha = 0.30f),
 )
 
 val DarkSynapseSemanticColors = SemanticColors(

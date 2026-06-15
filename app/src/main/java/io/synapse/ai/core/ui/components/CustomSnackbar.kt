@@ -1,5 +1,6 @@
 package io.synapse.ai.core.ui.components
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,7 +51,7 @@ enum class SnackbarType {
 class SnackbarController(
     val hostState: SnackbarHostState,
     private val scope: CoroutineScope,
-    private val context: android.content.Context
+    private val context: Context
 ) {
     private var currentType: SnackbarType = SnackbarType.DEFAULT
 

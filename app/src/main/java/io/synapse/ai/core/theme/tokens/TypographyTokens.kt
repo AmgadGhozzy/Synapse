@@ -9,7 +9,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -132,30 +133,39 @@ object TypeScale {
         letterSpacing = 0.5.sp,
     )
 }
+
 private inline fun safeFontFamily(create: () -> FontFamily): FontFamily = try {
     create()
 } catch (_: Throwable) {
     FontFamily.Default
 }
 
+val provider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs
+)
+
 val InterBold: FontFamily by lazy {
     safeFontFamily {
+        val font = GoogleFont("Inter")
         FontFamily(
-            Font(R.font.inter_bold, FontWeight.Bold),
-            Font(R.font.inter_bold, FontWeight.Light),
-            Font(R.font.inter_bold, FontWeight.Medium),
-            Font(R.font.inter_bold, FontWeight.Normal)
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Bold),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Light),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Medium),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Normal)
         )
     }
 }
 
 val Cairo: FontFamily by lazy {
     safeFontFamily {
+        val font = GoogleFont("Cairo")
         FontFamily(
-            Font(R.font.cairo_bold, FontWeight.Bold),
-            Font(R.font.cairo_bold, FontWeight.Light),
-            Font(R.font.cairo_bold, FontWeight.Medium),
-            Font(R.font.cairo_bold, FontWeight.Normal)
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Bold),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Light),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Medium),
+            Font(googleFont = font, fontProvider = provider, weight = FontWeight.Normal)
         )
     }
 }

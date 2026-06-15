@@ -59,8 +59,7 @@ fun SynapseTheme(
         SideEffect {
             val window = (view.context as Activity).window
             val controller = WindowCompat.getInsetsController(window, view)
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-            controller.isAppearanceLightStatusBars = !isDark
+            controller.isAppearanceLightStatusBars     = !isDark
             controller.isAppearanceLightNavigationBars = !isDark
         }
     }
