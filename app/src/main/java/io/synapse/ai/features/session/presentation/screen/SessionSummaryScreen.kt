@@ -64,7 +64,7 @@ import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.core.ui.components.GoogleSignInButton
+import io.synapse.ai.features.profile.presentation.components.GoogleSignInButton
 import io.synapse.ai.core.ui.components.GuidedPrimaryButton
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SecondaryButton
