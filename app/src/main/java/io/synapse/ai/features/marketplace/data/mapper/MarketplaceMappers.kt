@@ -1,14 +1,15 @@
 package io.synapse.ai.features.marketplace.data.mapper
 
-import io.synapse.ai.data.entity.PackEntity
-import io.synapse.ai.domain.model.PackModule
-import io.synapse.ai.domain.model.QuestionContent
-import io.synapse.ai.domain.model.QuestionModel
-import io.synapse.ai.domain.model.QuestionType
+import io.synapse.ai.core.database.entity.PackEntity
+import io.synapse.ai.domains.study.model.PackModule
+import io.synapse.ai.domains.study.model.QuestionContent
+import io.synapse.ai.domains.study.model.QuestionModel
+import io.synapse.ai.domains.study.model.QuestionType
 import io.synapse.ai.features.marketplace.data.dto.MarketplacePackDto
 import io.synapse.ai.features.marketplace.data.dto.PreviewQuestionDto
 import io.synapse.ai.features.marketplace.domain.MarketplacePack
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonArray
@@ -96,7 +97,7 @@ internal fun PackEntity.toMarketplaceDomain(): MarketplacePack = MarketplacePack
 
 
 
-private fun parseModulesFromJsonArray(jsonArray: kotlinx.serialization.json.JsonArray?): List<PackModule> {
+private fun parseModulesFromJsonArray(jsonArray: JsonArray?): List<PackModule> {
     if (jsonArray == null) return emptyList()
     return runCatching {
         jsonArray.map { element ->
