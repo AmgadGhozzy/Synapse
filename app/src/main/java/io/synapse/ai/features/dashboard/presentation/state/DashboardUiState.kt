@@ -2,7 +2,7 @@ package io.synapse.ai.features.dashboard.presentation.state
 
 import androidx.compose.runtime.Immutable
 import io.synapse.ai.R
-import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.domains.study.model.PackDisplayItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 

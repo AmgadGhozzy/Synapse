@@ -1,4 +1,6 @@
-package io.synapse.ai.features.dashboard.presentation.screen
+package io.synapse.ai.features.dashboard.presentation.screen
+
+import io.synapse.ai.core.ui.components.study.buildPackCardActions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,12 +41,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
-import io.synapse.ai.core.ui.components.DeletePackDialog
-import io.synapse.ai.core.ui.components.GridPackCard
+import io.synapse.ai.features.library.presentation.components.DeletePackDialog
+import io.synapse.ai.core.ui.components.study.GridPackCard
 import io.synapse.ai.core.ui.components.SnackbarHost
-import io.synapse.ai.core.ui.components.buildPackCardActions
 import io.synapse.ai.core.ui.components.rememberSnackbarController
-import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.domains.study.model.PackDisplayItem
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.dashboard.presentation.components.DailyGoalCard
 import io.synapse.ai.features.dashboard.presentation.components.DashboardFab
@@ -494,3 +495,4 @@ private fun PackCard(
         modifier = modifier,
     )
 }
+

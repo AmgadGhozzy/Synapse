@@ -10,18 +10,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
-import io.synapse.ai.core.ui.components.PackDisplayItemBuilder
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.data.repo.QuizSessionManager
-import io.synapse.ai.domain.model.PackOverviewModel
-import io.synapse.ai.domain.repo.IPackRepository
-import io.synapse.ai.domain.repo.IProgressRepository
-import io.synapse.ai.domain.repo.IQuestionRepository
-import io.synapse.ai.domain.repo.ISessionRepository
+import io.synapse.ai.domains.config.data.AppConfigProvider
+import io.synapse.ai.domains.premium.data.PremiumManager
+import io.synapse.ai.domains.study.usecase.BuildPackDisplayItemsUseCase
+import io.synapse.ai.domains.study.usecase.StreakCalculator
+import io.synapse.ai.domains.study.data.QuizSessionManager
+import io.synapse.ai.domains.study.model.PackOverviewModel
+import io.synapse.ai.domains.study.repository.IPackRepository
+import io.synapse.ai.domains.study.repository.IProgressRepository
+import io.synapse.ai.domains.study.repository.IQuestionRepository
+import io.synapse.ai.domains.study.repository.ISessionRepository
 import io.synapse.ai.features.dashboard.presentation.state.DashboardUiState
 import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.collections.immutable.toImmutableList
@@ -132,7 +133,7 @@ class DashboardViewModel @Inject constructor(
                         val (allActivity, allDisplayItems) = coroutineScope {
                             val activityDef = async { sessionRepo.getDailyActivity(0, Long.MAX_VALUE) }
                             val buildBatchDef = async {
-                                PackDisplayItemBuilder.buildBatch(
+                                BuildPackDisplayItemsUseCase.buildBatch(
                                     packs = data.packs,
                                     questionRepo = questionRepo,
                                     progressRepo = progressRepo
@@ -142,11 +143,11 @@ class DashboardViewModel @Inject constructor(
                         }
                         
                         val studiedIndices = allActivity.map { it.dayEpochMs / MS_PER_DAY }.sortedDescending()
-                        val currentStreak = io.synapse.ai.domain.stats.StreakCalculator.currentStreak(studiedIndices, todayIndex)
+                        val currentStreak = StreakCalculator.currentStreak(studiedIndices, todayIndex)
 
                         val todayStudied = allActivity.firstOrNull { it.dayEpochMs == todayMidnightMs }?.questionsStudied ?: 0
 
-                        val (thisMondayMs, thisNextMondayMs) = io.synapse.ai.domain.stats.StreakCalculator.currentWeekBounds(nowMs)
+                        val (thisMondayMs, thisNextMondayMs) = StreakCalculator.currentWeekBounds(nowMs)
                         val lastMondayMs = thisMondayMs - 7 * MS_PER_DAY
 
                         val thisWeekActivity = allActivity.filter { it.dayEpochMs in thisMondayMs until thisNextMondayMs }
@@ -217,3 +218,10 @@ class DashboardViewModel @Inject constructor(
         val showSwipeHint: Boolean,
     )
 }
+
+
+
+
+
+
+
