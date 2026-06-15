@@ -7,11 +7,14 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.synapse.ai.data.SynapseDatabase
-import io.synapse.ai.data.dao.PackDao
-import io.synapse.ai.data.dao.ProgressDao
-import io.synapse.ai.data.dao.QuestionDao
-import io.synapse.ai.data.dao.SessionDao
+import io.synapse.ai.core.database.DatabaseMigrations
+import io.synapse.ai.core.database.SynapseDatabase
+import io.synapse.ai.core.database.dao.PackDao
+import io.synapse.ai.core.database.dao.ProgressDao
+import io.synapse.ai.core.database.dao.QuestionDao
+import io.synapse.ai.core.database.dao.SessionDao
+import io.synapse.ai.core.database.dao.SummaryDao
+import io.synapse.ai.core.database.dao.MarketplacePackDao
 import javax.inject.Singleton
 
 @Module
@@ -27,7 +30,11 @@ object SynapseDatabaseModule {
         SynapseDatabase::class.java,
         SynapseDatabase.DB_NAME
     )
-        .fallbackToDestructiveMigration()
+        .addMigrations(
+            DatabaseMigrations.MIGRATION_3_4,
+            DatabaseMigrations.MIGRATION_4_5,
+            DatabaseMigrations.MIGRATION_5_6,
+        )
         .build()
 
     @Provides
@@ -41,4 +48,13 @@ object SynapseDatabaseModule {
 
     @Provides
     fun provideSessionDao(db: SynapseDatabase): SessionDao = db.sessionDao()
+
+    @Provides
+    fun provideMarketplacePackDao(db: SynapseDatabase): MarketplacePackDao =
+        db.marketplacePackDao()
+
+    @Provides
+    fun provideSummaryDao(db: SynapseDatabase): SummaryDao = db.summaryDao()
 }
+
+
