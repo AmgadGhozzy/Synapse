@@ -59,7 +59,7 @@ import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.CloseButton
-import io.synapse.ai.core.ui.components.ExportActionButton
+import io.synapse.ai.features.export.presentation.components.ExportActionButton
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.StepIndicator

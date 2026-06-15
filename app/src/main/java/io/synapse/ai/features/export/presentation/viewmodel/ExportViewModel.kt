@@ -5,13 +5,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.domains.premium.data.PremiumManager
 import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
-import io.synapse.ai.domain.repo.IPackRepository
-import io.synapse.ai.domain.repo.IQuestionRepository
-import io.synapse.ai.domain.usecase.ExportPackToPdfUseCase
-import io.synapse.ai.domain.usecase.ExportPackToWordUseCase
+import io.synapse.ai.domains.study.repository.IPackRepository
+import io.synapse.ai.domains.study.repository.IQuestionRepository
+import io.synapse.ai.features.export.domain.usecase.ExportPackToPdfUseCase
+import io.synapse.ai.features.export.domain.usecase.ExportPackToWordUseCase
 import io.synapse.ai.features.export.data.ExportLimitTracker
 import io.synapse.ai.features.export.data.InstitutionPreferences
 import io.synapse.ai.features.export.domain.ExportResult
@@ -271,3 +271,6 @@ class ExportViewModel @Inject constructor(
         _effects.tryEmit(ExportEffect.ShareFile(uri, mimeType))
     }
 }
+
+
+
