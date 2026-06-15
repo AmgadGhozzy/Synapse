@@ -9,7 +9,7 @@ import io.synapse.ai.R
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.data.repo.PremiumManager
+import io.synapse.ai.domains.premium.data.PremiumManager
 import io.synapse.ai.features.marketplace.domain.AcquireResult
 import io.synapse.ai.features.marketplace.domain.MarketplaceFilter
 import io.synapse.ai.features.marketplace.domain.usecase.AcquirePackUseCase
@@ -191,3 +191,4 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 }
+
