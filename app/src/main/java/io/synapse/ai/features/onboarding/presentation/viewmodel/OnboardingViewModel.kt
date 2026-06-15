@@ -7,14 +7,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.AppSettingsRepository
+import io.synapse.ai.domains.config.data.AppConfigProvider
+import io.synapse.ai.domains.config.data.AppSettingsRepository
 import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingUiState
-import io.synapse.ai.domain.repo.IAuthRepository
-import io.synapse.ai.data.sync.SyncScheduler
+import io.synapse.ai.domains.auth.repository.IAuthRepository
+import io.synapse.ai.domains.study.data.sync.SyncScheduler
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,3 +111,6 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 }
+
+
+
