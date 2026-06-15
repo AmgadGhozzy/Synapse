@@ -17,8 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -274,7 +273,7 @@ private fun CtaButton(
     modifier: Modifier = Modifier,
 ) {
     val tokens = MaterialTheme.synapse
-    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     val buttonBgColor = if (isDark) Color.White.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.2f)
     val contentColor = Color.White
@@ -313,9 +312,9 @@ private fun CtaButton(
                     ),
                 )
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowForwardIos,
+                    painter = painterResource(R.drawable.ic_chevron_right),
                     contentDescription = null,
-                    modifier = Modifier.size(16.adp).shake(),
+                    modifier = Modifier.size(20.adp).shake(),
                 )
             }
 
