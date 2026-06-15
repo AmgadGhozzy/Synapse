@@ -1,4 +1,12 @@
-package io.synapse.ai.features.premium.presentation.viewmodel
+package io.synapse.ai.features.premium.presentation.viewmodel
+
+import io.synapse.ai.domains.premium.model.*
+
+import io.synapse.ai.domains.premium.model.PaywallFeature
+
+import io.synapse.ai.domains.premium.model.PaywallProduct
+
+import io.synapse.ai.domains.premium.model.PaywallConfig
 
 import android.app.Activity
 import android.content.Context
@@ -10,12 +18,12 @@ import io.synapse.ai.R
 import io.synapse.ai.core.analytics.TrackingManager
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.domain.model.ProductDetails
-import io.synapse.ai.domain.repo.IAuthRepository
-import io.synapse.ai.domain.repo.IBillingRepository
-import io.synapse.ai.domain.repo.IPremiumRepository
-import io.synapse.ai.domain.repo.ISocialProofRepository
+import io.synapse.ai.domains.premium.data.PremiumManager
+import io.synapse.ai.domains.premium.model.ProductDetails
+import io.synapse.ai.domains.auth.repository.IAuthRepository
+import io.synapse.ai.domains.premium.repository.IBillingRepository
+import io.synapse.ai.domains.premium.repository.IPremiumRepository
+import io.synapse.ai.domains.premium.repository.ISocialProofRepository
 import io.synapse.ai.features.premium.presentation.state.PremiumEvent
 import io.synapse.ai.features.premium.presentation.state.PremiumUiState
 import io.synapse.ai.features.premium.presentation.state.buildFeatureUiModels
@@ -268,3 +276,7 @@ class PremiumViewModel @Inject constructor(
         viewModelScope.launch { billingRepository.disconnect() }
     }
 }
+
+
+
+
