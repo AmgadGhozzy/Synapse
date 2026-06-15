@@ -1,4 +1,8 @@
-package io.synapse.ai.core.ui.components
+package io.synapse.ai.core.ui.components
+
+import io.synapse.ai.core.ui.components.study.DragValue
+
+import io.synapse.ai.core.ui.components.study.SwipeAction
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -72,7 +76,7 @@ fun SwipeableCardContainer(
     val haptic  = LocalHapticFeedback.current
 
     val actionWidth    = 72.adp
-    val panelPadding   = MaterialTheme.synapse.spacing.s4
+    val panelPadding   = MaterialTheme.synapse.spacing.s6
     // Panel width = action slots + gaps between them + outer padding
     val revealWidthDp: Dp = if (verticalActions) {
         actionWidth + panelPadding
@@ -103,7 +107,7 @@ fun SwipeableCardContainer(
     }
 
     // reveals the action panel to hint swipeability,
-    val hintPeekPx = with(density) { actionWidth.toPx() }
+    val hintPeekPx = with(density) { revealWidthDp.toPx() }
     val hintOffset = remember { Animatable(0f) }
     LaunchedEffect(showSwipeHint) {
         if (showSwipeHint && dragState.currentValue == DragValue.Closed) {
@@ -256,7 +260,11 @@ fun ActionButton(
                 transformOrigin = TransformOrigin(1f, 0.5f)
             }
             .background(action.color, MaterialTheme.shapes.medium)
-            .clickable(onClick = onClick),
+            .clickable(
+                onClick = onClick,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Column(

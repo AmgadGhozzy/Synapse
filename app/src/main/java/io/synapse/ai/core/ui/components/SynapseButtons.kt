@@ -14,85 +14,68 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 
-/**
- * Full-width gradient CTA button.
- */
 @Composable
 fun PrimaryGradientButton(
     text: String,
     iconRes: Int? = null,
     enabled: Boolean,
+    isLoading: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shape = MaterialTheme.shapes.medium
 
-    val gradient: Brush = if (enabled) {
-        MaterialTheme.synapse.gradients.primary
-    } else {
-        Brush.linearGradient(
-            listOf(
-                MaterialTheme.colorScheme.surfaceVariant,
-                MaterialTheme.colorScheme.surfaceVariant,
-            )
-        )
-    }
-
-    val contentColor = if (enabled) {
-        Color.White.copy(alpha = 0.9f)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val contentColor = Color.White.copy(alpha = 0.9f)
 
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
             .height(60.adp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(gradient)
+            .clip(shape)
+            .background(MaterialTheme.synapse.gradients.primary)
             .then(
                 if (enabled) Modifier.clickable(onClick = onClick) else Modifier
             ),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s10),
-        ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-                color = contentColor,
-            )
-            if (iconRes != null) {
-                Icon(
-                    painter = painterResource(iconRes),
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xl),
+        if (isLoading) {
+            WavyLoadingIndicator()
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
+            ) {
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = contentColor,
                 )
+                if (iconRes != null) {
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xl),
+                    )
+                }
             }
         }
     }
@@ -133,25 +116,22 @@ fun GuidedPrimaryButton(
         iconRes = iconRes,
         enabled = enabled,
         onClick = onClick,
-        modifier = modifier
-            .graphicsLayer {
-                scaleX = haloScale
-                scaleY = haloScale
-            }
-    )
+        modifier = modifier.graphicsLayer {
+            scaleX = haloScale
+            scaleY = haloScale
+        })
 }
 
-/**
- * Clean outlined button for secondary / cancel actions.
- */
 @Composable
 fun SecondaryButton(
     text: String,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
             .height(60.adp),
@@ -165,48 +145,7 @@ fun SecondaryButton(
         ),
     ) {
         Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium
+            text = text, style = MaterialTheme.typography.bodyMedium
         )
     }
 }
-
-/**
- * Inline PRO badge.
- */
-@Composable
-fun ProBadge(modifier: Modifier = Modifier) {
-    val gold = MaterialTheme.synapse.semantic.gold
-
-    Surface(
-        modifier = modifier,
-        color = gold.copy(alpha = 0.15f),
-        shape = MaterialTheme.synapse.radius.pill,
-        border = BorderStroke(
-            width = 1.adp,
-            color = gold.copy(alpha = 0.50f),
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = MaterialTheme.synapse.spacing.s8,
-                vertical = MaterialTheme.synapse.spacing.s4,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.s4),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_crown),
-                contentDescription = null,
-                tint = gold,
-                modifier = Modifier.size(MaterialTheme.synapse.spacing.icon_xs),
-            )
-            Text(
-                text = stringResource(R.string.pro_badge_label),
-                style = MaterialTheme.typography.labelSmall,
-                color = gold,
-            )
-        }
-    }
-}
-

@@ -27,8 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
+
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -60,7 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
@@ -381,7 +380,7 @@ fun UnlockAIButton(
             horizontalArrangement = Arrangement.spacedBy(8.adp)
         ) {
             Icon(
-                imageVector = Icons.Rounded.AutoAwesome,
+                painter = painterResource(id = R.drawable.ic_sparkles),
                 contentDescription = null,
                 tint = baseColor,
                 modifier = Modifier.size(18.adp)
