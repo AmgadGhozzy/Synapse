@@ -1,9 +1,9 @@
 package io.synapse.ai.features.add_pdf.presentation.state
 
 import androidx.compose.runtime.Immutable
-import io.synapse.ai.core.ui.state.QuestionUiModel
+import io.synapse.ai.core.ui.model.QuestionUiModel
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.domain.model.QuestionType
+import io.synapse.ai.domains.study.model.QuestionType
 
 enum class AddPdfStep {
     SELECT_PDF,
@@ -32,6 +32,7 @@ data class AddPdfUiState(
     val fileUri: String? = null,
     val fileName: String? = null,
     val fileSizeMb: Float = 0f,
+    val filePageCount: Int? = null,
     val ocrEnabled: Boolean = false,
     val extractedText: String? = null,
     val extractionProgress: Float = 0f,
@@ -102,3 +103,4 @@ data class AddPdfUiState(
     val maxPages: Int = 20,
     val maxFileSizeMb: Int = 5
 )
+

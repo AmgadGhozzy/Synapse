@@ -1,10 +1,13 @@
 package io.synapse.ai.features.add_pdf.presentation.screen
 
+import android.app.Activity
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -14,37 +17,60 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
-import io.synapse.ai.core.ui.components.ConfettiAnimationType
-import io.synapse.ai.core.ui.components.ConfettiView
+import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.ErrorBanner
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.StepIndicator
 import io.synapse.ai.core.ui.components.rememberSnackbarController
@@ -58,15 +84,26 @@ import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomShee
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
+import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
 import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.text.style.TextOverflow
 import io.synapse.ai.features.add_pdf.presentation.viewmodel.AddPdfViewModel
+import io.synapse.ai.features.summary.presentation.screen.SummaryConfigContent
+import io.synapse.ai.features.summary.presentation.state.SummaryConfig
 
 @Composable
 fun AddPdfScreen(
     onNavigateBack      : () -> Unit,
     onNavigateToSession : (Long) -> Unit,
+    onNavigateToExport  : (Long) -> Unit,
     onNavigateToPremium : () -> Unit,
     onNavigateToDashboard: () -> Unit,
+    onNavigateToSummaryConfig: (String, String, String, SummaryConfig) -> Unit,
     viewModel           : AddPdfViewModel = hiltViewModel(),
 ) {
     val uiState            by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,6 +118,9 @@ fun AddPdfScreen(
         stringResource(R.string.step_generate),
         stringResource(R.string.step_done),
     )
+    
+    var isSummarySelected by remember { mutableStateOf(false) }
+    var summaryConfig by remember { mutableStateOf(SummaryConfig()) }
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -100,6 +140,67 @@ fun AddPdfScreen(
                 } else "document.pdf"
             } ?: "document.pdf"
         viewModel.onEvent(AddPdfUiEvent.FileSelected(uri.toString(), fileName, fileSizeMb))
+    }
+
+    // ── ML Kit Document Scanner ───────────────────────────────────────────────
+    val scannerOptions = remember {
+        GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setResultFormats(RESULT_FORMAT_PDF)
+            .setScannerMode(SCANNER_MODE_FULL)
+            .build()
+    }
+    val scanner = remember { GmsDocumentScanning.getClient(scannerOptions) }
+
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            scanResult?.pdf?.let { pdf ->
+                val pdfUri   = pdf.uri
+                val pdfName  = "scanned_document.pdf"
+
+                var fileSizeMb = 0f
+
+                // 1. Try file:// path first (most reliable for scanned PDFs)
+                if (pdfUri.scheme == "file") {
+                    pdfUri.path?.let { path ->
+                        val file = java.io.File(path)
+                        if (file.exists()) fileSizeMb = file.length() / (1024f * 1024f)
+                    }
+                }
+
+                // 2. Try ContentResolver SIZE column
+                if (fileSizeMb == 0f) {
+                    context.contentResolver.query(pdfUri, null, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val sizeCol = cursor.getColumnIndex(OpenableColumns.SIZE)
+                            if (sizeCol != -1) {
+                                val raw = cursor.getLong(sizeCol)
+                                if (raw > 0) fileSizeMb = raw / (1024f * 1024f)
+                            }
+                        }
+                    }
+                }
+
+                // 3. Fall back: count bytes from InputStream (accurate but reads the file)
+                if (fileSizeMb == 0f) {
+                    try {
+                        context.contentResolver.openInputStream(pdfUri)?.use { stream ->
+                            var count = 0L
+                            val buf   = ByteArray(8192)
+                            var read: Int
+                            while (stream.read(buf).also { read = it } != -1) count += read
+                            if (count > 0) fileSizeMb = count / (1024f * 1024f)
+                        }
+                    } catch (_: Exception) { /* ignore — fileSizeMb stays 0 */ }
+                }
+
+                val pageCount = pdf.pageCount.takeIf { it > 0 } ?: scanResult.pages?.size ?: 0
+                viewModel.onEvent(AddPdfUiEvent.ScannedPdfReady(pdfUri.toString(), pdfName, fileSizeMb, pageCount))
+            }
+        }
     }
 
     BackHandler {
@@ -148,35 +249,125 @@ fun AddPdfScreen(
         snackbarHost        = { snackbarController.SnackbarHost() },
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            AnimatedContent(
+                targetState = uiState.step,
+                transitionSpec = { fadeIn() togetherWith fadeOut() }
+            ) { step ->
+                if (step == AddPdfStep.SELECT_PDF || step == AddPdfStep.CONFIGURE) {
+                    val canProceed by remember(
+                        uiState.sourceTab, uiState.fileName,
+                        uiState.pasteText, uiState.webUrl,
+                        uiState.isPro, uiState.isLoading,
+                    ) {
+                        derivedStateOf {
+                            when (uiState.sourceTab) {
+                                SourceTab.FILE    -> uiState.fileName != null && !uiState.isLoading
+                                SourceTab.TEXT    -> uiState.pasteText.length >= 10
+                                SourceTab.WEB     -> uiState.isPro && uiState.webUrl.isNotBlank()
+                                SourceTab.YOUTUBE -> uiState.isPro && uiState.webUrl.isNotBlank()
+                            }
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .dropShadow(
+                                shape = RoundedCornerShape(topStart = 24.adp, topEnd = 24.adp),
+                                shadow = MaterialTheme.synapse.shadows.medium.toShadow()
+                            ),
+                        shape = RoundedCornerShape(topStart = 24.adp, topEnd = 24.adp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = MaterialTheme.synapse.spacing.screen)
+                                .padding(top = 16.adp, bottom = MaterialTheme.synapse.spacing.screen)
+                                .navigationBarsPadding()
+                        ) {
+                            if (step == AddPdfStep.SELECT_PDF) {
+                                PrimaryGradientButton(
+                                    text = stringResource(R.string.add_pdf_continue),
+                                    iconRes = R.drawable.ic_chevron_right,
+                                    enabled = canProceed,
+                                    onClick = { viewModel.onEvent(AddPdfUiEvent.ContinueToConfigure) },
+                                )
+                            } else {
+                                if (!isSummarySelected) {
+                                    PrimaryGradientButton(
+                                        text = stringResource(R.string.configure_generate),
+                                        iconRes = R.drawable.ic_sparkles,
+                                        enabled = true,
+                                        onClick = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
+                                    )
+                                } else {
+                                    PrimaryGradientButton(
+                                        text = stringResource(R.string.summary_config_generate),
+                                        iconRes = R.drawable.ic_sparkles,
+                                        enabled = summaryConfig.focus.isNotEmpty(),
+                                        onClick = {
+                                            val type = when (uiState.sourceTab) {
+                                                SourceTab.FILE -> "pdf"
+                                                SourceTab.TEXT -> "text"
+                                                SourceTab.YOUTUBE -> "youtube"
+                                                SourceTab.WEB -> "url"
+                                            }
+                                            val name = when (uiState.sourceTab) {
+                                                SourceTab.FILE -> uiState.fileName ?: "document"
+                                                SourceTab.TEXT -> "Pasted Text"
+                                                SourceTab.WEB, SourceTab.YOUTUBE -> uiState.webUrl
+                                            }
+                                            val content = when (uiState.sourceTab) {
+                                                SourceTab.FILE -> uiState.fileUri ?: ""
+                                                SourceTab.TEXT -> uiState.pasteText
+                                                SourceTab.WEB, SourceTab.YOUTUBE -> uiState.webUrl
+                                            }
+                                            onNavigateToSummaryConfig(type, name, content, summaryConfig)
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Spacer(Modifier.height(0.adp))
+                }
+            }
+        }
     ) { innerPadding ->
 
-        AnimatedVisibility(
-            visible = uiState.step == AddPdfStep.DONE,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            ConfettiView(
-                animationType = ConfettiAnimationType.KONFETTI,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+//        AnimatedVisibility(
+//            visible = uiState.step == AddPdfStep.DONE,
+//            enter = fadeIn(),
+//            exit = fadeOut()
+//        ) {
+//            ConfettiView(
+//                modifier = Modifier.fillMaxSize()
+//            )
+//        }
+
+        val columnModifier = Modifier
+            .padding(innerPadding)
+            .fillMaxSize()
+            .then(if (uiState.step != AddPdfStep.DONE) Modifier.verticalScroll(scrollState) else Modifier)
+            .imePadding()
+            .padding(horizontal = if (uiState.step != AddPdfStep.DONE) MaterialTheme.synapse.spacing.screen else 0.adp)
 
         Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .imePadding()
-                .padding(horizontal = MaterialTheme.synapse.spacing.screen),
+            modifier = columnModifier,
             verticalArrangement = Arrangement.spacedBy(MaterialTheme.synapse.spacing.sectionGap),
         ) {
-            StepIndicator(
-                currentStep = uiState.step.toIndicatorIndex(),
-                steps = stepLabels,
-                modifier     = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.adp),
-            )
+            if (uiState.step != AddPdfStep.DONE) {
+                StepIndicator(
+                    currentStep = uiState.step.toIndicatorIndex(),
+                    steps = stepLabels,
+                    modifier     = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.adp),
+                )
+            }
 
             AnimatedVisibility(
                 visible = uiState.error != null,
@@ -209,25 +400,141 @@ fun AddPdfScreen(
                     AddPdfStep.SELECT_PDF -> UploadStep(
                         uiState           = uiState,
                         onTabSelect       = { viewModel.onEvent(AddPdfUiEvent.SourceTabSelected(it)) },
-                        onPickFile        = { filePicker.launch(arrayOf("application/pdf")) },
+                        onPickFile        = { filePicker.launch(arrayOf("application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")) },
                         onClearFile       = { viewModel.onEvent(AddPdfUiEvent.ClearFile) },
                         onOcrToggle       = { viewModel.onEvent(AddPdfUiEvent.OcrToggled) },
                         onPasteTextChange = { viewModel.onEvent(AddPdfUiEvent.PasteTextChanged(it)) },
                         onWebUrlChange    = { viewModel.onEvent(AddPdfUiEvent.WebUrlChanged(it)) },
                         onWebTabLockedClick = { viewModel.onEvent(AddPdfUiEvent.WebTabLockedClicked) },
                         onContinue        = { viewModel.onEvent(AddPdfUiEvent.ContinueToConfigure) },
+                        onSavePdf         = { viewModel.onEvent(AddPdfUiEvent.SavePdfClicked) },
+                        onScanDocument    = {
+                            scanner.getStartScanIntent(context as Activity)
+                                .addOnSuccessListener { intentSender ->
+                                    scannerLauncher.launch(
+                                        IntentSenderRequest.Builder(intentSender).build()
+                                    )
+                                }
+                                .addOnFailureListener { e ->
+                                    snackbarController.info(e.localizedMessage ?: context.getString(R.string.error_scanner_unavailable))
+                                }
+                        },
                     )
 
-                    AddPdfStep.CONFIGURE -> ConfigureStep(
-                        uiState               = uiState,
-                        onThinkingToggle     = { viewModel.onEvent(AddPdfUiEvent.ThinkingToggled) },
-                        onQuestionCountChange = { viewModel.onEvent(AddPdfUiEvent.QuestionCountChanged(it)) },
-                        onTypeToggle          = { viewModel.onEvent(AddPdfUiEvent.QuestionTypeToggled(it)) },
-                        onFocusNotesChange    = { viewModel.onEvent(AddPdfUiEvent.FocusNotesChanged(it)) },
-                        onLanguageClick       = { showLanguagePicker = true },
-                        onNavigateToPremium    = onNavigateToPremium,
-                        onGenerate            = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
-                    )
+                    AddPdfStep.CONFIGURE -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(16.adp)) {
+                            // Custom tab row for config type (Pack vs Summary)
+                            val tabs = listOf(
+                                false to stringResource(R.string.configure_pack),
+                                true to stringResource(R.string.generate_summary)
+                            )
+                            var rowHeightDp by remember { mutableStateOf(0.dp) }
+                            val density = LocalDensity.current
+
+                            Surface(
+                                modifier = Modifier
+                                    .padding(horizontal = MaterialTheme.synapse.spacing.screen)
+                                    .fillMaxWidth()
+                                    .dropShadow(
+                                        MaterialTheme.shapes.medium,
+                                        MaterialTheme.synapse.shadows.subtle.toShadow()
+                                    ),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.medium,
+                            ) {
+                                androidx.compose.foundation.layout.BoxWithConstraints(
+                                    modifier = Modifier
+                                        .padding(horizontal = 5.adp, vertical = 5.adp)
+                                        .fillMaxWidth(),
+                                ) {
+                                    val tabWidth = maxWidth / 2
+                                    val selectedIndex = if (isSummarySelected) 1 else 0
+                                    val pillOffsetX by animateDpAsState(
+                                        targetValue = tabWidth * selectedIndex,
+                                        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .offset(x = pillOffsetX)
+                                            .width(tabWidth)
+                                            .height(rowHeightDp)
+                                            .dropShadow(
+                                                MaterialTheme.shapes.small,
+                                                MaterialTheme.synapse.shadows.subtle.toShadow()
+                                            )
+                                            .background(
+                                                color = MaterialTheme.colorScheme.surface,
+                                                shape = MaterialTheme.shapes.small,
+                                            ),
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .onSizeChanged() { size ->
+                                                rowHeightDp = with(density) { size.height.toDp() }
+                                            },
+                                    ) {
+                                        tabs.forEach { (isSummary, label) ->
+                                            val isSelected = isSummary == isSummarySelected
+                                            val textColor by animateColorAsState(
+                                                targetValue = if (isSelected) MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                animationSpec = tween(durationMillis = 200),
+                                            )
+
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(MaterialTheme.shapes.small)
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null,
+                                                        onClick = { isSummarySelected = isSummary },
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    text = label,
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                                    ),
+                                                    color = textColor,
+                                                    modifier = Modifier.padding(vertical = 10.adp),
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (!isSummarySelected) {
+                                ConfigureStep(
+                                    uiState               = uiState,
+                                    onThinkingToggle     = { viewModel.onEvent(AddPdfUiEvent.ThinkingToggled) },
+                                    onQuestionCountChange = { viewModel.onEvent(AddPdfUiEvent.QuestionCountChanged(it)) },
+                                    onTypeToggle          = { viewModel.onEvent(AddPdfUiEvent.QuestionTypeToggled(it)) },
+                                    onFocusNotesChange    = { viewModel.onEvent(AddPdfUiEvent.FocusNotesChanged(it)) },
+                                    onLanguageClick       = { showLanguagePicker = true },
+                                    onNavigateToPremium    = onNavigateToPremium,
+                                    onGenerate            = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
+                                    onSavePdf             = { viewModel.onEvent(AddPdfUiEvent.SavePdfClicked) },
+                                )
+                            } else {
+                                SummaryConfigContent(
+                                    config = summaryConfig,
+                                    onConfigChange = { summaryConfig = it },
+                                    onLanguageClick = { showLanguagePicker = true },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 140.adp),
+                                )
+                            }
+                        }
+                    }
 
                     AddPdfStep.GENERATING -> GeneratingStep(
                         uiState          = uiState,
@@ -237,10 +544,11 @@ fun AddPdfScreen(
                     AddPdfStep.DONE -> DoneStep(
                         packName            = uiState.packTitle,
                         sourceDescription  = uiState.sourceDescription,
-                        questionCount     = uiState.questionCount,
                         language          = selectedLanguage,
                         generatedQuestions = uiState.generatedQuestions,
+                        filePageCount      = uiState.filePageCount,
                         onStartStudying   = { onNavigateToSession(uiState.packId) },
+                        onExport          = { onNavigateToExport(uiState.packId) },
                         onBackToDashboard = onNavigateToDashboard,
                     )
                 }
@@ -251,10 +559,14 @@ fun AddPdfScreen(
 
         if (showLanguagePicker) {
             LanguageBottomSheet(
-                selectedCode = uiState.language,
+                selectedCode = if (isSummarySelected) summaryConfig.language else uiState.language,
                 isPro        = uiState.isPro,
                 onSelect     = {
-                    viewModel.onEvent(AddPdfUiEvent.LanguageSelected(it))
+                    if (isSummarySelected) {
+                        summaryConfig = summaryConfig.copy(language = it)
+                    } else {
+                        viewModel.onEvent(AddPdfUiEvent.LanguageSelected(it))
+                    }
                     showLanguagePicker = false
                 },
                 onDismiss    = { showLanguagePicker = false },

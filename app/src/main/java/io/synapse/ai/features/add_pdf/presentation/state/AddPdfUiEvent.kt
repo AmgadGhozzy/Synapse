@@ -1,6 +1,6 @@
 package io.synapse.ai.features.add_pdf.presentation.state
 
-import io.synapse.ai.domain.model.QuestionType
+import io.synapse.ai.domains.study.model.QuestionType
 
 sealed interface AddPdfUiEvent {
     data object GoBack : AddPdfUiEvent
@@ -10,11 +10,18 @@ sealed interface AddPdfUiEvent {
     data class  SourceTabSelected(val tab: SourceTab) : AddPdfUiEvent
     data class  FileSelected(val uri: String, val name: String, val sizeMb: Float) : AddPdfUiEvent
     data object ClearFile : AddPdfUiEvent
+    data class  SharedFileReceived(val uriString: String) : AddPdfUiEvent
     data object OcrToggled : AddPdfUiEvent
     data class  PasteTextChanged(val text: String) : AddPdfUiEvent
     data class  WebUrlChanged(val url: String) : AddPdfUiEvent
     data object WebTabLockedClicked : AddPdfUiEvent
     data object ContinueToConfigure : AddPdfUiEvent
+
+    // ── Document Scanner ─────────────────────────────────────────
+    /** User taps "Scan Document" button to open ML Kit scanner. */
+    data object ScanDocumentClicked : AddPdfUiEvent
+    /** ML Kit scanner returned a scanned PDF URI. */
+    data class  ScannedPdfReady(val uri: String, val name: String, val sizeMb: Float, val pageCount: Int) : AddPdfUiEvent
 
     // ── Configure step ────────────────────────────────────────────
     data class  QuestionCountChanged(val count: Int) : AddPdfUiEvent
@@ -31,4 +38,8 @@ sealed interface AddPdfUiEvent {
 
     /** User taps "Start Now" before generation finishes. */
     data object StartStudyEarly : AddPdfUiEvent
+
+    /** User taps "Save to Device" to copy the imported PDF to Downloads. */
+    data object SavePdfClicked : AddPdfUiEvent
 }
+
