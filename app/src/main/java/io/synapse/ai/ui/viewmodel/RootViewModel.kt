@@ -6,7 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.synapse.ai.data.repo.AppSettingsRepository
+import io.synapse.ai.domains.config.data.AppSettingsRepository
+import io.synapse.ai.domains.premium.repository.IPremiumRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,7 @@ sealed interface SubtitleOverrideState {
 @HiltViewModel
 class RootViewModel @Inject constructor(
     private val settingsRepository: AppSettingsRepository,
+    private val premiumRepository: IPremiumRepository,
 ) : ViewModel() {
 
     // ── Splash gate ──────────────────────────────────────────────────────────
@@ -40,6 +42,15 @@ class RootViewModel @Inject constructor(
     private val _sharedUri = MutableStateFlow<String?>(null)
     val sharedUri: StateFlow<String?> = _sharedUri.asStateFlow()
 
+    // ── Paywall sheet ─────────────────────────────────────────────
+    // Single source of truth for showing the Premium bottom sheet.
+    // Any screen calls rootViewModel.showPaywall() — no nav needed.
+    private val _paywallVisible = MutableStateFlow(false)
+    val paywallVisible: StateFlow<Boolean> = _paywallVisible.asStateFlow()
+
+    fun showPaywall() { _paywallVisible.value = true  }
+    fun hidePaywall() { _paywallVisible.value = false }
+
     fun setSharedUri(uri: String) {
         _sharedUri.value = uri
     }
@@ -54,6 +65,9 @@ class RootViewModel @Inject constructor(
             val isFirstLaunch = settingsRepository.isFirstLaunch()
             _onboardingDone.value = !isFirstLaunch
             isLoadingOnboardingState = false
+            
+            // Warm the paywall cache so the first open has no loading spinner
+            premiumRepository.warmCache()
         }
     }
 
@@ -74,3 +88,4 @@ class RootViewModel @Inject constructor(
         _subtitleOverride.value = SubtitleOverrideState.Default
     }
 }
+

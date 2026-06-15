@@ -38,9 +38,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.synapse.ai.core.framework.audio.SoundManager
+import io.synapse.ai.core.audio.SoundManager
 import io.synapse.ai.core.theme.synapse
-import io.synapse.ai.core.ui.audio.LocalSoundManager
+import io.synapse.ai.core.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SynapseTopBar
 import io.synapse.ai.features.premium.presentation.screen.SynapsePremiumScreen
 import io.synapse.ai.features.profile.presentation.viewmodel.ProfileViewModel

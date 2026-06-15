@@ -1,8 +1,9 @@
 package io.synapse.ai.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Immutable
 import io.synapse.ai.R
-import io.synapse.ai.data.demo.DemoStudyPack
+import io.synapse.ai.domains.study.demo.DemoStudyPack
 
 sealed class SynapseScreen(
     val route: String,
@@ -57,7 +58,7 @@ sealed class SynapseScreen(
         val baseRoute: String = "synapse/add-pdf"
 
         fun createRoute(source: String? = null, uri: String? = null): String {
-            val encodedUri = uri?.let { android.net.Uri.encode(it) }
+            val encodedUri = uri?.let { Uri.encode(it) }
             return when {
                 source == null && encodedUri == null -> baseRoute
                 encodedUri != null -> "$baseRoute?$ARG_SOURCE=${source ?: SOURCE_FILE}&$ARG_URI=$encodedUri"
@@ -119,11 +120,7 @@ sealed class SynapseScreen(
         subtitleRes = R.string.synapse_subtitle_quiz,
     )
 
-    data object Session : SynapseScreen(
-        route = "synapse/quiz/content",
-        titleRes = R.string.synapse_screen_quiz,
-        subtitleRes = R.string.synapse_subtitle_quiz,
-    )
+
 
     data object SessionSummary : SynapseScreen(
         route = "synapse/session-summary",
@@ -152,9 +149,9 @@ sealed class SynapseScreen(
             language: String,
             readAloud: Boolean
         ): String {
-            val encName = android.net.Uri.encode(name)
-            val encContent = android.net.Uri.encode(content)
-            val encFocus = android.net.Uri.encode(focus)
+            val encName = Uri.encode(name)
+            val encContent = Uri.encode(content)
+            val encFocus = Uri.encode(focus)
             return "synapse/summary/generate?$ARG_SOURCE_TYPE=$type&$ARG_SOURCE_NAME=$encName&$ARG_SOURCE_CONTENT=$encContent&$ARG_DEPTH=$depth&$ARG_FOCUS=$encFocus&$ARG_LANGUAGE=$language&$ARG_READ_ALOUD=$readAloud"
         }
     }

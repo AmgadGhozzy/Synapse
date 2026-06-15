@@ -18,7 +18,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
-import io.synapse.ai.core.analytics.presentation.ScreenTrackerViewModel
+import io.synapse.ai.features.analytics.viewmodel.ScreenTrackerViewModel
 import io.synapse.ai.features.add_pdf.presentation.screen.AddPdfScreen
 import io.synapse.ai.features.dashboard.presentation.screen.DashboardScreen
 import io.synapse.ai.features.dashboard.presentation.viewmodel.DashboardViewModel
@@ -35,6 +35,13 @@ import io.synapse.ai.features.session.presentation.viewmodel.SessionViewModel
 import io.synapse.ai.features.stats.presentation.screen.StatsScreen
 import io.synapse.ai.features.summary.presentation.screen.SummaryGeneratorScreen
 import io.synapse.ai.features.summary.presentation.screen.SummaryScreen
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import io.synapse.ai.core.ui.components.LoadingIndicator
+import io.synapse.ai.features.summary.presentation.state.SummaryConfig
+import io.synapse.ai.features.summary.presentation.state.SummaryDepth
+import io.synapse.ai.features.summary.presentation.state.SummaryEffect
+import io.synapse.ai.features.summary.presentation.state.SummaryEvent
 import io.synapse.ai.features.summary.presentation.viewmodel.SummaryViewModel
 import io.synapse.ai.navigation.core.AnimatedNavHost
 import io.synapse.ai.navigation.core.NavTransitions
@@ -107,7 +114,7 @@ fun SynapseNavGraph(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(androidx.compose.material3.MaterialTheme.colorScheme.background)
+                            .background(MaterialTheme.colorScheme.background)
                     )
                 } else {
                     val parentEntry = remember(entry) {
@@ -152,8 +159,8 @@ fun SynapseNavGraph(
             composable(
                 route = SynapseScreen.Profile.route,
                 arguments = listOf(
-                    androidx.navigation.navArgument(SynapseScreen.Profile.ARG_REOPEN_PAYWALL) {
-                        type = androidx.navigation.NavType.BoolType
+                    navArgument(SynapseScreen.Profile.ARG_REOPEN_PAYWALL) {
+                        type = NavType.BoolType
                         defaultValue = false
                     }
                 )
@@ -399,8 +406,8 @@ fun SynapseNavGraph(
 
             // 1. Initialize config once — separate from effect collection
             LaunchedEffect(Unit) {
-                val config = io.synapse.ai.features.summary.presentation.state.SummaryConfig(
-                    depth = io.synapse.ai.features.summary.presentation.state.SummaryDepth.valueOf(
+                val config = SummaryConfig(
+                    depth = SummaryDepth.valueOf(
                         depthStr
                     ),
                     focus = focusStr.split(",").filter { it.isNotBlank() }.toSet(),
@@ -408,7 +415,7 @@ fun SynapseNavGraph(
                     readAloud = readAloud
                 )
                 vm.onEvent(
-                    io.synapse.ai.features.summary.presentation.state.SummaryEvent.ConfigChanged(
+                    SummaryEvent.ConfigChanged(
                         config
                     )
                 )
@@ -418,13 +425,13 @@ fun SynapseNavGraph(
             LaunchedEffect(vm) {
                 vm.effect.collect { effect ->
                     when (effect) {
-                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateToSummary -> {
+                        is SummaryEffect.NavigateToSummary -> {
                             navController.navigate(SynapseScreen.SummaryViewer.createRoute(effect.id)) {
                                 popUpTo(SynapseScreen.SummaryGenerator.route) { inclusive = true }
                             }
                         }
 
-                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateBack -> {
+                        is SummaryEffect.NavigateBack -> {
                             navController.popBackStack()
                         }
                         else -> {}
@@ -457,7 +464,7 @@ fun SynapseNavGraph(
 
             LaunchedEffect(summaryId) {
                 vm.onEvent(
-                    io.synapse.ai.features.summary.presentation.state.SummaryEvent.LoadSummary(
+                    SummaryEvent.LoadSummary(
                         summaryId
                     )
                 )
@@ -468,7 +475,7 @@ fun SynapseNavGraph(
             LaunchedEffect(vm) {
                 vm.effect.collect { effect ->
                     when (effect) {
-                        is io.synapse.ai.features.summary.presentation.state.SummaryEffect.NavigateBack -> {
+                        is SummaryEffect.NavigateBack -> {
                             navController.popBackStack()
                         }
 
@@ -484,31 +491,31 @@ fun SynapseNavGraph(
                     readAloudState = state.readAloudState,
                     activeSentenceIdProvider = { state.activeSentenceId },
                     resumeFromMs = state.resumeFromMs,
-                    onBack = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.BackClicked) },
-                    onShare = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.ShareClicked) },
-                    onInitiateReadAloud = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.InitiateReadAloud) },
-                    onPlayPause = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.PlayPauseAudio) },
-                    onSeekTo = { pos -> vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudio(pos)) },
-                    onSeekBack = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudioBack) },
-                    onSeekForward = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.SeekAudioForward) },
+                    onBack = { vm.onEvent(SummaryEvent.BackClicked) },
+                    onShare = { vm.onEvent(SummaryEvent.ShareClicked) },
+                    onInitiateReadAloud = { vm.onEvent(SummaryEvent.InitiateReadAloud) },
+                    onPlayPause = { vm.onEvent(SummaryEvent.PlayPauseAudio) },
+                    onSeekTo = { pos -> vm.onEvent(SummaryEvent.SeekAudio(pos)) },
+                    onSeekBack = { vm.onEvent(SummaryEvent.SeekAudioBack) },
+                    onSeekForward = { vm.onEvent(SummaryEvent.SeekAudioForward) },
                     onSpeedChange = { speed ->
                         vm.onEvent(
-                            io.synapse.ai.features.summary.presentation.state.SummaryEvent.ChangeAudioSpeed(
+                            SummaryEvent.ChangeAudioSpeed(
                                 speed
                             )
                         )
                     },
-                    onRestart = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.RestartAudio) },
-                    onAcceptResume = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.AcceptResumeAudio) },
-                    onDismissResume = { vm.onEvent(io.synapse.ai.features.summary.presentation.state.SummaryEvent.DismissResumeAudio) },
+                    onRestart = { vm.onEvent(SummaryEvent.RestartAudio) },
+                    onAcceptResume = { vm.onEvent(SummaryEvent.AcceptResumeAudio) },
+                    onDismissResume = { vm.onEvent(SummaryEvent.DismissResumeAudio) },
                 )
             } else {
                 // Summary is loading from Room — show spinner
-                androidx.compose.foundation.layout.Box(
-                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center,
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    io.synapse.ai.core.ui.components.LoadingIndicator()
+                    LoadingIndicator()
                 }
             }
         }

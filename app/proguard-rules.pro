@@ -2,6 +2,10 @@
 # 🔥 MINIMAL SAFE RULES (MOSHI CODEGEN)
 ############################################
 
+-repackageclasses ''
+-allowaccessmodification
+-optimizationpasses 5
+
 # Keep annotations metadata (required by Room + Moshi codegen)
 -keepattributes *Annotation*
 
@@ -45,3 +49,20 @@
 ############################################
 
 -dontwarn org.checkerframework.**
+
+############################################
+# 🔥 LOG STRIPPING (REMOVES LOGS IN RELEASE)
+############################################
+
+-assumenosideeffects class android.util.Log {
+    public static boolean isLoggable(java.lang.String, int);
+    public static int d(...);
+    public static int w(...);
+    public static int v(...);
+    public static int i(...);
+}
+
+-assumenosideeffects class java.io.PrintStream {
+    public static void println(...);
+    public static void print(...);
+}
