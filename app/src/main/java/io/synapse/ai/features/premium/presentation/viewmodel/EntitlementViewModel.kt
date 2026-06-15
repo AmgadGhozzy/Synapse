@@ -1,10 +1,11 @@
 package io.synapse.ai.features.premium.presentation.viewmodel
 
+import io.synapse.ai.domains.premium.model.*
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.domain.model.Entitlement
+import io.synapse.ai.domains.premium.data.PremiumManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
