@@ -43,7 +43,7 @@ import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.domain.srs.ReviewRating
+import io.synapse.ai.domains.study.srs.ReviewRating
 
 @Composable
 internal fun QuizActionSheet(
@@ -550,3 +550,4 @@ private fun QuizActionSheetSrsPreview() {
         )
     }
 }
+
