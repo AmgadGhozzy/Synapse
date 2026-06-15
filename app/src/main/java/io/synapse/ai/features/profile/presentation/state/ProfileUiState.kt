@@ -2,8 +2,8 @@ package io.synapse.ai.features.profile.presentation.state
 
 import androidx.compose.runtime.Immutable
 import io.synapse.ai.R
-import io.synapse.ai.data.sync.SyncConsent
-import io.synapse.ai.data.sync.SyncStatus
+import io.synapse.ai.domains.config.data.SyncConsent
+import io.synapse.ai.domains.study.data.sync.SyncStatus
 
 @Immutable
 data class ProfileUiState(
@@ -32,3 +32,4 @@ data class ProfileUiState(
     val crashEnabled: Boolean = false,
     val pushEnabled: Boolean = false,
 )
+

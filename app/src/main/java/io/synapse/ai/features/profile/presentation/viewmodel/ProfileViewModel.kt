@@ -6,21 +6,25 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
 import io.synapse.ai.core.analytics.TrackingManager
+import io.synapse.ai.core.analytics.data.ConsentRepository
 import io.synapse.ai.core.analytics.model.AnalyticsEvent
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.data.sync.RemoteDataRepository
-import io.synapse.ai.data.sync.SyncConsent
-import io.synapse.ai.data.sync.SyncScheduler
-import io.synapse.ai.domain.repo.IAuthRepository
-import io.synapse.ai.domain.repo.ILocalDataRepository
-import io.synapse.ai.domain.repo.IPackRepository
-import io.synapse.ai.domain.repo.IQuestionRepository
-import io.synapse.ai.domain.repo.ISessionRepository
-import io.synapse.ai.domain.stats.StreakCalculator
+import io.synapse.ai.domains.config.data.AppConfigProvider
+import io.synapse.ai.domains.config.data.ConsentManager
+import io.synapse.ai.domains.premium.data.PremiumManager
+import io.synapse.ai.domains.study.data.sync.RemoteDataRepository
+import io.synapse.ai.domains.study.data.sync.SyncEngine
+import io.synapse.ai.domains.study.data.sync.SyncStatus
+import io.synapse.ai.domains.config.data.SyncConsent
+import io.synapse.ai.domains.study.data.sync.SyncScheduler
+import io.synapse.ai.domains.auth.repository.IAuthRepository
+import io.synapse.ai.domains.study.repository.ILocalDataRepository
+import io.synapse.ai.domains.study.repository.IPackRepository
+import io.synapse.ai.domains.study.repository.IQuestionRepository
+import io.synapse.ai.domains.study.repository.ISessionRepository
+import io.synapse.ai.domains.study.usecase.StreakCalculator
 import io.synapse.ai.features.profile.presentation.state.ProfileUiState
 import io.synapse.ai.navigation.SynapseScreen
 import kotlinx.coroutines.CoroutineDispatcher
@@ -48,11 +52,11 @@ class ProfileViewModel @Inject constructor(
     private val localDataRepo: ILocalDataRepository,
     private val remoteDataRepo: RemoteDataRepository,
     private val premiumManager: PremiumManager,
-    private val consentManager: io.synapse.ai.data.sync.ConsentManager,
-    private val syncEngine: io.synapse.ai.data.sync.SyncEngine,
+    private val consentManager: ConsentManager,
+    private val syncEngine: SyncEngine,
     private val syncScheduler: SyncScheduler,
     private val appConfigProvider: AppConfigProvider,
-    private val analyticsConsentRepo: io.synapse.ai.core.analytics.data.ConsentRepository,
+    private val analyticsConsentRepo: ConsentRepository,
     private val trackingManager: TrackingManager,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -81,8 +85,8 @@ class ProfileViewModel @Inject constructor(
             analyticsConsentRepo.consent,
         ) { packs, studiedDayIndices, (userState, entitlement), syncInfo, userConsent ->
             val isSyncEnabled = syncInfo[0] as Boolean
-            val consentState = syncInfo[1] as io.synapse.ai.data.sync.SyncConsent
-            val syncStatus = syncInfo[2] as io.synapse.ai.data.sync.SyncStatus
+            val consentState = syncInfo[1] as SyncConsent
+            val syncStatus = syncInfo[2] as SyncStatus
             val lastSyncedTime = syncInfo[3] as String?
             val todayIndex = System.currentTimeMillis() / 86_400_000L
             val streakDays = StreakCalculator.currentStreak(studiedDayIndices, todayIndex)
@@ -314,3 +318,11 @@ class ProfileViewModel @Inject constructor(
         }
     }
 }
+
+
+
+
+
+
+
+

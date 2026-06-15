@@ -57,13 +57,13 @@ import io.synapse.ai.core.theme.AppTheme
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
-import io.synapse.ai.core.ui.components.GoogleSignInButton
+import io.synapse.ai.features.profile.presentation.components.GoogleSignInButton
 import io.synapse.ai.core.ui.components.LoadingContent
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.SynapseSwitch
 import io.synapse.ai.core.ui.components.rememberSnackbarController
 import io.synapse.ai.core.ui.state.UiEffect
-import io.synapse.ai.data.sync.SyncConsent
+import io.synapse.ai.domains.config.data.SyncConsent
 import io.synapse.ai.features.profile.presentation.components.ClearDataConfirmDialog
 import io.synapse.ai.features.profile.presentation.components.DeleteAccountConfirmDialog
 import io.synapse.ai.features.profile.presentation.components.DestructiveSettingsRow
@@ -728,3 +728,5 @@ private fun StudySettingsSectionPreview() {
         }
     }
 }
+
+

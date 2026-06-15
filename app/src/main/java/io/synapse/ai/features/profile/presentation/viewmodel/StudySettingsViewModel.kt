@@ -11,8 +11,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.core.theme.AppTheme
-import io.synapse.ai.domain.reminder.ReminderScheduler
-import io.synapse.ai.domain.reminder.ReminderSettings
+import io.synapse.ai.core.notifications.ReminderScheduler
+import io.synapse.ai.domains.study.reminder.ReminderSettings
 import io.synapse.ai.features.profile.presentation.state.StudySettingsUiState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
