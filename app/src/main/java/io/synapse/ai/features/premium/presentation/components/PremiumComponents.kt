@@ -61,7 +61,7 @@ import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.features.premium.presentation.state.PremiumPlanUiModel
 import io.synapse.ai.features.premium.presentation.state.ProFeatureUiModel
-import io.synapse.ai.features.premium.presentation.state.SocialProofData
+import io.synapse.ai.domains.premium.model.SocialProofData
 import io.synapse.ai.features.premium.presentation.state.iconKeyToDrawableRes
 import io.synapse.ai.features.premium.presentation.state.toColor
 
