@@ -83,7 +83,7 @@ import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
-import io.synapse.ai.core.ui.components.GoogleSignInButton
+import io.synapse.ai.features.profile.presentation.components.GoogleSignInButton
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingEvent
 import io.synapse.ai.features.onboarding.presentation.state.OnboardingStepData
