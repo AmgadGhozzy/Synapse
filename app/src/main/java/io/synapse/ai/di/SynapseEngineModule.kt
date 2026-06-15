@@ -5,11 +5,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import io.synapse.ai.domain.srs.EngineConfig
-import io.synapse.ai.domain.srs.StudyEngine
-import io.synapse.ai.domain.srs.StudyEngineImpl
-import io.synapse.ai.domain.srs.SystemTimeProvider
-import io.synapse.ai.domain.srs.TimeProvider
+import io.synapse.ai.domains.study.srs.EngineConfig
+import io.synapse.ai.domains.study.srs.StudyEngine
+import io.synapse.ai.domains.study.srs.StudyEngineImpl
+import io.synapse.ai.domains.study.srs.SystemTimeProvider
+import io.synapse.ai.domains.study.srs.TimeProvider
 import javax.inject.Singleton
 
 @Module
@@ -35,3 +35,4 @@ abstract class SynapseEngineModule {
         fun provideSystemTimeProvider(): SystemTimeProvider = SystemTimeProvider()
     }
 }
+

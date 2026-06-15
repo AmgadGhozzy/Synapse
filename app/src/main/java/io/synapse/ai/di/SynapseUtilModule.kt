@@ -12,7 +12,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.synapse.ai.data.repo.PremiumPreferences
+import io.synapse.ai.domains.premium.data.PremiumPreferences
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
@@ -69,6 +69,11 @@ object SynapseUtilModule {
     @Provides
     @Singleton
     fun provideNowProvider(): () -> Long = { System.currentTimeMillis() }
+
+    @Provides
+    fun provideProgressMessageRotator(): io.synapse.ai.core.ui.util.ProgressMessageRotator {
+        return io.synapse.ai.core.ui.util.DefaultProgressMessageRotator()
+    }
 }
 
 @EntryPoint
