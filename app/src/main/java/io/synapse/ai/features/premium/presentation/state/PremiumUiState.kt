@@ -1,5 +1,7 @@
 package io.synapse.ai.features.premium.presentation.state
 
+import io.synapse.ai.domains.premium.model.*
+
 import android.content.res.Resources
 import androidx.annotation.DrawableRes
 import androidx.compose.material3.MaterialTheme
@@ -8,11 +10,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import io.synapse.ai.R
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.domain.model.BillingPeriod
-import io.synapse.ai.domain.model.FeatureColorRole
-import io.synapse.ai.domain.model.PaywallFeature
-import io.synapse.ai.domain.model.PaywallProduct
-import io.synapse.ai.domain.model.ProductDetails
+import io.synapse.ai.domains.premium.model.BillingPeriod
 
 // ══════════════════════════════════════════════════════════════════
 // UI Model — 100% computed locally from Google Play + strings.xml
@@ -245,9 +243,3 @@ fun buildFeatureUiModels(
         colorRole = feature.colorRole,
     )
 }
-
-@Immutable
-data class SocialProofData(
-    val userCountLabel: String,
-    val avatarInitials: List<String> = listOf("A", "J", "M", "S", "K"),
-)
