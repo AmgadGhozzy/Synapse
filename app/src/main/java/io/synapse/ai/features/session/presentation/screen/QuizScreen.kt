@@ -1,4 +1,6 @@
-package io.synapse.ai.features.session.presentation.screen
+package io.synapse.ai.features.session.presentation.screen
+
+import io.synapse.ai.domains.study.model.PackModule
 
 import android.content.res.Configuration
 import android.os.SystemClock
@@ -44,14 +46,15 @@ import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.tts.TtsManager
 import io.synapse.ai.core.tts.TtsState
-import io.synapse.ai.core.ui.audio.LocalSoundManager
+import io.synapse.ai.core.audio.LocalSoundManager
 import io.synapse.ai.core.ui.components.SnackbarHost
 import io.synapse.ai.core.ui.components.rememberSnackbarController
 import io.synapse.ai.core.ui.state.UiEffect
-import io.synapse.ai.domain.model.QuestionType
-import io.synapse.ai.domain.model.SoundType
-import io.synapse.ai.domain.srs.AnswerPayload
-import io.synapse.ai.domain.srs.ReviewRating
+import io.synapse.ai.domains.study.model.QuestionType
+import io.synapse.ai.core.audio.model.SoundType
+import io.synapse.ai.domains.study.srs.AnswerPayload
+import io.synapse.ai.domains.study.srs.ReviewRating
+import io.synapse.ai.features.session.presentation.components.DiagramBottomSheet
 import io.synapse.ai.features.session.presentation.components.McqPanel
 import io.synapse.ai.features.session.presentation.components.QuizActionSheet
 import io.synapse.ai.features.session.presentation.components.QuizErrorState
@@ -63,6 +66,7 @@ import io.synapse.ai.features.session.presentation.state.QuestionUiContent
 import io.synapse.ai.features.session.presentation.state.QuestionUiModel
 import io.synapse.ai.features.session.presentation.state.SessionUiState
 import io.synapse.ai.features.session.presentation.viewmodel.SessionViewModel
+import io.synapse.ai.features.tts.presentation.viewmodel.TtsManagerViewModel
 
 @Composable
 fun QuizScreen(
@@ -70,7 +74,7 @@ fun QuizScreen(
     onNavigateToSummary: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SessionViewModel = hiltViewModel(),
-    ttsManager: TtsManager = androidx.hilt.navigation.compose.hiltViewModel<io.synapse.ai.core.tts.TtsManagerViewModel>().manager,
+    ttsManager: TtsManager = hiltViewModel<TtsManagerViewModel>().manager,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val ttsState by ttsManager.state.collectAsStateWithLifecycle()
@@ -321,7 +325,7 @@ internal fun QuizContent(
     }
 
     if (showDiagram && diagram != null) {
-        io.synapse.ai.features.session.presentation.components.DiagramBottomSheet(
+        DiagramBottomSheet(
             title = module.title.orEmpty(),
             mermaid = diagram.content,
             explanation = diagram.explanation,
@@ -528,3 +532,7 @@ private class UiSoundEffectDebouncer(
         return shouldPlay
     }
 }
+
+
+
+
