@@ -2,6 +2,8 @@ package io.synapse.ai.features.marketplace.data.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 
 /**
  * Raw DTO mirroring the `packs` Supabase row for marketplace entries.
@@ -22,7 +24,7 @@ internal data class MarketplacePackDto(
     @SerialName("is_featured")     val isFeatured: Boolean = false,
     val tags: List<String> = emptyList(),
 
-    val modules: kotlinx.serialization.json.JsonArray? = null,
+    val modules: JsonArray? = null,
     @SerialName("download_count") val downloadCount: Int = 0,
 )
 
@@ -33,7 +35,7 @@ internal data class PreviewQuestionDto(
     @SerialName("pack_id")       val packId: String,
     val type: String,
     @SerialName("question_text") val questionText: String,
-    @SerialName("content_json")  val contentJson: kotlinx.serialization.json.JsonElement,
+    @SerialName("content_json")  val contentJson: JsonElement,
     @SerialName("sort_order")    val sortOrder: Int = 0,
     val reference: String? = null,
     @SerialName("module_title")  val moduleTitle: String? = null,
