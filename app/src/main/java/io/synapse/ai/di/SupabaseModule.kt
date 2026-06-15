@@ -9,7 +9,9 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.functions.Functions
 import io.github.jan.supabase.postgrest.Postgrest
+import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.plugins.HttpTimeout
 import io.synapse.ai.BuildConfig
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -38,4 +40,11 @@ object SupabaseModule {
             install(Postgrest)
             install(Functions)
         }
+
+
+    @Provides
+    @Singleton
+    fun provideHttpClient(): HttpClient = HttpClient(OkHttp) {
+        install(HttpTimeout)
+    }
 }
