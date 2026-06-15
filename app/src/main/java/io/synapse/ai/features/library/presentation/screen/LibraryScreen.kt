@@ -1,4 +1,6 @@
-package io.synapse.ai.features.library.presentation.screen
+package io.synapse.ai.features.library.presentation.screen
+
+import io.synapse.ai.core.ui.components.study.buildPackCardActions
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
@@ -33,14 +35,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
-import io.synapse.ai.core.ui.components.DeletePackDialog
+import io.synapse.ai.features.library.presentation.components.DeletePackDialog
 import io.synapse.ai.core.ui.components.ErrorBanner
-import io.synapse.ai.core.ui.components.GridPackCard
-import io.synapse.ai.core.ui.components.GridSummaryCard
+import io.synapse.ai.core.ui.components.study.GridPackCard
+import io.synapse.ai.features.summary.presentation.components.GridSummaryCard
 import io.synapse.ai.core.ui.components.SnackbarHost
-import io.synapse.ai.core.ui.components.buildPackCardActions
 import io.synapse.ai.core.ui.components.rememberSnackbarController
-import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.domains.study.model.PackDisplayItem
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.features.library.presentation.components.AddPackCell
 import io.synapse.ai.features.library.presentation.components.FilterTabRow
@@ -274,3 +275,4 @@ private fun LibraryScreenPreview() {
         )
     }
 }
+

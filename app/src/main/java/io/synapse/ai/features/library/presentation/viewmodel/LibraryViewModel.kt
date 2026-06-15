@@ -4,20 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.synapse.ai.R
-import io.synapse.ai.core.ui.components.PackDisplayItemBuilder
-import io.synapse.ai.core.ui.state.PackDisplayItem
+import io.synapse.ai.domains.study.usecase.BuildPackDisplayItemsUseCase
+import io.synapse.ai.domains.study.model.PackDisplayItem
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.core.ui.state.toDisplayItem
-import io.synapse.ai.data.repo.AppConfigProvider
-import io.synapse.ai.data.repo.PremiumManager
-import io.synapse.ai.domain.model.PackOverviewModel
-import io.synapse.ai.domain.repo.IAuthRepository
-import io.synapse.ai.domain.repo.IPackRepository
-import io.synapse.ai.domain.repo.IProgressRepository
-import io.synapse.ai.domain.repo.IQuestionRepository
-import io.synapse.ai.domain.repo.ISummaryRepository
+import io.synapse.ai.features.summary.presentation.state.toDisplayItem
+import io.synapse.ai.domains.config.data.AppConfigProvider
+import io.synapse.ai.domains.premium.data.PremiumManager
+import io.synapse.ai.domains.study.model.PackOverviewModel
+import io.synapse.ai.domains.auth.repository.IAuthRepository
+import io.synapse.ai.domains.study.repository.IPackRepository
+import io.synapse.ai.domains.study.repository.IProgressRepository
+import io.synapse.ai.domains.study.repository.IQuestionRepository
+import io.synapse.ai.features.summary.domain.repository.ISummaryRepository
 import io.synapse.ai.features.library.presentation.state.LibraryFeedItem
 import io.synapse.ai.features.library.presentation.state.LibrarySortOption
 import io.synapse.ai.features.library.presentation.state.LibraryUiState
@@ -158,7 +158,7 @@ class LibraryViewModel @Inject constructor(
 
     private suspend fun enrichPacks(packs: List<PackOverviewModel>): List<PackDisplayItem> =
         withContext(ioDispatcher) {
-            PackDisplayItemBuilder.buildBatch(
+            BuildPackDisplayItemsUseCase.buildBatch(
                 packs        = packs,
                 questionRepo = questionRepo,
                 progressRepo = progressRepo,
@@ -178,3 +178,10 @@ class LibraryViewModel @Inject constructor(
         listOf(LibraryUiState.ALL_CATEGORY) +
                 items.map { it.category }.filter { it.isNotBlank() }.distinct().sorted()
 }
+
+
+
+
+
+
+
