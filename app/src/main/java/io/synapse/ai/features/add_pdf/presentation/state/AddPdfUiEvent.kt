@@ -34,6 +34,9 @@ sealed interface AddPdfUiEvent {
     data object ThinkingToggled : AddPdfUiEvent
 
     // ── Generation ────────────────────────────────────────────────
+    data object GeneratePackToggled : AddPdfUiEvent
+    data object GenerateSummaryToggled : AddPdfUiEvent
+    data object ShowSummaryPaywall : AddPdfUiEvent
     data object GeneratePack : AddPdfUiEvent
 
     /** User taps "Start Now" before generation finishes. */
