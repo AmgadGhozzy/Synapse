@@ -129,7 +129,10 @@ class AddPdfViewModel @Inject constructor(
             is AddPdfUiEvent.FocusNotesChanged    -> _uiState.update { it.copy(focusNotes = event.notes) }
             is AddPdfUiEvent.LanguageSelected     -> _uiState.update { it.copy(language = event.languageCode) }
             is AddPdfUiEvent.ThinkingToggled      -> toggleThinking()
-            is AddPdfUiEvent.GeneratePack         -> generateQuestions()
+            is AddPdfUiEvent.GeneratePackToggled  -> _uiState.update { it.copy(generatePack = !it.generatePack) }
+            is AddPdfUiEvent.GenerateSummaryToggled -> toggleSummaryGeneration()
+            is AddPdfUiEvent.ShowSummaryPaywall   -> _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_pro_summary)))
+            is AddPdfUiEvent.GeneratePack         -> if (_uiState.value.canGenerate) generateQuestions()
             is AddPdfUiEvent.StartStudyEarly      -> startStudyEarly()
             is AddPdfUiEvent.SavePdfClicked       -> savePdfToDownloads()
             is AddPdfUiEvent.OcrToggled           -> toggleOcr()
@@ -203,6 +206,14 @@ class AddPdfViewModel @Inject constructor(
             return
         }
         _uiState.update { it.copy(thinkingEnabled = !it.thinkingEnabled) }
+    }
+
+    private fun toggleSummaryGeneration() {
+        if (!_uiState.value.isPro) {
+            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_pro_summary)))
+            return
+        }
+        _uiState.update { it.copy(generateSummary = !it.generateSummary) }
     }
 
     private fun toggleOcr() {
