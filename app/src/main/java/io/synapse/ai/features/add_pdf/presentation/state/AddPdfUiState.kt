@@ -55,6 +55,10 @@ data class AddPdfUiState(
     val difficulty: String = "medium",          // "easy" | "medium" | "hard"
     val focusNotes: String = "",
 
+    // ── Generation Selection ──────────────────────────────────────
+    val generatePack: Boolean = true,
+    val generateSummary: Boolean = false,
+
     // ── Deep Thinking (Pro only) ──────────────────────────────────
     val thinkingEnabled: Boolean = false,
     val isThinkingLocked: Boolean = false,
@@ -102,5 +106,8 @@ data class AddPdfUiState(
 
     val maxPages: Int = 20,
     val maxFileSizeMb: Int = 5
-)
+) {
+    val canGenerate: Boolean
+        get() = generatePack || generateSummary
+}
 
