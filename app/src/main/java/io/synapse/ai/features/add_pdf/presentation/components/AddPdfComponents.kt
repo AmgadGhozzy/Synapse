@@ -47,6 +47,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -98,6 +100,7 @@ import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
+import io.synapse.ai.core.ui.components.CardShell
 import io.synapse.ai.core.ui.components.AnimatedTypingText
 import io.synapse.ai.features.export.presentation.components.ExportActionButton
 import io.synapse.ai.core.ui.components.LoadingIndicator
@@ -869,6 +872,128 @@ fun TextTab(
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun GenerationOptionsSelector(
+    generatePack: Boolean,
+    generateSummary: Boolean,
+    isPro: Boolean,
+    onPackToggled: () -> Unit,
+    onSummaryToggled: () -> Unit,
+    onSummaryLockedClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val spacing = MaterialTheme.synapse.spacing
+    
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.sm)
+    ) {
+        Text(
+            text = stringResource(R.string.generation_options_title), 
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        
+        // 1. Interactive Quizzes Option (Pack)
+        SelectableOptionCard(
+            title = stringResource(R.string.generation_option_pack_title),
+            subtitle = stringResource(R.string.generation_option_pack_subtitle),
+            iconRes = R.drawable.ic_layers,
+            isSelected = generatePack,
+            onClick = onPackToggled
+        )
+        
+        // 2. Smart Summary Option (Premium Gated)
+        SelectableOptionCard(
+            title = stringResource(R.string.generation_option_summary_title),
+            subtitle = stringResource(R.string.generation_option_summary_subtitle),
+            iconRes = R.drawable.ic_file_text,
+            isSelected = generateSummary,
+            isLocked = !isPro,
+            onClick = {
+                if (isPro) onSummaryToggled() else onSummaryLockedClicked()
+            }
+        )
+    }
+}
+
+@Composable
+private fun SelectableOptionCard(
+    title: String,
+    subtitle: String,
+    iconRes: Int,
+    isSelected: Boolean,
+    isLocked: Boolean = false,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.synapse.semantic.primary.copy(alpha = 0.1f) 
+                      else MaterialTheme.colorScheme.surfaceVariant,
+        label = "BgColor"
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.synapse.semantic.primary 
+                      else Color.Transparent,
+        label = "BorderColor"
+    )
+
+    CardShell(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        color = borderColor,
+        bgGrad = androidx.compose.ui.graphics.SolidColor(backgroundColor)
+    ) {
+        Row(
+            modifier = Modifier.padding(MaterialTheme.synapse.spacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = if (isSelected) MaterialTheme.synapse.semantic.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.adp)
+            )
+            
+            Spacer(modifier = Modifier.width(MaterialTheme.synapse.spacing.md))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (isLocked) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_lock),
+                    contentDescription = stringResource(R.string.content_description_pro_feature),
+                    tint = MaterialTheme.synapse.semantic.gold
+                )
+            } else {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onClick() },
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.synapse.semantic.primary
+                    )
+                )
             }
         }
     }
