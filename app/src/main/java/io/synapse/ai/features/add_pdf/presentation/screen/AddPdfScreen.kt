@@ -95,6 +95,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import io.synapse.ai.features.add_pdf.presentation.viewmodel.AddPdfViewModel
 import io.synapse.ai.features.summary.presentation.screen.SummaryConfigContent
 import io.synapse.ai.features.summary.presentation.state.SummaryConfig
+import io.synapse.ai.features.add_pdf.presentation.components.GenerationOptionsSelector
 
 @Composable
 fun AddPdfScreen(
@@ -295,19 +296,17 @@ fun AddPdfScreen(
                                     onClick = { viewModel.onEvent(AddPdfUiEvent.ContinueToConfigure) },
                                 )
                             } else {
-                                if (!isSummarySelected) {
-                                    PrimaryGradientButton(
-                                        text = stringResource(R.string.configure_generate),
-                                        iconRes = R.drawable.ic_sparkles,
-                                        enabled = true,
-                                        onClick = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
-                                    )
-                                } else {
-                                    PrimaryGradientButton(
-                                        text = stringResource(R.string.summary_config_generate),
-                                        iconRes = R.drawable.ic_sparkles,
-                                        enabled = summaryConfig.focus.isNotEmpty(),
-                                        onClick = {
+                                val canGenerate = uiState.canGenerate && (!uiState.generateSummary || summaryConfig.focus.isNotEmpty())
+                                PrimaryGradientButton(
+                                    text = if (uiState.generatePack && uiState.generateSummary) stringResource(R.string.generate_pack_and_summary)
+                                           else if (uiState.generateSummary) stringResource(R.string.summary_config_generate)
+                                           else stringResource(R.string.configure_generate),
+                                    iconRes = R.drawable.ic_sparkles,
+                                    enabled = canGenerate,
+                                    onClick = {
+                                        if (uiState.generatePack && !uiState.generateSummary) {
+                                            viewModel.onEvent(AddPdfUiEvent.GeneratePack)
+                                        } else if (uiState.generateSummary && !uiState.generatePack) {
                                             val type = when (uiState.sourceTab) {
                                                 SourceTab.FILE -> "pdf"
                                                 SourceTab.TEXT -> "text"
@@ -325,9 +324,13 @@ fun AddPdfScreen(
                                                 SourceTab.WEB, SourceTab.YOUTUBE -> uiState.webUrl
                                             }
                                             onNavigateToSummaryConfig(type, name, content, summaryConfig)
-                                        },
-                                    )
-                                }
+                                        } else {
+                                            // BOTH selected: For now, we can launch the pack generation. The Edge function can be updated to generate both.
+                                            // The user explicitly requested to update the edge function to handle both.
+                                            viewModel.onEvent(AddPdfUiEvent.GeneratePack)
+                                        }
+                                    },
+                                )
                             }
                         }
                     }
@@ -423,95 +426,17 @@ fun AddPdfScreen(
 
                     AddPdfStep.CONFIGURE -> {
                         Column(verticalArrangement = Arrangement.spacedBy(16.adp)) {
-                            // Custom tab row for config type (Pack vs Summary)
-                            val tabs = listOf(
-                                false to stringResource(R.string.configure_pack),
-                                true to stringResource(R.string.generate_summary)
+                            GenerationOptionsSelector(
+                                generatePack = uiState.generatePack,
+                                generateSummary = uiState.generateSummary,
+                                isPro = uiState.isPro,
+                                onPackToggled = { viewModel.onEvent(AddPdfUiEvent.GeneratePackToggled) },
+                                onSummaryToggled = { viewModel.onEvent(AddPdfUiEvent.GenerateSummaryToggled) },
+                                onSummaryLockedClicked = { viewModel.onEvent(AddPdfUiEvent.ShowSummaryPaywall) },
+                                modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.screen)
                             )
-                            var rowHeightDp by remember { mutableStateOf(0.dp) }
-                            val density = LocalDensity.current
 
-                            Surface(
-                                modifier = Modifier
-                                    .padding(horizontal = MaterialTheme.synapse.spacing.screen)
-                                    .fillMaxWidth()
-                                    .dropShadow(
-                                        MaterialTheme.shapes.medium,
-                                        MaterialTheme.synapse.shadows.subtle.toShadow()
-                                    ),
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.medium,
-                            ) {
-                                androidx.compose.foundation.layout.BoxWithConstraints(
-                                    modifier = Modifier
-                                        .padding(horizontal = 5.adp, vertical = 5.adp)
-                                        .fillMaxWidth(),
-                                ) {
-                                    val tabWidth = maxWidth / 2
-                                    val selectedIndex = if (isSummarySelected) 1 else 0
-                                    val pillOffsetX by animateDpAsState(
-                                        targetValue = tabWidth * selectedIndex,
-                                        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing)
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .offset(x = pillOffsetX)
-                                            .width(tabWidth)
-                                            .height(rowHeightDp)
-                                            .dropShadow(
-                                                MaterialTheme.shapes.small,
-                                                MaterialTheme.synapse.shadows.subtle.toShadow()
-                                            )
-                                            .background(
-                                                color = MaterialTheme.colorScheme.surface,
-                                                shape = MaterialTheme.shapes.small,
-                                            ),
-                                    )
-
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .onSizeChanged() { size ->
-                                                rowHeightDp = with(density) { size.height.toDp() }
-                                            },
-                                    ) {
-                                        tabs.forEach { (isSummary, label) ->
-                                            val isSelected = isSummary == isSummarySelected
-                                            val textColor by animateColorAsState(
-                                                targetValue = if (isSelected) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                animationSpec = tween(durationMillis = 200),
-                                            )
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .weight(1f)
-                                                    .clip(MaterialTheme.shapes.small)
-                                                    .clickable(
-                                                        interactionSource = remember { MutableInteractionSource() },
-                                                        indication = null,
-                                                        onClick = { isSummarySelected = isSummary },
-                                                    ),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Text(
-                                                    text = label,
-                                                    style = MaterialTheme.typography.bodySmall.copy(
-                                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                                    ),
-                                                    color = textColor,
-                                                    modifier = Modifier.padding(vertical = 10.adp),
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis,
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (!isSummarySelected) {
+                            if (uiState.generatePack) {
                                 ConfigureStep(
                                     uiState               = uiState,
                                     onThinkingToggle     = { viewModel.onEvent(AddPdfUiEvent.ThinkingToggled) },
@@ -523,7 +448,9 @@ fun AddPdfScreen(
                                     onGenerate            = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
                                     onSavePdf             = { viewModel.onEvent(AddPdfUiEvent.SavePdfClicked) },
                                 )
-                            } else {
+                            }
+                            
+                            if (uiState.generateSummary) {
                                 SummaryConfigContent(
                                     config = summaryConfig,
                                     onConfigChange = { summaryConfig = it },
