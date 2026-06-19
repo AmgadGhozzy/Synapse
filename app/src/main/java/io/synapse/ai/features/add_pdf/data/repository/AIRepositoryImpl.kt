@@ -97,6 +97,7 @@ class AIRepositoryImpl @Inject constructor(
                     parser.feedLine(line)
                 }
                 parser.flush()
+                close()
             }
 
         } catch (e: GenerationError) {
