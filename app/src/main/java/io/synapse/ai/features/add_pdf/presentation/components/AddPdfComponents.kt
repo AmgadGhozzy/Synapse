@@ -7,7 +7,6 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -47,8 +46,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -64,6 +61,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -71,6 +72,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -100,21 +102,20 @@ import io.synapse.ai.core.theme.SynapseTheme
 import io.synapse.ai.core.theme.synapse
 import io.synapse.ai.core.theme.tokens.adp
 import io.synapse.ai.core.theme.tokens.toShadow
-import io.synapse.ai.core.ui.components.CardShell
 import io.synapse.ai.core.ui.components.AnimatedTypingText
-import io.synapse.ai.features.export.presentation.components.ExportActionButton
+import io.synapse.ai.core.ui.components.CardShell
 import io.synapse.ai.core.ui.components.LoadingIndicator
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SecondaryButton
 import io.synapse.ai.core.ui.components.StatusIconHeader
 import io.synapse.ai.core.ui.components.StepIndicator
-import io.synapse.ai.features.add_pdf.presentation.components.GeneratingLoadingUi
-import io.synapse.ai.core.ui.components.WavyProgressIndicator
 import io.synapse.ai.core.ui.model.QuestionUiModel
 import io.synapse.ai.core.ui.utils.animatedDashedBorder
 import io.synapse.ai.domains.study.model.QuestionType
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiState
+import io.synapse.ai.features.add_pdf.presentation.state.DualGenerationPhase
 import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
+import io.synapse.ai.features.export.presentation.components.ExportActionButton
 import kotlinx.coroutines.runBlocking
 
 
@@ -257,7 +258,7 @@ fun SourceTabRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .onSizeChanged() { size ->
+                    .onSizeChanged { size ->
                         rowHeightDp = with(density) { size.height.toDp() }
                     },
             ) {
@@ -887,114 +888,93 @@ fun GenerationOptionsSelector(
     onSummaryLockedClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val spacing = MaterialTheme.synapse.spacing
-    
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(spacing.sm)
-    ) {
-        Text(
-            text = stringResource(R.string.generation_options_title), 
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        
-        // 1. Interactive Quizzes Option (Pack)
-        SelectableOptionCard(
-            title = stringResource(R.string.generation_option_pack_title),
-            subtitle = stringResource(R.string.generation_option_pack_subtitle),
-            iconRes = R.drawable.ic_layers,
-            isSelected = generatePack,
-            onClick = onPackToggled
-        )
-        
-        // 2. Smart Summary Option (Premium Gated)
-        SelectableOptionCard(
-            title = stringResource(R.string.generation_option_summary_title),
-            subtitle = stringResource(R.string.generation_option_summary_subtitle),
-            iconRes = R.drawable.ic_file_text,
-            isSelected = generateSummary,
-            isLocked = !isPro,
-            onClick = {
-                if (isPro) onSummaryToggled() else onSummaryLockedClicked()
-            }
-        )
+    SectionCard(modifier = modifier) {
+        SectionLabel(text = stringResource(R.string.generation_options_title))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.adp),
+        ) {
+            // Pack chip
+            GenerationChip(
+                label = stringResource(R.string.generation_option_pack_title),
+                iconRes = R.drawable.ic_layers,
+                isSelected = generatePack,
+                onClick = onPackToggled,
+                modifier = Modifier.weight(1f),
+            )
+
+            // Summary chip (premium-gated)
+            GenerationChip(
+                label = stringResource(R.string.generation_option_summary_title),
+                iconRes = R.drawable.ic_file_text,
+                isSelected = generateSummary,
+                isLocked = !isPro,
+                onClick = { if (isPro) onSummaryToggled() else onSummaryLockedClicked() },
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
 @Composable
-private fun SelectableOptionCard(
-    title: String,
-    subtitle: String,
+private fun GenerationChip(
+    label: String,
     iconRes: Int,
     isSelected: Boolean,
     isLocked: Boolean = false,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.synapse.semantic.primary.copy(alpha = 0.1f) 
-                      else MaterialTheme.colorScheme.surfaceVariant,
-        label = "BgColor"
+    val semantic = MaterialTheme.synapse.semantic
+    val bgColor by animateColorAsState(
+        targetValue = when {
+            isLocked -> semantic.goldBg
+            isSelected -> semantic.primaryBg
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        },
+        animationSpec = tween(200)
     )
-    val borderColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.synapse.semantic.primary 
-                      else Color.Transparent,
-        label = "BorderColor"
+    val contentColor by animateColorAsState(
+        targetValue = when {
+            isLocked -> semantic.gold
+            isSelected -> semantic.primary
+            else -> MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = tween(200)
     )
 
-    CardShell(
+    Surface(
         modifier = modifier
-            .fillMaxWidth()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
             ),
-        color = borderColor,
-        bgGrad = androidx.compose.ui.graphics.SolidColor(backgroundColor)
+        shape = MaterialTheme.synapse.radius.md,
+        color = bgColor,
     ) {
         Row(
-            modifier = Modifier.padding(MaterialTheme.synapse.spacing.md),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.padding(horizontal = 14.adp, vertical = 12.adp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
             Icon(
-                painter = painterResource(iconRes),
+                painter = painterResource(if (isLocked) R.drawable.ic_lock else iconRes),
                 contentDescription = null,
-                tint = if (isSelected) MaterialTheme.synapse.semantic.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.adp)
+                tint = contentColor,
+                modifier = Modifier.size(16.adp),
             )
-            
-            Spacer(modifier = Modifier.width(MaterialTheme.synapse.spacing.md))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (isLocked) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_lock),
-                    contentDescription = stringResource(R.string.content_description_pro_feature),
-                    tint = MaterialTheme.synapse.semantic.gold
-                )
-            } else {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onClick() },
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = MaterialTheme.synapse.semantic.primary
-                    )
-                )
-            }
+            Spacer(Modifier.width(8.adp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                ),
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -1008,8 +988,6 @@ fun ConfigureStep(
     onLanguageClick: () -> Unit,
     onThinkingToggle: () -> Unit,
     onNavigateToPremium: () -> Unit,
-    onGenerate: () -> Unit,
-    onSavePdf: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val selectedLang = remember(uiState.language) {
@@ -1017,23 +995,6 @@ fun ConfigureStep(
     }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.adp)) {
-
-        // Pill showing which source was confirmed in Step 1.
-        SourceConfirmedPill(
-            text = when (uiState.sourceTab) {
-                SourceTab.FILE ->
-                    stringResource(R.string.configure_source_file, uiState.fileName ?: "File")
-
-                SourceTab.TEXT ->
-                    stringResource(R.string.configure_source_text, uiState.pasteText.length)
-
-                SourceTab.WEB, SourceTab.YOUTUBE ->
-                    stringResource(R.string.configure_source_web)
-            },
-            showSaveButton = uiState.sourceTab == SourceTab.FILE && uiState.fileUri != null,
-            onSavePdf = onSavePdf,
-        )
-
         ThinkingBanner(
             enabled = uiState.thinkingEnabled,
             isLocked = uiState.isThinkingLocked,
@@ -1291,10 +1252,10 @@ fun GeneratingStep(
     onStartEarly: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val phase = remember(uiState.isUploading, uiState.packId) {
+    val phase = remember(uiState.isUploading, uiState.packId, uiState.generationPhase) {
         when {
             uiState.isUploading -> GenerationPhase.UPLOADING
-            uiState.packId == 0L -> GenerationPhase.PREPARING
+            uiState.packId == 0L && uiState.generationPhase != DualGenerationPhase.SUMMARY -> GenerationPhase.PREPARING
             else -> GenerationPhase.GENERATING
         }
     }
@@ -1415,7 +1376,7 @@ private fun PreparingPhaseUi(uiState: AddPdfUiState) {
         if (uiState.isPro) R.array.generating_tasks_pro else R.array.generating_tasks_standard
     )
 
-    val currentIndex = uiState.progressMessageIndex.coerceAtMost(tasks.lastIndex)
+    val currentIndex = uiState.progressMessageIndex % tasks.size
     val currentTaskText = tasks[currentIndex]
 
     Column(
@@ -1467,47 +1428,88 @@ private fun PreparingPhaseUi(uiState: AddPdfUiState) {
     }
 }
 
-// Helper to smooth out generation progress (fast start, steady middle, slow finish)
-private fun mapProgress(real: Float): Float {
-    return when {
-        real < 0.2f -> real * 0.5f // 0 -> 0.1
-        real < 0.8f -> 0.1f + (real - 0.2f) * 1.25f // 0.1 -> 0.85
-        else -> 0.85f + (real - 0.8f) * 0.75f // 0.85 -> 1.0
-    }
-}
-
 @Composable
 private fun GeneratingPhaseUi(
     uiState: AddPdfUiState,
     onStartEarly: () -> Unit
 ) {
-    GeneratingLoadingUi(
-        headerContent = {
-            Text(
-                text = uiState.streamPackEmoji.ifBlank { stringResource(R.string.generating_pack_fallback) },
-                fontSize = 32.sp
-            )
-        },
-        title = uiState.streamPackTitle.ifBlank { stringResource(R.string.generating_pack_title) },
-        stage = uiState.streamStage,
-        progress = uiState.generationProgress,
-        stats = listOf(
-            Triple(
-                "${uiState.conceptsFound}",
-                stringResource(R.string.generating_concepts_found),
-                MaterialTheme.colorScheme.secondary
-            ),
-            Triple(
-                "${uiState.questionsCompleted} / ${uiState.questionsExpected.coerceAtLeast(1)}",
-                stringResource(R.string.generating_questions_ready),
-                MaterialTheme.colorScheme.primary
-            )
-        ),
-        earlyStartVisible = uiState.canStartEarly,
-        earlyStartMessage = stringResource(R.string.generating_early_start_msg),
-        earlyStartLabel = stringResource(R.string.generating_start_now),
-        onStartEarly = onStartEarly,
+    val tasks = androidx.compose.ui.res.stringArrayResource(
+        if (uiState.isPro) R.array.generating_tasks_pro else R.array.generating_tasks_standard
     )
+    val currentIndex = uiState.progressMessageIndex % tasks.size
+    val currentTaskText = tasks[currentIndex]
+
+    if (uiState.generationPhase == DualGenerationPhase.PACK) {
+        val dynamicStage = if (uiState.streamStage.isBlank() || uiState.streamStage.contains("Extracted") || uiState.streamStage.contains("Organized")) {
+            currentTaskText
+        } else {
+            uiState.streamStage
+        }
+
+        GeneratingLoadingUi(
+            headerContent = {
+                Text(
+                    text = uiState.streamPackEmoji.ifBlank { stringResource(R.string.generating_pack_fallback) },
+                    fontSize = 32.sp
+                )
+            },
+            title = uiState.streamPackTitle.ifBlank { stringResource(R.string.generating_pack_title) },
+            stage = dynamicStage,
+            progress = uiState.generationProgress,
+            stats = listOf(
+                Triple(
+                    "${uiState.conceptsFound}",
+                    stringResource(R.string.generating_concepts_found),
+                    MaterialTheme.colorScheme.secondary
+                ),
+                Triple(
+                    "${uiState.questionsCompleted} / ${uiState.questionsExpected.coerceAtLeast(1)}",
+                    stringResource(R.string.generating_questions_ready),
+                    MaterialTheme.colorScheme.primary
+                )
+            ),
+            earlyStartVisible = uiState.canStartEarly,
+            earlyStartMessage = stringResource(R.string.generating_early_start_msg),
+            earlyStartLabel = stringResource(R.string.generating_start_now),
+            onStartEarly = onStartEarly,
+        )
+    } else {
+        val dynamicSummaryStage = if (uiState.summaryStage.isBlank() || uiState.summaryStage.contains("Extracted")) {
+            currentTaskText
+        } else {
+            uiState.summaryStage
+        }
+
+        GeneratingLoadingUi(
+            headerContent = {
+                Icon(
+                    painter = painterResource(R.drawable.ic_file_text),
+                    contentDescription = null,
+                    modifier = Modifier.size(32.adp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            },
+            title = uiState.streamSummaryTitle.ifBlank { stringResource(R.string.generating_summary_title) },
+            stage = dynamicSummaryStage,
+            progress = uiState.summaryProgress,
+            stats = listOf(
+                Triple(
+                    "${uiState.summaryConcepts}",
+                    stringResource(R.string.generating_concepts_found),
+                    MaterialTheme.colorScheme.secondary
+                ),
+                Triple(
+                    "${uiState.sectionsCompleted} / ${uiState.sectionsExpected.coerceAtLeast(1)}",
+                    stringResource(R.string.generating_sections_ready),
+                    MaterialTheme.colorScheme.primary
+                )
+            ),
+            earlyStartVisible = false,
+            earlyStartMessage = "",
+            earlyStartLabel = "",
+            onStartEarly = { },
+        )
+    }
 }
 
 @Composable
@@ -1516,12 +1518,21 @@ fun DoneStep(
     sourceDescription: String,
     language: LanguageOption,
     generatedQuestions: List<QuestionUiModel>,
+    wantsPack: Boolean,
+    wantsSummary: Boolean,
+    packWasGenerated: Boolean,
+    summaryWasGenerated: Boolean,
     onStartStudying: () -> Unit,
+    onReadSummary: () -> Unit,
     onExport: () -> Unit,
     onBackToDashboard: () -> Unit,
     modifier: Modifier = Modifier,
     filePageCount: Int? = null,
 ) {
+    var selectedTab by remember(packWasGenerated, summaryWasGenerated) {
+        mutableIntStateOf(if (packWasGenerated) 0 else 1)
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,
@@ -1544,21 +1555,33 @@ fun DoneStep(
                         .navigationBarsPadding(),
                     verticalArrangement = Arrangement.spacedBy(8.adp)
                 ) {
-                    PrimaryGradientButton(
-                        text = stringResource(R.string.done_start_studying),
-                        iconRes = R.drawable.ic_zap,
-                        enabled = true,
-                        onClick = onStartStudying
-                    )
+                    if (selectedTab == 0 && packWasGenerated) {
+                        PrimaryGradientButton(
+                            text = stringResource(R.string.done_start_studying),
+                            iconRes = R.drawable.ic_zap,
+                            enabled = true,
+                            onClick = onStartStudying
+                        )
+                    } else if (selectedTab == 1 && summaryWasGenerated) {
+                        PrimaryGradientButton(
+                            text = stringResource(R.string.done_read_summary),
+                            iconRes = R.drawable.ic_file_text,
+                            enabled = true,
+                            onClick = onReadSummary
+                        )
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.adp)
                     ) {
-                        SecondaryButton(
-                            text = stringResource(R.string.save_pdf),
-                            onClick = onExport,
-                            modifier = Modifier.weight(2f)
-                        )
+                        if (selectedTab == 0 && packWasGenerated) {
+                            SecondaryButton(
+                                text = stringResource(R.string.save_pdf),
+                                onClick = onExport,
+                                modifier = Modifier.weight(2f)
+                            )
+                        }
                         SecondaryButton(
                             text = stringResource(R.string.done_back_to_dashboard),
                             onClick = onBackToDashboard,
@@ -1588,91 +1611,187 @@ fun DoneStep(
 
             Spacer(Modifier.height(32.adp))
 
-            if (generatedQuestions.isNotEmpty()) {
-                val breakdown = remember(generatedQuestions) {
-                    generatedQuestions.groupBy { it.type }.mapValues { it.value.size }
-                }
-
-                val questionTypeInfo = listOf(
-                    Triple(
-                        QuestionType.MCQ,
-                        stringResource(R.string.type_mcq),
-                        R.drawable.ic_brain
-                    ),
-                    Triple(
-                        QuestionType.TRUE_FALSE,
-                        stringResource(R.string.type_true_false),
-                        R.drawable.ic_toggle_left
-                    ),
-                    Triple(
-                        QuestionType.FLASHCARD,
-                        stringResource(R.string.type_flashcard),
-                        R.drawable.ic_layers
-                    ),
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.adp)
-                        .background(
-                            MaterialTheme.colorScheme.surface,
-                            shape = MaterialTheme.shapes.medium
+            val showTabs = wantsPack && wantsSummary
+            if (showTabs) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = Color.Transparent,
+                    indicator = { tabPositions ->
+                        TabRowDefaults.Indicator(
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            color = MaterialTheme.colorScheme.primary
                         )
-                        .padding(vertical = 12.adp, horizontal = 20.adp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    questionTypeInfo.forEach { (type, label, iconRes) ->
-                        val count = breakdown[type] ?: 0
-                        if (count > 0) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.adp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(iconRes),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.adp),
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "$count $label",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(24.adp))
-
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 4.adp),
-                    horizontalArrangement = Arrangement.spacedBy(12.adp),
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    val displayItems = generatedQuestions.take(6)
-                    itemsIndexed(displayItems.chunked(2)) { chunkIndex, chunk ->
-                        Column(verticalArrangement = Arrangement.spacedBy(12.adp)) {
-                            chunk.forEachIndexed { itemIndex, q ->
-                                val actualIndex = chunkIndex * 2 + itemIndex
-                                val (_, label, iconRes) = questionTypeInfo.first { it.first == q.type }
-                                PreviewQuestionCardCarousel(
-                                    typeLabel = label,
-                                    iconRes = iconRes,
-                                    questionText = q.questionText,
-                                    index = actualIndex,
-                                    modifier = Modifier
-                                        .width(280.adp)
-                                        .height(120.adp)
-                                )
-                            }
+                    listOf(
+                        stringResource(R.string.generation_option_pack_title),
+                        stringResource(R.string.generation_option_summary_title)
+                    ).forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { 
+                                Text(
+                                    text = title, 
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
+                                ) 
+                            },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Spacer(Modifier.height(24.adp))
+            }
+
+            AnimatedContent(
+                targetState = selectedTab,
+                label = "DoneTabContent"
+            ) { tab ->
+                if (tab == 0) {
+                    if (packWasGenerated) {
+                        PackResultsView(generatedQuestions = generatedQuestions)
+                    } else if (wantsPack) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(32.adp), contentAlignment = Alignment.Center) {
+                            LoadingIndicator(size = 48.adp)
+                        }
+                    }
+                } else if (tab == 1) {
+                    if (summaryWasGenerated) {
+                        SummaryResultsView()
+                    } else if (wantsSummary) {
+                        Box(modifier = Modifier.fillMaxWidth().padding(32.adp), contentAlignment = Alignment.Center) {
+                            LoadingIndicator(size = 48.adp)
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PackResultsView(generatedQuestions: List<QuestionUiModel>) {
+    if (generatedQuestions.isNotEmpty()) {
+        val breakdown = remember(generatedQuestions) {
+            generatedQuestions.groupBy { it.type }.mapValues { it.value.size }
+        }
+
+        val questionTypeInfo = listOf(
+            Triple(
+                QuestionType.MCQ,
+                stringResource(R.string.type_mcq),
+                R.drawable.ic_brain
+            ),
+            Triple(
+                QuestionType.TRUE_FALSE,
+                stringResource(R.string.type_true_false),
+                R.drawable.ic_toggle_left
+            ),
+            Triple(
+                QuestionType.FLASHCARD,
+                stringResource(R.string.type_flashcard),
+                R.drawable.ic_layers
+            ),
+        )
+
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surface,
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    .padding(vertical = 12.adp, horizontal = 20.adp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                questionTypeInfo.forEach { (type, label, iconRes) ->
+                    val count = breakdown[type] ?: 0
+                    if (count > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.adp)
+                        ) {
+                            Icon(
+                                painter = painterResource(iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(16.adp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "$count $label",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.adp))
+
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 4.adp),
+                horizontalArrangement = Arrangement.spacedBy(12.adp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val displayItems = generatedQuestions.take(6)
+                itemsIndexed(displayItems.chunked(2)) { chunkIndex, chunk ->
+                    Column(verticalArrangement = Arrangement.spacedBy(12.adp)) {
+                        chunk.forEachIndexed { itemIndex, q ->
+                            val actualIndex = chunkIndex * 2 + itemIndex
+                            val (_, label, iconRes) = questionTypeInfo.first { it.first == q.type }
+                            PreviewQuestionCardCarousel(
+                                typeLabel = label,
+                                iconRes = iconRes,
+                                questionText = q.questionText,
+                                index = actualIndex,
+                                modifier = Modifier
+                                    .width(280.adp)
+                                    .height(120.adp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryResultsView() {
+    CardShell(
+        modifier = Modifier.fillMaxWidth(),
+        bgGrad = MaterialTheme.synapse.gradients.page,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Column(
+            modifier = Modifier.padding(24.adp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_file_text),
+                contentDescription = null,
+                tint = MaterialTheme.synapse.semantic.primary,
+                modifier = Modifier.size(48.adp)
+            )
+            Spacer(Modifier.height(16.adp))
+            Text(
+                text = stringResource(R.string.done_summary_ready),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(8.adp))
+            Text(
+                text = stringResource(R.string.done_summary_ready_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
