@@ -16,6 +16,14 @@ enum class AddPdfStep {
 /** Source tabs shown on the first screen of the creation flow. */
 enum class SourceTab { FILE, TEXT, WEB, YOUTUBE }
 
+/** Tracks which phase of a dual-generation flow we are in. */
+enum class DualGenerationPhase {
+    /** Only pack is being generated, or the pack phase of a dual run. */
+    PACK,
+    /** The summary phase of a dual run (follows PACK). */
+    SUMMARY,
+}
+
 fun AddPdfStep.toIndicatorIndex() = when (this) {
     AddPdfStep.SELECT_PDF -> 0
     AddPdfStep.CONFIGURE  -> 1
@@ -58,12 +66,15 @@ data class AddPdfUiState(
     // ── Generation Selection ──────────────────────────────────────
     val generatePack: Boolean = true,
     val generateSummary: Boolean = false,
+    val summaryFocus: Set<String> = emptySet(),
+    val summaryDepth: String = "standard",
+    val summaryLanguage: String = "en",
 
     // ── Deep Thinking (Pro only) ──────────────────────────────────
     val thinkingEnabled: Boolean = false,
     val isThinkingLocked: Boolean = false,
 
-    // ── Streaming generation state ────────────────────────────────
+    // ── Streaming generation state (Pack) ─────────────────────────
     /** Server-provided stage message (e.g. "Extracting key ideas…") */
     val streamStage: String = "",
     /** Index for local checklist animation during the Preparing phase */
@@ -85,6 +96,28 @@ data class AddPdfUiState(
     /** Whether generation is still running in background after early start */
     val generatingInBackground: Boolean = false,
 
+    // ── Streaming generation state (Summary) ──────────────────────
+    /** Summary title from server (available after summary_metadata event) */
+    val streamSummaryTitle: String = "",
+    /** Summary emoji from server */
+    val streamSummaryEmoji: String = "",
+    /** Summary color from server */
+    val streamSummaryColor: String = "",
+    /** Sections completed so far (live counter) */
+    val sectionsCompleted: Int = 0,
+    /** Total sections expected from the server */
+    val sectionsExpected: Int = 0,
+    /** Summary concepts found */
+    val summaryConcepts: Int = 0,
+    /** Summary generation progress (0..1) */
+    val summaryProgress: Float = 0f,
+    /** Summary stage message */
+    val summaryStage: String = "",
+
+    // ── Dual generation phase ─────────────────────────────────────
+    /** Which phase we are currently in during generation. */
+    val generationPhase: DualGenerationPhase = DualGenerationPhase.PACK,
+
     // ── Generation / Done ─────────────────────────────────────────
     val sourceDescription: String = "",
     val generationProgress: Float = 0f,
@@ -92,6 +125,12 @@ data class AddPdfUiState(
     /** Supabase packs.id (UUID) — available after successful generation. */
     val packUuid: String? = null,
     val generatedQuestions: List<QuestionUiModel> = emptyList(),
+    /** Local Room summary ID — available after summary generation. */
+    val summaryId: Long = 0L,
+    /** True when pack was successfully generated in this session. */
+    val packWasGenerated: Boolean = false,
+    /** True when summary was successfully generated in this session. */
+    val summaryWasGenerated: Boolean = false,
 
     // ── UI meta ───────────────────────────────────────────────────
     val isLoading: Boolean = false,
