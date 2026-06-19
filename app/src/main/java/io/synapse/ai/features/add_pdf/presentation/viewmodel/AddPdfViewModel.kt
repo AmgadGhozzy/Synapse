@@ -11,7 +11,7 @@ import io.synapse.ai.core.ui.model.toUiModel
 import io.synapse.ai.core.ui.state.ToastType
 import io.synapse.ai.core.ui.state.UiEffect
 import io.synapse.ai.core.ui.state.UiText
-import io.synapse.ai.core.ui.util.ProgressMessageRotator
+import io.synapse.ai.core.ui.utils.ProgressMessageRotator
 import io.synapse.ai.domains.config.data.AppConfigProvider
 import io.synapse.ai.domains.study.model.QuestionType
 import io.synapse.ai.domains.study.repository.IPackRepository
@@ -132,7 +132,7 @@ class AddPdfViewModel @Inject constructor(
             is AddPdfUiEvent.GeneratePackToggled  -> _uiState.update { it.copy(generatePack = !it.generatePack) }
             is AddPdfUiEvent.GenerateSummaryToggled -> toggleSummaryGeneration()
             is AddPdfUiEvent.ShowSummaryPaywall   -> _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_pro_summary)))
-            is AddPdfUiEvent.GeneratePack         -> if (_uiState.value.canGenerate) generateQuestions()
+            is AddPdfUiEvent.GeneratePack         -> if (_uiState.value.canGenerate) generateQuestions(event)
             is AddPdfUiEvent.StartStudyEarly      -> startStudyEarly()
             is AddPdfUiEvent.SavePdfClicked       -> savePdfToDownloads()
             is AddPdfUiEvent.OcrToggled           -> toggleOcr()
@@ -331,10 +331,18 @@ class AddPdfViewModel @Inject constructor(
         }
     }
 
-    private fun generateQuestions() {
+    private fun generateQuestions(event: AddPdfUiEvent.GeneratePack) {
         if (_uiState.value.isPackLimitReached) {
             _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_unlimited_packs)))
             return
+        }
+
+        _uiState.update { 
+            it.copy(
+                summaryFocus = event.summaryFocus,
+                summaryDepth = event.summaryDepth,
+                summaryLanguage = event.summaryLanguage
+            ) 
         }
 
         progressMessageRotator.start(viewModelScope) { idx ->
@@ -359,6 +367,8 @@ class AddPdfViewModel @Inject constructor(
                     is AddPdfGenerationUiEvent.SourceResolved -> {
                         _uiState.update { it.copy(isUploading = false) }
                     }
+
+                    // ── Pack events ──────────────────────────────────
                     is AddPdfGenerationUiEvent.PackMetaCreated -> {
                         progressMessageRotator.stop()
                         _uiState.update {
@@ -374,7 +384,7 @@ class AddPdfViewModel @Inject constructor(
                     is AddPdfGenerationUiEvent.ProgressUpdated -> {
                         _uiState.update { reducer.onProgressUpdated(it, event.percent, event.message, event.conceptsFound) }
                     }
-                    is AddPdfGenerationUiEvent.Completed -> {
+                    is AddPdfGenerationUiEvent.PackCompleted -> {
                         progressMessageRotator.stop()
                         val sourceDesc = when (_uiState.value.sourceTab) {
                             SourceTab.FILE    -> _uiState.value.fileName ?: "PDF"
@@ -382,8 +392,52 @@ class AddPdfViewModel @Inject constructor(
                             SourceTab.WEB     -> _uiState.value.webUrl.takeLast(30)
                             SourceTab.YOUTUBE -> "YouTube"
                         }
-                        _uiState.update { reducer.onGenerationCompleted(it, sourceDesc, event.generatedQuestions) }
+                        _uiState.update { reducer.onPackCompleted(it, sourceDesc, event.generatedQuestions) }
                     }
+
+                    // ── Summary events ───────────────────────────────
+                    is AddPdfGenerationUiEvent.SummaryPhaseStarted -> {
+                        // Restart progress rotator for summary phase
+                        progressMessageRotator.start(viewModelScope) { idx ->
+                            val currentState = _uiState.value
+                            if (currentState.summaryStage.isBlank() && currentState.streamSummaryTitle.isBlank()) {
+                                _uiState.update { it.copy(progressMessageIndex = idx) }
+                            }
+                        }
+                        _uiState.update { reducer.onSummaryPhaseStarted(it) }
+                    }
+                    is AddPdfGenerationUiEvent.SummaryMetaCreated -> {
+                        _uiState.update {
+                            reducer.onSummaryMetaCreated(
+                                it,
+                                localSummaryId = event.localSummaryId,
+                                title = event.title,
+                                emoji = event.emoji,
+                                color = event.color,
+                                conceptsFound = event.conceptsFound,
+                                sectionsExpected = event.sectionsExpected,
+                            )
+                        }
+                    }
+                    is AddPdfGenerationUiEvent.SummarySectionAdded -> {
+                        _uiState.update { reducer.onSummarySectionAdded(it) }
+                    }
+                    is AddPdfGenerationUiEvent.SummaryProgressUpdated -> {
+                        _uiState.update {
+                            reducer.onSummaryProgressUpdated(it, event.percent, event.message, event.conceptsFound)
+                        }
+                    }
+                    is AddPdfGenerationUiEvent.SummaryCompleted -> {
+                        progressMessageRotator.stop()
+                        _uiState.update { reducer.onSummaryCompleted(it) }
+                    }
+
+                    // ── All done ─────────────────────────────────────
+                    is AddPdfGenerationUiEvent.AllCompleted -> {
+                        progressMessageRotator.stop()
+                        _uiState.update { reducer.onAllCompleted(it) }
+                    }
+
                     is AddPdfGenerationUiEvent.GenerationError -> {
                         progressMessageRotator.stop()
                         val msg = UiText.Dynamic(event.error.message ?: "Unknown error")
