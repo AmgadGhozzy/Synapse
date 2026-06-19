@@ -904,13 +904,13 @@ fun GenerationOptionsSelector(
                 modifier = Modifier.weight(1f),
             )
 
-            // Summary chip (premium-gated)
+            // Summary chip
             GenerationChip(
                 label = stringResource(R.string.generation_option_summary_title),
                 iconRes = R.drawable.ic_file_text,
                 isSelected = generateSummary,
-                isLocked = !isPro,
-                onClick = { if (isPro) onSummaryToggled() else onSummaryLockedClicked() },
+                isLocked = false,
+                onClick = onSummaryToggled,
                 modifier = Modifier.weight(1f),
             )
         }
