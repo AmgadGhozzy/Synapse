@@ -17,12 +17,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,16 +27,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -47,17 +41,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -79,23 +67,18 @@ import io.synapse.ai.features.add_pdf.presentation.components.AddPdfHeader
 import io.synapse.ai.features.add_pdf.presentation.components.ConfigureStep
 import io.synapse.ai.features.add_pdf.presentation.components.DoneStep
 import io.synapse.ai.features.add_pdf.presentation.components.GeneratingStep
+import io.synapse.ai.features.add_pdf.presentation.components.GenerationOptionsSelector
 import io.synapse.ai.features.add_pdf.presentation.components.LANGUAGES
 import io.synapse.ai.features.add_pdf.presentation.components.LanguageBottomSheet
+import io.synapse.ai.features.add_pdf.presentation.components.SourceConfirmedPill
 import io.synapse.ai.features.add_pdf.presentation.components.UploadStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfStep
 import io.synapse.ai.features.add_pdf.presentation.state.AddPdfUiEvent
 import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
 import io.synapse.ai.features.add_pdf.presentation.state.toIndicatorIndex
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.ui.text.style.TextOverflow
 import io.synapse.ai.features.add_pdf.presentation.viewmodel.AddPdfViewModel
 import io.synapse.ai.features.summary.presentation.screen.SummaryConfigContent
 import io.synapse.ai.features.summary.presentation.state.SummaryConfig
-import io.synapse.ai.features.add_pdf.presentation.components.GenerationOptionsSelector
 
 @Composable
 fun AddPdfScreen(
@@ -104,6 +87,7 @@ fun AddPdfScreen(
     onNavigateToExport  : (Long) -> Unit,
     onNavigateToPremium : () -> Unit,
     onNavigateToDashboard: () -> Unit,
+    onNavigateToSummary: (Long) -> Unit,
     onNavigateToSummaryConfig: (String, String, String, SummaryConfig) -> Unit,
     viewModel           : AddPdfViewModel = hiltViewModel(),
 ) {
@@ -304,31 +288,13 @@ fun AddPdfScreen(
                                     iconRes = R.drawable.ic_sparkles,
                                     enabled = canGenerate,
                                     onClick = {
-                                        if (uiState.generatePack && !uiState.generateSummary) {
-                                            viewModel.onEvent(AddPdfUiEvent.GeneratePack)
-                                        } else if (uiState.generateSummary && !uiState.generatePack) {
-                                            val type = when (uiState.sourceTab) {
-                                                SourceTab.FILE -> "pdf"
-                                                SourceTab.TEXT -> "text"
-                                                SourceTab.YOUTUBE -> "youtube"
-                                                SourceTab.WEB -> "url"
-                                            }
-                                            val name = when (uiState.sourceTab) {
-                                                SourceTab.FILE -> uiState.fileName ?: "document"
-                                                SourceTab.TEXT -> "Pasted Text"
-                                                SourceTab.WEB, SourceTab.YOUTUBE -> uiState.webUrl
-                                            }
-                                            val content = when (uiState.sourceTab) {
-                                                SourceTab.FILE -> uiState.fileUri ?: ""
-                                                SourceTab.TEXT -> uiState.pasteText
-                                                SourceTab.WEB, SourceTab.YOUTUBE -> uiState.webUrl
-                                            }
-                                            onNavigateToSummaryConfig(type, name, content, summaryConfig)
-                                        } else {
-                                            // BOTH selected: For now, we can launch the pack generation. The Edge function can be updated to generate both.
-                                            // The user explicitly requested to update the edge function to handle both.
-                                            viewModel.onEvent(AddPdfUiEvent.GeneratePack)
-                                        }
+                                        viewModel.onEvent(
+                                            AddPdfUiEvent.GeneratePack(
+                                                summaryFocus = summaryConfig.focus,
+                                                summaryDepth = summaryConfig.depth.name.lowercase(),
+                                                summaryLanguage = summaryConfig.language,
+                                            )
+                                        )
                                     },
                                 )
                             }
@@ -426,14 +392,29 @@ fun AddPdfScreen(
 
                     AddPdfStep.CONFIGURE -> {
                         Column(verticalArrangement = Arrangement.spacedBy(16.adp)) {
+                            // Pill showing which source was confirmed in Step 1.
+                            SourceConfirmedPill(
+                                text = when (uiState.sourceTab) {
+                                    SourceTab.FILE ->
+                                        stringResource(R.string.configure_source_file, uiState.fileName ?: "File")
+
+                                    SourceTab.TEXT ->
+                                        stringResource(R.string.configure_source_text, uiState.pasteText.length)
+
+                                    SourceTab.WEB, SourceTab.YOUTUBE ->
+                                        stringResource(R.string.configure_source_web)
+                                },
+                                showSaveButton = uiState.sourceTab == SourceTab.FILE && uiState.fileUri != null,
+                                onSavePdf = { viewModel.onEvent(AddPdfUiEvent.SavePdfClicked) },
+                            )
+
                             GenerationOptionsSelector(
                                 generatePack = uiState.generatePack,
                                 generateSummary = uiState.generateSummary,
                                 isPro = uiState.isPro,
                                 onPackToggled = { viewModel.onEvent(AddPdfUiEvent.GeneratePackToggled) },
                                 onSummaryToggled = { viewModel.onEvent(AddPdfUiEvent.GenerateSummaryToggled) },
-                                onSummaryLockedClicked = { viewModel.onEvent(AddPdfUiEvent.ShowSummaryPaywall) },
-                                modifier = Modifier.padding(horizontal = MaterialTheme.synapse.spacing.screen)
+                                onSummaryLockedClicked = { viewModel.onEvent(AddPdfUiEvent.ShowSummaryPaywall) }
                             )
 
                             if (uiState.generatePack) {
@@ -443,18 +424,16 @@ fun AddPdfScreen(
                                     onQuestionCountChange = { viewModel.onEvent(AddPdfUiEvent.QuestionCountChanged(it)) },
                                     onTypeToggle          = { viewModel.onEvent(AddPdfUiEvent.QuestionTypeToggled(it)) },
                                     onFocusNotesChange    = { viewModel.onEvent(AddPdfUiEvent.FocusNotesChanged(it)) },
-                                    onLanguageClick       = { showLanguagePicker = true },
-                                    onNavigateToPremium    = onNavigateToPremium,
-                                    onGenerate            = { viewModel.onEvent(AddPdfUiEvent.GeneratePack) },
-                                    onSavePdf             = { viewModel.onEvent(AddPdfUiEvent.SavePdfClicked) },
+                                    onLanguageClick       = { isSummarySelected = false; showLanguagePicker = true },
+                                    onNavigateToPremium    = onNavigateToPremium
                                 )
                             }
-                            
+
                             if (uiState.generateSummary) {
                                 SummaryConfigContent(
                                     config = summaryConfig,
                                     onConfigChange = { summaryConfig = it },
-                                    onLanguageClick = { showLanguagePicker = true },
+                                    onLanguageClick = { isSummarySelected = true; showLanguagePicker = true },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(bottom = 140.adp),
@@ -474,7 +453,12 @@ fun AddPdfScreen(
                         language          = selectedLanguage,
                         generatedQuestions = uiState.generatedQuestions,
                         filePageCount      = uiState.filePageCount,
+                        wantsPack          = uiState.generatePack,
+                        wantsSummary       = uiState.generateSummary,
+                        packWasGenerated   = uiState.packWasGenerated,
+                        summaryWasGenerated = uiState.summaryWasGenerated,
                         onStartStudying   = { onNavigateToSession(uiState.packId) },
+                        onReadSummary     = { onNavigateToSummary(uiState.summaryId) },
                         onExport          = { onNavigateToExport(uiState.packId) },
                         onBackToDashboard = onNavigateToDashboard,
                     )
