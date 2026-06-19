@@ -302,6 +302,9 @@ fun SynapseNavGraph(
                 onNavigateToExport = { packId ->
                     navController.navigate(SynapseScreen.Export.createRoute(packId))
                 },
+                onNavigateToSummary = { summaryId ->
+                    navController.navigate(SynapseScreen.SummaryViewer.createRoute(summaryId))
+                },
                 onNavigateToSummaryConfig = { type, name, content, config ->
                     navController.navigate(
                         SynapseScreen.SummaryGenerator.createRoute(
