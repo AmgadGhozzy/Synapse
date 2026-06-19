@@ -12,6 +12,7 @@ class AddPdfStateReducer @Inject constructor() {
             uploadProgress = null,
             generationProgress = 0f,
             error = null,
+            // Pack fields
             questionsCompleted = 0,
             questionsExpected = state.questionCount,
             conceptsFound = 0,
@@ -23,7 +24,21 @@ class AddPdfStateReducer @Inject constructor() {
             canStartEarly = false,
             generatingInBackground = false,
             packId = 0L,
-            packUuid = null
+            packUuid = null,
+            // Summary fields
+            streamSummaryTitle = "",
+            streamSummaryEmoji = "",
+            streamSummaryColor = "",
+            sectionsCompleted = 0,
+            sectionsExpected = 0,
+            summaryConcepts = 0,
+            summaryProgress = 0f,
+            summaryStage = "",
+            summaryId = 0L,
+            // Phase
+            generationPhase = DualGenerationPhase.PACK,
+            packWasGenerated = false,
+            summaryWasGenerated = false,
         )
     }
 
@@ -75,20 +90,100 @@ class AddPdfStateReducer @Inject constructor() {
         )
     }
 
-    fun onGenerationCompleted(
+    /**
+     * Pack finished. If summary is also requested, we stay in GENERATING step
+     * and just mark pack as done; the coordinator will proceed to summary.
+     */
+    fun onPackCompleted(
         state: AddPdfUiState,
         sourceDescription: String,
         generatedQuestions: List<io.synapse.ai.core.ui.model.QuestionUiModel>
     ): AddPdfUiState {
         return state.copy(
-            step = AddPdfStep.DONE,
-            isLoading = false,
-            generatingInBackground = false,
             generationProgress = 1f,
             packTitle = state.streamPackTitle,
             sourceDescription = sourceDescription,
             generatedQuestions = generatedQuestions,
-            streamStage = "Pack ready!"
+            streamStage = "Pack ready!",
+            packWasGenerated = true,
+        )
+    }
+
+    // ── Summary reducers ─────────────────────────────────────────
+
+    fun onSummaryPhaseStarted(state: AddPdfUiState): AddPdfUiState {
+        return state.copy(
+            generationPhase = DualGenerationPhase.SUMMARY,
+            summaryProgress = 0f,
+            summaryStage = "",
+            sectionsCompleted = 0,
+            sectionsExpected = 0,
+            summaryConcepts = 0,
+            streamSummaryTitle = "",
+            streamSummaryEmoji = "",
+            streamSummaryColor = "",
+        )
+    }
+
+    fun onSummaryMetaCreated(
+        state: AddPdfUiState,
+        localSummaryId: Long,
+        title: String,
+        emoji: String,
+        color: String,
+        conceptsFound: Int,
+        sectionsExpected: Int,
+    ): AddPdfUiState {
+        return state.copy(
+            summaryId = localSummaryId,
+            streamSummaryTitle = title,
+            streamSummaryEmoji = emoji,
+            streamSummaryColor = color,
+            summaryConcepts = conceptsFound,
+            sectionsExpected = sectionsExpected,
+            summaryStage = "Extracted \$conceptsFound concepts — writing sections…",
+            summaryProgress = 0.08f,
+        )
+    }
+
+    fun onSummarySectionAdded(state: AddPdfUiState): AddPdfUiState {
+        val done = state.sectionsCompleted + 1
+        val expected = state.sectionsExpected.coerceAtLeast(1)
+        val progress = (done.toFloat() / expected).coerceIn(0.1f, 0.95f)
+        return state.copy(
+            sectionsCompleted = done,
+            summaryProgress = progress,
+        )
+    }
+
+    fun onSummaryProgressUpdated(
+        state: AddPdfUiState,
+        percent: Float,
+        message: String,
+        conceptsFound: Int,
+    ): AddPdfUiState {
+        return state.copy(
+            summaryProgress = percent,
+            summaryStage = message.ifBlank { state.summaryStage },
+            summaryConcepts = conceptsFound.takeIf { it > 0 } ?: state.summaryConcepts,
+        )
+    }
+
+    fun onSummaryCompleted(state: AddPdfUiState): AddPdfUiState {
+        return state.copy(
+            summaryProgress = 1f,
+            summaryStage = "Summary ready!",
+            summaryWasGenerated = true,
+        )
+    }
+
+    // ── All completed ────────────────────────────────────────────
+
+    fun onAllCompleted(state: AddPdfUiState): AddPdfUiState {
+        return state.copy(
+            step = AddPdfStep.DONE,
+            isLoading = false,
+            generatingInBackground = false,
         )
     }
 
