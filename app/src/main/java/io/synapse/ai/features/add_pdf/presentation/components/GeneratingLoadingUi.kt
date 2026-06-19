@@ -1,8 +1,5 @@
-package io.synapse.ai.features.add_pdf.presentation.components
+package io.synapse.ai.features.add_pdf.presentation.components
 
-import io.synapse.ai.core.ui.components.PrimaryGradientButton
-
-import io.synapse.ai.core.ui.components.WavyProgressIndicator
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -40,6 +37,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.tokens.adp
+import io.synapse.ai.core.ui.components.AnimatedTypingText
+import io.synapse.ai.core.ui.components.PrimaryGradientButton
+import io.synapse.ai.core.ui.components.WavyProgressIndicator
 
 // Smooth progress curve: fast start → steady middle → slow finish
 private fun mapGeneratingProgress(real: Float): Float = when {
@@ -78,8 +78,7 @@ fun GeneratingLoadingUi(
     val mappedProgress = remember(progress) { mapGeneratingProgress(progress) }
     val animatedProgress by animateFloatAsState(
         targetValue = mappedProgress,
-        animationSpec = tween(800, easing = FastOutSlowInEasing),
-        label = "gen_progress"
+        animationSpec = tween(800, easing = FastOutSlowInEasing)
     )
 
     Column(
@@ -105,7 +104,7 @@ fun GeneratingLoadingUi(
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(8.adp))
-        Text(
+        AnimatedTypingText(
             text = stage,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
