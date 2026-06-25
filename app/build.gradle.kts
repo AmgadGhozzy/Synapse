@@ -28,8 +28,8 @@ android {
         applicationId = "io.synapse.ai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 76
-        versionName = "2.2.6"
+        versionCode = 77
+        versionName = "2.2.7"
 //        ndk {
 //            abiFilters.add("arm64-v8a")
 //            abiFilters.add("armeabi-v7a")
