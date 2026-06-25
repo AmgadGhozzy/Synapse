@@ -13,7 +13,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class AndroidDocumentSaver @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : DocumentSaver {
 
     override suspend fun savePdfToDownloads(uriString: String, destName: String): Result<Unit> = withContext(Dispatchers.IO) {
