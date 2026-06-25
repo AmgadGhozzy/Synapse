@@ -6,7 +6,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -20,7 +19,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -32,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,10 +58,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -83,9 +76,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -95,7 +86,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.synapse.ai.R
 import io.synapse.ai.core.theme.SynapseTheme
@@ -105,10 +95,12 @@ import io.synapse.ai.core.theme.tokens.toShadow
 import io.synapse.ai.core.ui.components.AnimatedTypingText
 import io.synapse.ai.core.ui.components.CardShell
 import io.synapse.ai.core.ui.components.LoadingIndicator
+import io.synapse.ai.core.ui.components.PillTab
 import io.synapse.ai.core.ui.components.PrimaryGradientButton
 import io.synapse.ai.core.ui.components.SecondaryButton
 import io.synapse.ai.core.ui.components.StatusIconHeader
 import io.synapse.ai.core.ui.components.StepIndicator
+import io.synapse.ai.core.ui.components.SynapsePillTabRow
 import io.synapse.ai.core.ui.model.QuestionUiModel
 import io.synapse.ai.core.ui.utils.animatedDashedBorder
 import io.synapse.ai.domains.study.model.QuestionType
@@ -117,7 +109,6 @@ import io.synapse.ai.features.add_pdf.presentation.state.DualGenerationPhase
 import io.synapse.ai.features.add_pdf.presentation.state.SourceTab
 import io.synapse.ai.features.export.presentation.components.ExportActionButton
 import kotlinx.coroutines.runBlocking
-
 
 const val TEXT_MAX_CHARS = 5_000
 
@@ -201,121 +192,20 @@ fun SourceTabRow(
     onSelect: (SourceTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tabs = listOf(
-        Triple(SourceTab.FILE, stringResource(R.string.tab_file_image), R.drawable.ic_file_image),
-        Triple(SourceTab.WEB, stringResource(R.string.tab_web_youtube), R.drawable.ic_youtube),
-        Triple(SourceTab.TEXT, stringResource(R.string.tab_plain_text), R.drawable.ic_type),
+    val tabEntries = listOf(
+        SourceTab.FILE to PillTab(stringResource(R.string.tab_file_image), R.drawable.ic_file_image),
+        SourceTab.WEB to PillTab(stringResource(R.string.tab_web_youtube), R.drawable.ic_youtube),
+        SourceTab.TEXT to PillTab(stringResource(R.string.tab_plain_text), R.drawable.ic_type),
     )
 
-    val selectedIndex = tabs.indexOfFirst { it.first == selected }
-    val density = LocalDensity.current
+    val selectedIndex = tabEntries.indexOfFirst { it.first == selected }
 
-    // Row measures itself → pill mirrors its height, no intrinsics needed
-    var rowHeightDp by remember { mutableStateOf(0.dp) }
-
-    Surface(
-        modifier = modifier
-            .padding(horizontal = 4.adp)
-            .fillMaxWidth()
-            .dropShadow(
-                MaterialTheme.shapes.medium,
-                MaterialTheme.synapse.shadows.subtle.toShadow()
-            ),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.medium,
-    ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .padding(horizontal = 5.adp, vertical = 5.adp)
-                .fillMaxWidth(),
-        ) {
-            val tabWidth = maxWidth / tabs.size
-
-            val pillOffsetX by animateDpAsState(
-                targetValue = tabWidth * selectedIndex,
-                animationSpec = tween(
-                    durationMillis = 400,
-                    easing = FastOutSlowInEasing,
-                )
-            )
-
-            // Pill drawn first (behind Row). Height comes from Row's onSizeChanged.
-            Box(
-                modifier = Modifier
-                    .offset(x = pillOffsetX)
-                    .width(tabWidth)
-                    .height(rowHeightDp)
-                    .dropShadow(
-                        MaterialTheme.shapes.small,
-                        MaterialTheme.synapse.shadows.subtle.toShadow()
-                    )
-                    .background(
-                        color = MaterialTheme.colorScheme.surface,
-                        shape = MaterialTheme.shapes.small,
-                    ),
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { size ->
-                        rowHeightDp = with(density) { size.height.toDp() }
-                    },
-            ) {
-                tabs.forEach { (tab, label, iconRes) ->
-                    val isSelected = selected == tab
-
-                    val contentColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        animationSpec = tween(durationMillis = 200),
-                        label = "tabIconColor_${tab.name}",
-                    )
-                    val textColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        animationSpec = tween(durationMillis = 200),
-                        label = "tabTextColor_${tab.name}",
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(MaterialTheme.shapes.small)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onSelect(tab) },
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(vertical = 10.adp, horizontal = 4.adp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                painter = painterResource(iconRes),
-                                contentDescription = null,
-                                tint = contentColor,
-                                modifier = Modifier.size(15.adp),
-                            )
-                            Spacer(Modifier.width(5.adp))
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                ),
-                                color = textColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+    SynapsePillTabRow(
+        tabs = tabEntries.map { it.second },
+        selectedIndex = selectedIndex,
+        onSelect = { index -> onSelect(tabEntries[index].first) },
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -350,7 +240,6 @@ fun FileTab(
         )
     }
 }
-
 
 @Composable
 private fun DropZone(
@@ -1613,42 +1502,20 @@ fun DoneStep(
 
             val showTabs = wantsPack && wantsSummary
             if (showTabs) {
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color.Transparent,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.Indicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    listOf(
-                        stringResource(R.string.generation_option_pack_title),
-                        stringResource(R.string.generation_option_summary_title)
-                    ).forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = { 
-                                Text(
-                                    text = title, 
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal
-                                ) 
-                            },
-                            selectedContentColor = MaterialTheme.colorScheme.primary,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                val doneTabs = listOf(
+                    PillTab(stringResource(R.string.generation_option_pack_title), R.drawable.ic_layers),
+                    PillTab(stringResource(R.string.generation_option_summary_title), R.drawable.ic_file_text),
+                )
+                SynapsePillTabRow(
+                    tabs = doneTabs,
+                    selectedIndex = selectedTab,
+                    onSelect = { selectedTab = it },
+                )
                 Spacer(Modifier.height(24.adp))
             }
 
             AnimatedContent(
-                targetState = selectedTab,
-                label = "DoneTabContent"
+                targetState = selectedTab
             ) { tab ->
                 if (tab == 0) {
                     if (packWasGenerated) {
@@ -2153,5 +2020,3 @@ private fun GeneratingStepPreview() {
         }
     }
 }
-
-
