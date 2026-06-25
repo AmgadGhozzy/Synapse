@@ -40,20 +40,14 @@ class MarketplaceViewModel @Inject constructor(
     private val acquirePackUseCase: AcquirePackUseCase,
     private val incrementViewUseCase: IncrementViewUseCase,
     private val premiumManager: PremiumManager,
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
-
-
 
     private val _uiState = MutableStateFlow(MarketplaceUiState())
     val uiState: StateFlow<MarketplaceUiState> = _uiState.asStateFlow()
 
-
-
     private val _uiEffects = MutableSharedFlow<UiEffect>(extraBufferCapacity = 8)
     val uiEffects: SharedFlow<UiEffect> = _uiEffects.asSharedFlow()
-
-
 
     private val _searchQuery = MutableStateFlow("")
     private var loadJob: Job? = null
@@ -79,8 +73,6 @@ class MarketplaceViewModel @Inject constructor(
         loadPacks()
     }
 
-
-
     fun onEvent(event: MarketplaceEvent) {
         when (event) {
             is MarketplaceEvent.LoadPacks            -> loadPacks()
@@ -95,8 +87,6 @@ class MarketplaceViewModel @Inject constructor(
             is MarketplaceEvent.DismissError         -> _uiState.update { it.copy(error = null) }
         }
     }
-
-
 
     private fun loadPacks() {
         loadJob?.cancel()
@@ -191,4 +181,3 @@ class MarketplaceViewModel @Inject constructor(
         }
     }
 }
-
