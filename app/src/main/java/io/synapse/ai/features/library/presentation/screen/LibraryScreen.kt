@@ -1,4 +1,4 @@
-package io.synapse.ai.features.library.presentation.screen
+package io.synapse.ai.features.library.presentation.screen
 
 import io.synapse.ai.core.ui.components.study.buildPackCardActions
 
@@ -99,7 +99,6 @@ fun LibraryScreen(
     }
 }
 
-
 @Composable
 private fun LibraryContent(
     uiState: LibraryUiState,
@@ -138,7 +137,6 @@ private fun LibraryContent(
     fun staggerDelay(index: Int) = index.coerceAtMost(5) * 60
 
     val spacing = MaterialTheme.synapse.spacing
-
 
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 180.adp),
@@ -199,9 +197,9 @@ private fun LibraryContent(
             }
         }
 
-        items(displayedItems, key = { it.id }) { item ->
+        items(displayedItems, key = { it.key }) { item ->
             val index = displayedItems.indexOf(item)
-            
+
             when (item) {
                 is LibraryFeedItem.Pack -> {
                     val pack = item.pack
@@ -249,7 +247,6 @@ private fun LibraryContent(
     }
 }
 
-
 @Preview(name = "Library — Light", showBackground = true)
 @Preview(name = "Library — Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
@@ -275,4 +272,3 @@ private fun LibraryScreenPreview() {
         )
     }
 }
-
