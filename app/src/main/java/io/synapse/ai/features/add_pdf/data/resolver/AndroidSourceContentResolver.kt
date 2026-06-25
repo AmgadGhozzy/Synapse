@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class AndroidSourceContentResolver @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : SourceContentResolver {
 
     companion object {
@@ -36,10 +36,10 @@ class AndroidSourceContentResolver @Inject constructor(
                     val uri = uriString.toUri()
                     val fileName = request.fileName ?: "document.pdf"
                     val sourceType = sourceTypeFromName(fileName)
-                    
+
                     val bytes = readBytes(uri) ?: return@withContext Result.failure(IllegalArgumentException("Cannot read file"))
                     if (bytes.isEmpty()) return@withContext Result.failure(IllegalArgumentException("File is empty"))
-                    
+
                     val ext = fileName.substringAfterLast('.', "").lowercase()
                     if (ext == "pdf" && !isValidPdf(bytes)) return@withContext Result.failure(IllegalArgumentException("Not a valid PDF"))
                     if (ext in setOf("doc", "docx") && !isValidWord(bytes)) return@withContext Result.failure(IllegalArgumentException("Not a valid Word document"))
@@ -75,13 +75,13 @@ class AndroidSourceContentResolver @Inject constructor(
         }
     }
 
-    override suspend fun getPageCount(uriString: String): Int? = withContext(Dispatchers.IO) {
+    override suspend fun getPageCount(uri: String): Int? = withContext(Dispatchers.IO) {
         try {
-            val uri = uriString.toUri()
-            val pfd = when (uri.scheme) {
-                "content" -> context.contentResolver.openFileDescriptor(uri, "r")
+            val parsedUri = uri.toUri()
+            val pfd = when (parsedUri.scheme) {
+                "content" -> context.contentResolver.openFileDescriptor(parsedUri, "r")
                 "file"    -> android.os.ParcelFileDescriptor.open(
-                    java.io.File(uri.path ?: return@withContext null),
+                    java.io.File(parsedUri.path ?: return@withContext null),
                     android.os.ParcelFileDescriptor.MODE_READ_ONLY,
                 )
                 else      -> null
