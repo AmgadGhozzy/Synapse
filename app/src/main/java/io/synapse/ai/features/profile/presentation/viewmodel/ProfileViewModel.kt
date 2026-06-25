@@ -140,7 +140,6 @@ class ProfileViewModel @Inject constructor(
                 initialValue = ProfileUiState(),
             )
 
-
     fun onHelpTapped()       = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appHelpUrl))
     fun onPrivacyTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appPrivacy))
     fun onRateAppTapped()    = _uiEffects.tryEmit(UiEffect.OpenExternal(appConfigProvider.appRateAppUrl))
@@ -318,11 +317,3 @@ class ProfileViewModel @Inject constructor(
         }
     }
 }
-
-
-
-
-
-
-
-
