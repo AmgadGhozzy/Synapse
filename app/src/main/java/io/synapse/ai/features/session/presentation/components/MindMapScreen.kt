@@ -42,10 +42,12 @@ fun MindMapScreen(mermaidCode: String) {
 
     var isLoading by remember { mutableStateOf(true) }
 
+    val cleanCode = remember(mermaidCode) { cleanMermaidCode(mermaidCode) }
+
     // Rebuild HTML only when content or theme flips – avoids redundant WebView reloads
-    val htmlContent = remember(mermaidCode, colorScheme) {
+    val htmlContent = remember(cleanCode, colorScheme) {
         buildMindMapHtml(
-            mermaidCode = mermaidCode,
+            mermaidCode = cleanCode,
             semanticColors = semanticColors,
             bgHex = colorScheme.background.toHexString(),
             outlineHex = colorScheme.outline.toHexString(),
@@ -73,7 +75,7 @@ fun MindMapScreen(mermaidCode: String) {
                             override fun onPageFinished(view: WebView?, url: String?) {
                                 view?.postDelayed({ isLoading = false }, 800)
                     }
-                        
+
                         }
 
                         settings.apply {
@@ -123,7 +125,6 @@ fun MindMapScreen(mermaidCode: String) {
                 }
             }
         )
-
 
         // ── Loading indicator ────────────────────────────────────────────────
         AnimatedVisibility(
@@ -205,7 +206,7 @@ private fun buildMindMapHtml(
     }
 
     .mermaid {
-      color: transparent; 
+      color: transparent;
       max-width: 100%;
       display: flex;
       justify-content: center;
@@ -231,13 +232,13 @@ private fun buildMindMapHtml(
       color: #FFFFFF !important;
       fill: #FFFFFF !important;
     }
-    
+
     .mermaid svg foreignObject div {
       display: flex;
       justify-content: center;
       align-items: center;
       text-align: center;
-      white-space: nowrap; 
+      white-space: nowrap;
     }
     @keyframes revealMap {
       from { opacity: 0; transform: scale(.97); }
