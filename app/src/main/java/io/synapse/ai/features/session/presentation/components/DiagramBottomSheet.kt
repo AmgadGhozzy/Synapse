@@ -83,9 +83,11 @@ fun DiagramBottomSheet(
     val onSurfaceArgb = MaterialTheme.colorScheme.onSurface.toArgb()
     val bgColorHex = "%06X".format(surfaceArgb and 0xFFFFFF)
 
-    val diagramUrl = remember(mermaid, isDark, bgColorHex) {
+    val cleanMermaid = remember(mermaid) { cleanMermaidCode(mermaid) }
+
+    val diagramUrl = remember(cleanMermaid, isDark, bgColorHex) {
         buildMermaidInkUrl(
-            mermaidCode = mermaid,
+            mermaidCode = cleanMermaid,
             darkTheme = isDark,
             bgColorHex = bgColorHex,
             nodeFillHex = bgColorHex,
@@ -133,7 +135,7 @@ fun DiagramBottomSheet(
 
             ZoomableDiagramImage(
                 url = diagramUrl,
-                mermaidCode = mermaid,
+                mermaidCode = cleanMermaid,
                 imageLoader = imageLoader,
                 modifier = Modifier
                     .fillMaxSize()
@@ -392,6 +394,27 @@ private fun ZoomableDiagramImage(
     }
 }
 
+internal fun cleanMermaidCode(mermaidCode: String): String {
+    var clean = mermaidCode.trim()
+
+    if (clean.startsWith("```mermaid", ignoreCase = true)) {
+        clean = clean.substring("```mermaid".length).trim()
+    } else if (clean.startsWith("```")) {
+        clean = clean.substring(3).trim()
+    }
+
+    if (clean.endsWith("```")) {
+        clean = clean.substring(0, clean.length - 3).trim()
+    }
+
+    clean = sanitizeMermaid(clean)
+    clean = clean.replace(
+        Regex("""(?<!\()\["([^"]+)"](?!\))""")
+    ) { match -> """(["${match.groupValues[1]}"])""" }
+
+    return clean
+}
+
 internal fun buildMermaidInkUrl(
     mermaidCode: String,
     darkTheme: Boolean = false,
@@ -401,21 +424,12 @@ internal fun buildMermaidInkUrl(
     onSurfaceHex: String = "1c1b1f",
 ): String {
 
-    // ── Step 1: strip markdown fences ────────────────────────────────────────
-    var clean = mermaidCode
-        .removePrefix("```mermaid")
-        .removePrefix("```")
-        .removeSuffix("```")
-        .trim()
+    // ── Step 1 & 2: clean and sanitize ────────────────────────────────────────
+    // Expect clean code, but apply cleanMermaidCode just in case
+    var finalCode = cleanMermaidCode(mermaidCode)
 
-    // ── Step 2: sanitize broken AI-generated patterns ─────────────────────────
-    clean = sanitizeMermaid(clean)
-    clean = clean.replace(
-        Regex("""(?<!\()\["([^"]+)"](?!\))""")
-    ) { match -> """(["${match.groupValues[1]}"])""" }
-
-    // ── Step 4: prepend %%{init}%% if not already present ────────────────────
-    if ("%%{init" !in clean) {
+    // ── Step 3: prepend %%{init}%% if not already present ────────────────────
+    if ("%%{init" !in finalCode) {
         val initBlock = """
             %%{init: {
               'look': 'handDrawn',
@@ -424,20 +438,22 @@ internal fun buildMermaidInkUrl(
                 'primaryBorderColor': '#$primaryHex',
                 'primaryTextColor': '#$onSurfaceHex',
                 'lineColor': '#$onSurfaceHex',
-                'edgeLabelBackground': '#$bgColorHex'
+                'edgeLabelBackground': '#$bgColorHex',
+                'clusterBkg': 'transparent',
+                'clusterBorder': '#$primaryHex'
               }
             }}%%
         """.trimIndent()
-        clean = "$initBlock\n$clean"
+        finalCode = "$initBlock\n$finalCode"
     }
 
-    // ── Step 5: Base64-URL-safe encode ────────────────────────────────────────
+    // ── Step 4: Base64-URL-safe encode ────────────────────────────────────────
     val encoded = android.util.Base64.encodeToString(
-        clean.toByteArray(Charsets.UTF_8),
+        finalCode.toByteArray(Charsets.UTF_8),
         android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP,
     )
 
-    // ── Step 6: assemble URL ──────────────────────────────────────────────────
+    // ── Step 5: assemble URL ──────────────────────────────────────────────────
     val theme = if (darkTheme) "dark" else "default"
     return "https://mermaid.ink/img/$encoded" +
             "?theme=$theme" +
