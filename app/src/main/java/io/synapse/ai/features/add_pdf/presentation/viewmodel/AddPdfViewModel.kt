@@ -209,10 +209,6 @@ class AddPdfViewModel @Inject constructor(
     }
 
     private fun toggleSummaryGeneration() {
-        if (!_uiState.value.isPro) {
-            _uiEffects.tryEmit(UiEffect.ShowPaywall(UiText.Raw(R.string.feature_pro_summary)))
-            return
-        }
         _uiState.update { it.copy(generateSummary = !it.generateSummary) }
     }
 
@@ -337,12 +333,12 @@ class AddPdfViewModel @Inject constructor(
             return
         }
 
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 summaryFocus = event.summaryFocus,
                 summaryDepth = event.summaryDepth,
                 summaryLanguage = event.summaryLanguage
-            ) 
+            )
         }
 
         progressMessageRotator.start(viewModelScope) { idx ->
